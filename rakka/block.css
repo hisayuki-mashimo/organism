@@ -1,0 +1,41 @@
+div.block {
+  position: absolute;
+  width:    10px;
+  height:   10px;
+  margin:   0px;
+}
+
+div.block_a {
+  background:        url('resource/block_a.png');
+  background-repeat: no-repeat;
+}
+
+div.block_b {
+  background:        url('resource/block_b.png');
+  background-repeat: no-repeat;
+}
+
+div.block_c {
+  background:        url('resource/block_c.png');
+  background-repeat: no-repeat;
+}
+
+div.block_d {
+  background:        url('resource/block_d.png');
+  background-repeat: no-repeat;
+}
+
+div.block_e {
+  background:        url('resource/block_e.png');
+  background-repeat: no-repeat;
+}
+
+div.block_f {
+  background:        url('resource/block_f.png');
+  background-repeat: no-repeat;
+}
+
+div.block_g {
+  background:        url('resource/block_g.png');
+  background-repeat: no-repeat;
+}

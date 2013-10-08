@@ -1,0 +1,104 @@
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="back.css" />
+        <link rel="stylesheet" type="text/css" href="block.css" />
+        <link rel="stylesheet" type="text/css" href="hangar.css" />
+        <link rel="stylesheet" type="text/css" href="meter.css" />
+        <script language="JavaScript" type="text/javascript" src="jquery-1.4.2.min.js"></script>
+        <script language="JavaScript" type="text/javascript" src="block.js"></script>
+        <script language="JavaScript" type="text/javascript" src="container.js"></script>
+        <script language="JavaScript" type="text/javascript" src="ahead.js"></script>
+        <script language="JavaScript" type="text/javascript" src="action.js"></script>
+        <script language="JavaScript" type="text/javascript" src="calculater.js"></script>
+        <script language="JavaScript" type="text/javascript">
+            $(document).ready(function(){
+                Container_Object = new ContainerObject({
+                    side:    11,
+                    depth:   20,
+                    element: $('#hangar').get(0)
+                });
+                Ahead_Object = new AheadObject({
+                    side:    4,
+                    depth:   4,
+                    element: $('#announcer').get(0)
+                });
+                Block_Operator = new BlockOperator({
+                    container:  Container_Object,
+                    ahead:      Ahead_Object,
+                    block_size: 10
+                });
+                Block_Operator.setObjectParam({
+                    formation:  block_a.formations,
+                    aim_count:  block_a.aim_count,
+                    class_name: 'block_a'
+                });
+                Block_Operator.setObjectParam({
+                    formation:  block_b.formations,
+                    aim_count:  block_b.aim_count,
+                    class_name: 'block_b'
+                });
+                Block_Operator.setObjectParam({
+                    formation:  block_c.formations,
+                    aim_count:  block_c.aim_count,
+                    class_name: 'block_c'
+                });
+                Block_Operator.setObjectParam({
+                    formation:  block_d.formations,
+                    aim_count:  block_d.aim_count,
+                    class_name: 'block_d'
+                });
+                Block_Operator.setObjectParam({
+                    formation:  block_e.formations,
+                    aim_count:  block_e.aim_count,
+                    class_name: 'block_e'
+                });
+                Block_Operator.setObjectParam({
+                    formation:  block_f.formations,
+                    aim_count:  block_f.aim_count,
+                    class_name: 'block_f'
+                });
+                Block_Operator.setObjectParam({
+                    formation:  block_g.formations,
+                    aim_count:  block_g.aim_count,
+                    class_name: 'block_g'
+                });
+                Container_Object.buildHangar();
+                Action_Operator = new ActionOperator({
+                    block_operator: Block_Operator,
+                    ahead:          Ahead_Object,
+                    fall_interval:  new Number(1000)
+                });
+                Calculater_Object = new Calculater({
+                    action_operator: Action_Operator,
+                    container:       Container_Object,
+                    element:         $("#meter").get(0)
+                });
+                Action_Operator.startAction();
+            });
+        </script>
+    </head>
+    <body>
+        <div id="hangar"></div>
+        <div id="announcer"></div>
+        <table id="meter">
+            <tbody>
+                <tr>
+                    <th>1</th>
+                    <td id="score_1">0</td>
+                </tr>
+                <tr>
+                    <th>2</th>
+                    <td id="score_2">0</td>
+                </tr>
+                <tr>
+                    <th>3</th>
+                    <td id="score_3">0</td>
+                </tr>
+                <tr>
+                    <th>4</th>
+                    <td id="score_4">0</td>
+                </tr>
+            </tbody>
+        </table>
+    </body>
+</html>
