@@ -156,7 +156,7 @@ Weapon_Basis.prototype = {
             for(var i = 0; i < embody.image_group.length; i ++){
                 var image_key = embody.image_group[i];
                 embody.image_material[image_key] = new Image();
-                embody.image_material[image_key].src= embody.getImagePath(image_key);
+                embody.image_material[image_key].src = embody.getImagePath(image_key);
             }
             embody.image_CX = Math.ceil(embody.image_W / 2);
             embody.image_CY = Math.ceil(embody.image_H / 2);

@@ -86,8 +86,7 @@ Area.prototype = {
 
 
     /**
-     * 
-     *
+     * アニメーションの起動
      *
      */
     startAnimate: function()
@@ -101,8 +100,7 @@ Area.prototype = {
 
 
     /**
-     * 
-     *
+     * アニメーションの停止
      *
      */
     stopAnimate: function()
@@ -112,8 +110,7 @@ Area.prototype = {
 
 
     /**
-     *
-     *
+     * 実行
      *
      */
     execute: function()
@@ -126,8 +123,7 @@ Area.prototype = {
 
 
     /**
-     *
-     *
+     * 実行(フェーズ01)
      *
      */
     execute01: function()
@@ -209,8 +205,7 @@ Area.prototype = {
 
 
     /**
-     *
-     *
+     * 実行(フェーズ02)
      *
      */
     execute02: function()
@@ -294,8 +289,7 @@ Area.prototype = {
 
 
     /**
-     *
-     *
+     * イベントの召喚
      *
      */
     callEvent: function()
@@ -311,8 +305,8 @@ Area.prototype = {
                             for(var i = 0; i < this.enemy_list.length; i ++){
                                 var enemy_data = this.enemy_list[i];
                                 switch(true){
-                                    case ((enemy_data.cond.max) != null && (enemy_data.cond.max < this.rest_metre)): break;
-                                    case ((enemy_data.cond.min) != null && (enemy_data.cond.min > this.rest_metre)): break;
+                                    case ((enemy_data.cond.max != null) && (enemy_data.cond.max < this.rest_metre)): break;
+                                    case ((enemy_data.cond.min != null) && (enemy_data.cond.min > this.rest_metre)): break;
                                     default:
                                         var priority = Math.random() * enemy_data.priority;
                                         if(priority > priority_max){
@@ -352,9 +346,9 @@ Area.prototype = {
 
 
     /**
-     * 
+     * 敵データの登録
      *
-     *
+     * @param   object  enemy
      */
     setEnemy: function(enemy)
     {
