@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Context-Type" context="text/html" charset="utf-8" />
+        <link type="text/css" rel="stylesheet" href="style/style.css" />
+        <!--
+        <title>HTML5試験</title>
+        -->
+    </head>
+    <body>
+        <div id="debug"></div>
+        <div id="frame">
+            <div id="canvas_frame">
+                <canvas id="CA01" width="600px" height="300px"></canvas>
+            </div>
+
+            <div id="map_frame">
+                <div id="map_canvas_frame"><canvas id="CA02" width="3000px" height="300px"></canvas></div>
+            </div>
+
+            <!--
+            <div id="memory_confirm">
+                <div id="memory_back"></div>
+                <div id="complete_back"></div>
+                <div id="mess_pause">[ 一時停止 ]</div>
+                <div id="mess_hp_empty">[ 耐久が0になりました。 ]</div>
+                <div id="mess_complete">[ 到達成功! ]</div>
+                <table id="memory_table01">
+                    <tr>
+                        <td><div id="memory_DO">記録する</div><div id="reload_DO">続きから</div></td>
+                        <td><div id="memory_NO01">最初から</div></td>
+                    </tr>
+                </table>
+                <table id="memory_table02">
+                    <tr>
+                        <td><div id="memory_NO02">最初から</div></td>
+                    </tr>
+                </table>
+                <table id="end_table">
+                    <tr>
+                        <td><div id="end_DO">終了する</div></td>
+                    </tr>
+                </table>
+            </div>
+            -->
+        </div>
+        <!--
+        <div id="option">
+            <table id="condition_menu">
+                <tr>
+                    <th>残り時間:</th>
+                    <td><span id="rest_limit"></span></td>
+                </tr>
+                <tr>
+                    <th>到達まで:</th>
+                    <td><span id="rest_metre"></span>M</td>
+                </tr>
+                <tr>
+                    <th>残り耐久:</th>
+                    <td><div id="hp_frame"><canvas id="hp" width="125px" height="10px"></canvas></div></td>
+                </tr>
+                <tr>
+                    <td colspan="2"><span id="debug"></span></td>
+                </tr>
+            </table>
+            <table id="key_menu">
+                <tr><th>キー</th><th>挙動</th></tr>
+                <tr><th>↑</th><td>前進(画面上)</td></tr>
+                <tr><th>↓</th><td>後退(画面上)</td></tr>
+                <tr><th>←</th><td>左ロール(画面上)</td></tr>
+                <tr><th>→</th><td>右ロール(画面上)</td></tr>
+                <tr><th>↑＋←</th><td>左旋回</td></tr>
+                <tr><th>↑＋→</th><td>右旋回</td></tr>
+                <tr><th>スペース</th><td>加速(燃料消費量増大)</td></tr>
+            </table>
+        </div>
+        -->
+
+        <script type="text/javascript" src="library/jquery-1.8.0.min.js"></script>
+        <script type="text/javascript" src="program/operator.js"></script>
+        <script type="text/javascript" src="program/area.js"></script>
+        <script type="text/javascript" src="program/map.js"></script>
+        <!--
+        <script type="text/javascript" src="program/meter.js"></script>
+        <script type="text/javascript" src="program/container.js"></script>
+        -->
+        <script type="text/javascript" src="program/player.js"></script>
+        <script type="text/javascript" src="program/avatar/basis.js"></script>
+        <script type="text/javascript" src="program/avatar/player_body.js"></script>
+        <script type="text/javascript" src="program/avatar/player_wheel.js"></script>
+        <script type="text/javascript" src="program/avatar/kurage.js"></script>
+        <script type="text/javascript" src="program/enemy/basis.js"></script>
+        <script type="text/javascript" src="program/enemy/kurage.js"></script>
+        <!--
+        <script type="text/javascript" src="program/enemy/uni.js"></script>
+        <script type="text/javascript" src="program/enemy/uni_subordinate.js"></script>
+        <script type="text/javascript" src="program/enemy/tako.js"></script>
+        <script type="text/javascript" src="program/enemy/tako_subordinate.js"></script>
+        <script type="text/javascript" src="program/enemy/ika.js"></script>
+        -->
+        <script type="text/javascript">
+            $(document).ready(function(){
+                DW = function(text){document.getElementById('debug').innerHTML  = text;};
+                DA = function(text){document.getElementById('debug').innerHTML += text;};
+                DR = function(text){document.getElementById('debug').innerHTML += '<br />' + text;};
+                /*$(document.getElementById('debug').parentNode).css('height', '100px');
+                $(document.getElementById('debug').parentNode).css('overflow', 'scroll');*/
+
+                var OperatorObject = new Operator();
+                OperatorObject.init();
+//$('body').css('opacity', 0.2);
+            });
+        </script>
+    </body>
+</html>
