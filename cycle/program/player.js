@@ -17,10 +17,10 @@ Player.prototype = {
         L: new Number(2)
     },
     might:                  new Number(10),
-    jumping_coefficient:    new Number(15),
+    jumping_coefficient:    new Number(10),
     body_radius:            {
-        X: 62,
-        Y: 72
+        X: 31,
+        Y: 36
     },
 
 
@@ -41,7 +41,8 @@ Player.prototype = {
     },
     direction:              'L',
     jump_process:           new Number(0),
-    hp:                     new Number(100),
+    hp:                     new Number(10000),
+    hp_max:                 new Number(10000),
     is_damage:              false,
 
 
@@ -172,6 +173,9 @@ Player.prototype = {
                     switch (true) {
                         case (this.jump_process <  4):
                             this.pos.Y = this.map.image_horizon + (this.jump_process * 6);
+                            if (this.op_cond.jump === true) {
+                                this.jumping_coefficient += 3;
+                            }
                             break;
                         case (this.jump_process >= 4):
                             this.jump_process = this.jumping_coefficient;
@@ -199,6 +203,7 @@ Player.prototype = {
                             this.op_cond.jumping = false;
                             this.jump_process = 0;
                             this.jump_phase = 0;
+                            this.jumping_coefficient = 10;
                             break;
                     }
                     this.jump_process ++;
@@ -234,15 +239,23 @@ Player.prototype = {
      */
     turnForEnemy: function()
     {
+        this.is_damage = false;
+
         for (var i in this.area.enemies) {
             var enemy = this.area.enemies[i];
-            var Y_abs = Math.abs(enemy.pos.Y - this.pos.Y);
-            var X_abs = Math.abs(enemy.pos.X - this.pos.X);
-            if ((Y_abs <= enemy.body_radius.Y) && (X_abs <= enemy.body_radius.X)) {
-                this.hp -= enemy.might;
-                this.is_damage = true;
-                enemy.hp -= this.might;
-                enemy.is_damage = true;
+
+            switch (true) {
+                case (this.pos.Y - this.body_radius.Y > enemy.pos.Y + enemy.body_radius.Y):
+                case (this.pos.Y + this.body_radius.Y < enemy.pos.Y - enemy.body_radius.Y):
+                case (this.pos.X - this.body_radius.X > enemy.pos.X + enemy.body_radius.X):
+                case (this.pos.X + this.body_radius.X < enemy.pos.X - enemy.body_radius.X):
+                    break;
+                default:
+                    this.hp -= enemy.might;
+                    this.is_damage = true;
+                    enemy.hp -= this.might;
+                    enemy.is_damage = true;
+                    break;
             }
         }
     },

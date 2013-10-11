@@ -22,7 +22,7 @@ Avatar_Player_Wheel.prototype = {
 
     pos_relative:   {
         X: 0,
-        Y: 48,
+        Y: 68,
         S: 0
     },
 
@@ -42,8 +42,9 @@ Avatar_Player_Wheel.prototype = {
         }
 
         CTX.setTransform(1, 0, 0, 1, 0, 0);
-        CTX.translate(this.owner.pos.X,       this.owner.pos.Y);
-        CTX.translate(this.pos_relative.X,    this.pos_relative.Y);
+        CTX.translate(this.owner.pos.X,                 this.owner.pos.Y);
+        CTX.translate(this.owner.body_radius.X * -1,    this.owner.body_radius.Y * -1);
+        CTX.translate(this.pos_relative.X,              this.pos_relative.Y);
         CTX.scale(1, scale);
         CTX.rotate(this.pos_relative.S);
         CTX.translate(this.image_CX * -1, this.image_CY * -1);

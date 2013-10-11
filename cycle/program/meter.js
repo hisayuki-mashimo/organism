@@ -12,7 +12,6 @@ var Meter = function(frame_node)
 Meter.prototype = {
     frame_node: null,
     context: null,
-    type: null,
 
 
     display_H:  new Number(),
@@ -38,9 +37,9 @@ Meter.prototype = {
      */
     init: function(params)
     {
-        if(params != undefined){
+        if (params != undefined) {
             for(i in params){
-                if(this[1] !== undefined){
+                if (this[1] !== undefined) {
                     this[i] = params[i];
                 }
             }
@@ -59,13 +58,13 @@ Meter.prototype = {
      */
     execute: function()
     {
-        switch(this.type){
-            case 'hp':      var values = {now: this.player.hp,      max: this.player.hp_max};       break;
-            case 'energy':  var values = {now: this.player.energy,  max: this.player.energy_max};   break;
-        }
+        var values = {
+            now: this.player.hp,
+            max: this.player.hp_max
+        };
         var percentage = values.now / values.max;
         var gauge_length = Math.round(percentage * this.display_W);
-        if((gauge_length == 0) && (values.now > 0)){
+        if ((gauge_length == 0) && (values.now > 0)) {
             gauge_length = 1;
         }
 

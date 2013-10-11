@@ -112,9 +112,6 @@ Enemy_Basis.prototype = {
                 ref.exportImage(this, CTX);
             };
         }
-        embody.getImagePath = function(image_key){
-            return ref.getImagePath(this, image_key);
-        };
 
         // 画像情報設定
         for (var i = 0; i < embody.avatar_codes.length; i ++) {

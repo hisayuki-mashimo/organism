@@ -26,16 +26,16 @@ Area.prototype = {
         'operator',
         'player',
         'map',
-        //'hp_meter',
+        'hp_meter',
         'enemy_basis'
     ),
 
 
     phase:              1,
     rest_limit:         10000,
-    //rest_metre:         null,
-    //rest_limit_node:    null,
-    //rest_metre_node:    null,
+    rest_point:         new Number(20),
+    rest_limit_node:    null,
+    rest_point_node:    null,
 
 
     enemy_list:         null,
@@ -76,9 +76,7 @@ Area.prototype = {
         }
         if(this.enemy_list == null){
             this.enemy_list = new Array(
-                {arise: 'Kurage',   priority: 5.0, cond: {max: null, min: null}}//,
-                //{arise: 'Uni',      priority: 2.0, cond: {max: 5000, min: null}},
-                //{arise: 'Tako',     priority: 4.0, cond: {max: 3000, min: null}}
+                {arise: 'Kurage',   priority: 5.0, cond: {max: null, min: null}}
             );
         }
     },
@@ -124,6 +122,10 @@ Area.prototype = {
         for (var entity_id in this.enemies) {
             var entity = this.enemies[entity_id];
             if ((entity.hp <= 0) || (entity.existed === false)) {
+                if (entity.existed === false) {
+                    this.rest_point --;
+                }
+
                 entity = null;
                 this.enemy_count --;
                 continue;
@@ -144,27 +146,22 @@ Area.prototype = {
 
         this.map.execute();
 
-        //var rest_pos_X = ((this.map.image_target_X - this.map.image_base_X) * this.map.region_size) + this.map.pos_L;
-        //var rest_pos_Y = ((this.map.image_target_Y - this.map.image_base_Y) * this.map.region_size) + this.map.pos_T;
-        //rest_pos_X -= this.player.pos.X - (this.map.display_W / 2);
-        //rest_pos_Y -= this.player.pos.Y - (this.map.display_H / 2);
-        //rest_pos_X = Math.abs(rest_pos_X);
-        //rest_pos_Y = Math.abs(rest_pos_Y);
-        //var hypotenuse  = Math.sqrt(Math.pow(rest_pos_X, 2) + Math.pow(rest_pos_Y, 2));
-        //this.rest_metre = Math.floor(hypotenuse / this.map.region_size * this.map.image_metre);
-        //this.rest_metre_node.innerHTML = this.rest_metre;
+        this.rest_point_node.innerHTML = this.rest_point;
 
-        //this.hp_meter.execute();
-        //this.en_meter.execute();
+        this.hp_meter.execute();
 
         this.rest_limit --;
-        //this.rest_limit_node.innerHTML = this.rest_limit;
+        this.rest_limit_node.innerHTML = this.rest_limit;
 
-        if(this.player.hp <= 0){
+        if (this.rest_point <= 0) {
+            this.stopAnimate();
+            this.operator.complete();
+        }
+        if (this.player.hp <= 0) {
             this.stopAnimate();
             this.operator.fail('hp_empty');
         }
-        if(this.rest_limit <= 0){
+        if (this.rest_limit <= 0) {
             this.stopAnimate();
             this.operator.fail('time_over');
         }

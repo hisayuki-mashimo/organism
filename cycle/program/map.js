@@ -15,7 +15,7 @@ Map.prototype = {
     image_H:        new Number(300),
     image_CX:       new Number(),
     image_CY:       new Number(),
-    image_horizon:  new Number(200),
+    image_horizon:  new Number(210),
     pos:            new Number(0),
     pos_base:       new Number(0),
 

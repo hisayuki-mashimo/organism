@@ -25,7 +25,7 @@ Avatar_Player_Body.prototype = {
 
     pos_relative:   {
         X: 0,
-        Y: -20,
+        Y: 0,
         S: 0
     },
 

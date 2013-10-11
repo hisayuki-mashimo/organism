@@ -10,21 +10,19 @@ Operator.prototype = {
      */
     nodes: {
         canvas:     null,
-        map_frame:  null//,
-        //rest_limit: null,
-        //rest_metre: null,
-        //energy:     null,
-        //memory:     null,
+        map_frame:  null,
+        rest_limit: null,
+        rest_point: null,
+        announce:   null
     },
 
 
     mightinesses: {
-        //storager:               null,
         player:                 null,
         area:                   null,
         avatar_basis:           null,
         map:                    null,
-        //hp_meter:               null,
+        hp_meter:               null,
         enemy_basis:            null
     },
 
@@ -69,16 +67,16 @@ Operator.prototype = {
 
         this.nodes.canvas       = document.getElementById('CA01');
         this.nodes.map_frame    = document.getElementById('map_frame');
-        //this.nodes.rest_limit   = document.getElementById('rest_limit');
-        //this.nodes.rest_metre   = document.getElementById('rest_metre');
-        //this.nodes.hp           = document.getElementById('hp');
-        //this.nodes.memory       = document.getElementById('memory_confirm');
+        this.nodes.rest_limit   = document.getElementById('rest_limit');
+        this.nodes.rest_point   = document.getElementById('rest_point');
+        this.nodes.hp           = document.getElementById('hp');
+        this.nodes.announce     = document.getElementById('announce');
 
         this.mightinesses.player    = new Player();
         this.mightinesses.area  = new Area(this.nodes.canvas);
         this.mightinesses.avatar_basis  = new Avatar_Basis();
         this.mightinesses.map           = new Map(this.nodes.map_frame);
-        //this.mightinesses.hp_meter      = new Meter(this.nodes.hp);
+        this.mightinesses.hp_meter      = new Meter(this.nodes.hp);
         this.mightinesses.enemy_basis   = new Enemy_Basis();
         for(var mightiness_key in this.mightinesses){
             var mightiness = this.mightinesses[mightiness_key];
@@ -97,14 +95,14 @@ Operator.prototype = {
             }
         }
 
-        //this.area.rest_limit_node   = this.nodes.rest_limit;
-        //this.area.rest_metre_node   = this.nodes.rest_metre;
-        //this.hp_meter.type          = 'hp';
-        //this.hp_meter.color_MAX     = {R: 255, G: 255, B: 160};
-        //this.hp_meter.color_MIN     = {R: 255, G:   0, B:   0};
+        this.area.rest_limit_node   = this.nodes.rest_limit;
+        this.area.rest_point_node   = this.nodes.rest_point;
+        this.hp_meter.color_MAX     = {R: 255, G: 255, B: 160};
+        this.hp_meter.color_MIN     = {R: 255, G:   0, B:   0};
 
         this.player.init();
         this.map.init();
+        this.hp_meter.init();
         this.area.init();
 
         var ref = this;
@@ -124,27 +122,9 @@ Operator.prototype = {
             ref.player.onOperate('keyup', key_code);
         });
 
-        $(this.nodes.memory).hide();
-        /*$('div#memory_DO').click(function(){
-            ref.storager.store();
-        });
-        $('div#memory_NO01').click(function(){
-            ref.storager.clear();
-            window.location.reload();
-        });
-        $('div#memory_NO02').click(function(){
-            ref.storager.clear();
-            window.location.reload();
-        });
-        $('div#reload_DO').click(function(){
-            window.location.reload();
-        });
-        $('div#end_DO').click(function(){
-            window.close();
-        });*/
+        $(this.nodes.announce).hide();
 
         this.area.startAnimate();
-//this.area.stopAnimate();
     },
 
 
@@ -158,23 +138,19 @@ Operator.prototype = {
             this.area.stopAnimate();
             this.paused = true;
 
-            /*$('#memory_table01').show();
-            $('#memory_table02').hide();
-            $('#memory_back').show();
+            $('#pause_back').show();
             $('#complete_back').hide();
             $('#mess_pause').show();
             $('#mess_hp_empty').hide();
-            $('#mess_energy_empty').hide();
             $('#mess_complete').hide();
-            $('#reload_DO').hide();
 
-            $(this.nodes.memory).fadeIn(250);*/
+            $(this.nodes.announce).fadeIn(250);
         }
         else{
             this.area.startAnimate();
             this.paused = false;
 
-            $(this.nodes.memory).fadeOut(250);
+            $(this.nodes.announce).fadeOut(250);
         }
     },
 
@@ -186,25 +162,16 @@ Operator.prototype = {
      */
     fail: function(failed_case)
     {
-        /*$('#memory_table01').show();
-        $('#memory_table02').hide();
-        $('#memory_back').show();
+        $('#pause_back').hide();
         $('#complete_back').hide();
         $('#mess_pause').hide();
         $('#mess_complete').hide();
-        $('#memory_DO').hide();
-        $('#reload_DO').show();
-        switch(failed_case){
+        switch (failed_case) {
             case 'hp_empty':
                 $('#mess_hp_empty').show();
-                $('#mess_energy_empty').hide();
-                break;
-            case 'energy_empty':
-                $('#mess_hp_empty').hide();
-                $('#mess_energy_empty').show();
                 break;
         }
-        $(this.nodes.memory).fadeIn(250);*/
+        $(this.nodes.announce).fadeIn(250);
     },
 
 
@@ -214,16 +181,11 @@ Operator.prototype = {
      */
     complete: function()
     {
-        /*$('#memory_table01').hide();
-        $('#memory_table02').show();
-        $('#memory_back').hide();
+        $('#pause_back').hide();
         $('#complete_back').show();
         $('#mess_pause').hide();
         $('#mess_complete').show();
-        $('#memory_DO').hide();
-        $('#reload_DO').show();
         $('#mess_hp_empty').hide();
-        $('#mess_energy_empty').hide();
-        $(this.nodes.memory).fadeIn(250);*/
+        $(this.nodes.announce).fadeIn(250);
     }
 };

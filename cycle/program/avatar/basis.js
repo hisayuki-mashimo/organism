@@ -137,8 +137,9 @@ Avatar_Basis.prototype = {
         embody.adjustPos();
 
         CTX.setTransform(1, 0, 0, 1, 0, 0);
-        CTX.translate(embody.owner.pos.X,       embody.owner.pos.Y);
-        CTX.translate(embody.pos_relative.X,    embody.pos_relative.Y);
+        CTX.translate(embody.owner.pos.X,               embody.owner.pos.Y);
+        CTX.translate(embody.owner.body_radius.X * -1,  embody.owner.body_radius.Y * -1);
+        CTX.translate(embody.pos_relative.X,            embody.pos_relative.Y);
         CTX.rotate(embody.pos_relative.S);
         CTX.translate(embody.image_CX * -1, embody.image_CY * -1);
         CTX.globalAlpha = embody.image_opacity.M;

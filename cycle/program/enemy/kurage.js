@@ -9,25 +9,14 @@ var Kurage = function()
 
 Kurage.prototype = {
     object_key:     new String('Kurage'),
-    image_key:      new String('kurage'),
-    image_group:    new Array('m'),
 
 
     direction:      new String(),
     speed:          new Number(),
-    //mobility:       new Number(0.1),
     might:          new Number(10),
 
 
     hp:             new Number(100),
-
-
-    image_W:        new Number(21),
-    image_H:        new Number(21),
-    image_opacity:  {
-        M: new Number(1.0)//,
-        //S: new Number(0.5)
-    },
 
 
 
@@ -38,12 +27,11 @@ Kurage.prototype = {
      */
     init: function()
     {
-        /*if(this.op_cond == null){
-            this.op_cond = {
-                side:   'O',
-                rotate: null
-            };
-        }*/
+        this.body_radius = {
+            X: 5,
+            Y: 5
+        };
+
         this.direction  = (Math.random() < 0.5) ? 'L' : 'R';
         this.speed      = 1 + (Math.random() / 2);
     },
@@ -61,7 +49,7 @@ Kurage.prototype = {
             case 'R': var pos_X = this.map.display_W + 20;  break;
         }
 
-        var pos_Y = this.map.display_H - (Math.random() * 20);
+        var pos_Y = this.map.image_horizon - (Math.random() * 50);
 
         this.pos = {
             X: pos_X,

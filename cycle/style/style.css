@@ -82,7 +82,7 @@ table#SLF td {
 }
 
 
-/*div#memory_confirm {
+div#announce {
     position: absolute;
     top: 20px;
     left: 20px;
@@ -90,10 +90,10 @@ table#SLF td {
     height: 480px;
     z-index: 10;
     display: none;
-}*/
+}
 
 
-div#memory_back,
+div#pause_back,
 div#complete_back {
     position: absolute;
     top: 0px;
@@ -104,7 +104,7 @@ div#complete_back {
 }
 
 
-div#memory_back {
+div#pause_back {
     background-color: #8888ff;
     filter: alpha(opacity=2);
     -moz-opacity: 0.2;
@@ -122,7 +122,6 @@ div#complete_back {
 
 div#mess_pause,
 div#mess_hp_empty,
-div#mess_energy_empty,
 div#mess_complete {
     position: absolute;
     top: 160px;
@@ -135,8 +134,6 @@ div#mess_complete {
 }
 
 
-table#memory_table01,
-table#memory_table02,
 table#end_table {
     position: absolute;
     left: 0px;
@@ -145,60 +142,6 @@ table#end_table {
 }
 
 
-table#memory_table01,
-table#memory_table02 {
-    top: 200px;
-}
-
-
 table#end_table {
     top: 240px;
-}
-
-
-div#memory_confirm table td {
-    text-align: center;
-}
-
-
-table#memory_table01 td {
-    width: 50%;
-}
-
-
-div#memory_confirm table td div {
-    margin-top: 5px;
-    width: 200px;
-    background-color: #6666ff;
-    color: #ffffff;
-    cursor: pointer;
-    filter: alpha(opacity=6);
-    -moz-opacity: 0.6;
-    opacity: 0.6;
-}
-
-
-div#memory_confirm table td div:hover{
-    background-color: #ff8888;
-    color: #880000;
-    filter: alpha(opacity=8);
-    -moz-opacity: 0.8;
-    opacity: 0.8;
-}
-
-
-div#reload_DO,
-div#memory_DO {
-    margin-left: 80px;
-}
-
-
-div#memory_NO01 {
-    margin-left: 20px;
-}
-
-
-div#memory_NO02,
-div#end_DO {
-    margin-left: 200px;
 }
