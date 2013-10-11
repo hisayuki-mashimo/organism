@@ -23,13 +23,6 @@ Avatar_Player_Body.prototype = {
     image_H:        new Number(70),
 
 
-    pos_relative:   {
-        X: 0,
-        Y: 0,
-        S: 0
-    },
-
-
     /**
      * 
      *

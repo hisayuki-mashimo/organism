@@ -27,13 +27,13 @@ Kurage.prototype = {
      */
     init: function()
     {
-        this.body_radius = {
-            X: 5,
-            Y: 5
-        };
-
         this.direction  = (Math.random() < 0.5) ? 'L' : 'R';
-        this.speed      = 1 + (Math.random() / 2);
+        this.speed      = 1 + (Math.random() * 10 / 2);
+
+        this.body_radius = {
+            X: 20,
+            Y: 20
+        };
     },
 
 
@@ -66,16 +66,14 @@ Kurage.prototype = {
     execute: function()
     {
         // フェーズ内行動
-        this.turn();
+        this.basis.execute(this);
 
         if (this.appeared === true) {
-            switch(true){
-                case (this.pos.X >= this.body_radius.X * -1):
-                case (this.pos.Y >= this.body_radius.Y * -1):
-                case (this.pos.X <= this.map.display_W + this.body_radius.X):
-                case (this.pos.Y <= this.map.display_H + this.body_radius.Y):
-                    break;
-                default:
+            switch (true) {
+                case (this.pos.X < this.body_radius.X * -1):
+                case (this.pos.Y < this.body_radius.Y * -1):
+                case (this.pos.X > this.map.display_W + this.body_radius.X):
+                case (this.pos.Y > this.map.display_H + this.body_radius.Y):
                     this.existed = false;
                     break;
             }
@@ -92,6 +90,11 @@ Kurage.prototype = {
         switch (this.direction) {
             case 'L': this.pos.X += this.speed; break;
             case 'R': this.pos.X -= this.speed; break;
+        }
+
+        switch (this.map.player.direction) {
+            case 'L': this.pos.X += 2; break;
+            case 'R': this.pos.X -= 2; break;
         }
     }
 };

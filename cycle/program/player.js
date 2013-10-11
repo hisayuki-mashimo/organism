@@ -13,8 +13,8 @@ Player.prototype = {
      *
      */
     speed:                  {
-        R: new Number(2),
-        L: new Number(2)
+        R: new Number(4),
+        L: new Number(4)
     },
     might:                  new Number(10),
     jumping_coefficient:    new Number(10),
@@ -41,8 +41,8 @@ Player.prototype = {
     },
     direction:              'L',
     jump_process:           new Number(0),
-    hp:                     new Number(10000),
-    hp_max:                 new Number(10000),
+    hp:                     new Number(1000),
+    hp_max:                 new Number(1000),
     is_damage:              false,
 
 

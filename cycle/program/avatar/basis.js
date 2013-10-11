@@ -71,13 +71,6 @@ Avatar_Basis.prototype = {
                 }
             }
         }
-        if (embody.pos_relative === null) {
-            embody.pos_relative = {
-                X: new Number(0),
-                Y: new Number(0),
-                S: new Number(0)
-            };
-        }
         embody.image_materials = {};
         if (embody.image_paturns === null) {
             embody.image_paturns = ['base'];
@@ -91,7 +84,12 @@ Avatar_Basis.prototype = {
 
         // 共通メソッド定義
         var ref = this;
-        if(embody.exportImage == undefined){
+        if (embody.initPos == undefined) {
+            embody.initPos = function(){
+                ref.initPos(this);
+            };
+        }
+        if (embody.exportImage == undefined) {
             embody.exportImage = function(CTX){
                 ref.exportImage(this, CTX);
             };
@@ -99,7 +97,7 @@ Avatar_Basis.prototype = {
         embody.getImagePath = function(paturn_code){
             return ref.getImagePath(this, paturn_code);
         };
-        if(embody.getImageMaterial == undefined){
+        if (embody.getImageMaterial == undefined) {
             embody.getImageMaterial = function(){
                 return ref.getImageMaterial(this);
             };
@@ -109,6 +107,8 @@ Avatar_Basis.prototype = {
                 ref.adjustPos(this);
             };
         }
+
+        embody.initPos();
 
         // 画像情報設定
         embody.image_CX = embody.image_W / 2;
@@ -123,6 +123,21 @@ Avatar_Basis.prototype = {
         }
 
         return embody;
+    },
+
+
+    /**
+     * 相対位置初期化
+     *
+     * @param   object  embody
+     */
+    initPos: function(embody)
+    {
+        embody.pos_relative = {
+            X: new Number(0),
+            Y: new Number(0),
+            S: new Number(0)
+        };
     },
 
 

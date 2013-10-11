@@ -33,7 +33,7 @@ Area.prototype = {
 
     phase:              1,
     rest_limit:         10000,
-    rest_point:         new Number(20),
+    rest_point:         new Number(10),
     rest_limit_node:    null,
     rest_point_node:    null,
 
@@ -137,7 +137,7 @@ Area.prototype = {
 
         this.context.setTransform(1, 0, 0, 1, 0, 0);
         this.context.clearRect(0, 0, this.canvas_node.width, this.canvas_node.height);
-        for(var entity_id in this.enemies){
+        for (var entity_id in this.enemies) {
             this.context.setTransform(1, 0, 0, 1, 0, 0);
             this.enemies[entity_id].exportImage(this.context);
         }
@@ -178,8 +178,7 @@ Area.prototype = {
         switch (this.phase) {
             case 1:
                 if (this.rest_limit % 10 == 1) {
-                    //if (this.enemy_count < 7) {
-                    if (this.enemy_count < 1) {
+                    if (this.enemy_count < 3) {
                         var alise_rand = Math.random();
                         if (alise_rand > 0.3) {
                             var arise = null;

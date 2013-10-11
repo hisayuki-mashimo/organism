@@ -17,6 +17,7 @@ Enemy_Basis.prototype = {
         'player',
         'area',
         'map',
+        'basis',
         'avatar_basis'
     ),
 
@@ -79,8 +80,9 @@ Enemy_Basis.prototype = {
         }
 
         // 依存オブジェクト挿入
-        embody.area = this.area;
-        embody.map  = this.map;
+        embody.basis    = this;
+        embody.area     = this.area;
+        embody.map      = this.map;
 
         // プロパティ初期化
         if (embody.body_radius === null) {
@@ -113,17 +115,17 @@ Enemy_Basis.prototype = {
             };
         }
 
+        // 実体初期化
+        embody.init();
+        if (embody.pos == null) {
+            embody.initPos();
+        }
+
         // 画像情報設定
         for (var i = 0; i < embody.avatar_codes.length; i ++) {
             var avatar_code = embody.avatar_codes[i];
 
             embody.avatars[avatar_code] = this.avatar_basis.summons(embody, avatar_code);
-        }
-
-        // 実体初期化
-        embody.init();
-        if (embody.pos == null) {
-            embody.initPos();
         }
 
         return embody;
@@ -151,20 +153,12 @@ Enemy_Basis.prototype = {
         embody.turn();
 
         // 被認知可能判別
-        if(embody.appeared == false){
+        if (embody.appeared == false) {
             switch(true){
                 case (embody.pos.X < embody.body_radius.X * -1):
                 case (embody.pos.Y < embody.body_radius.Y * -1):
                 case (embody.pos.X > this.map.display_W + embody.body_radius.X):
                 case (embody.pos.Y > this.map.display_H + embody.body_radius.Y):
-DW(
-embody.pos.X + '<br />' +
-embody.pos.Y + '<br />' +
-embody.body_radius.X + '<br />' +
-embody.body_radius.Y + '<br />' +
-this.map.display_W + '<br />' +
-this.map.display_H
-);
                     break;
                 default:
                     embody.appeared = true;

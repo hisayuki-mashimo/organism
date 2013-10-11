@@ -20,10 +20,16 @@ Avatar_Player_Wheel.prototype = {
     },
 
 
-    pos_relative:   {
-        X: 0,
-        Y: 68,
-        S: 0
+    /**
+     * 相対位置初期化
+     */
+    initPos: function()
+    {
+        this.pos_relative = {
+            X: 0,
+            Y: 68,
+            S: 0
+        };
     },
 
 
