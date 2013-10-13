@@ -1,0 +1,55 @@
+* {
+    margin: 0px;
+    padding: 0px;
+}
+
+
+canvas#CA01,
+canvas#CA02 {
+    position: absolute;
+    top: 50px;
+    left: 50px;
+}
+
+
+canvas#CA01 {
+    z-index: 0;
+}
+
+
+canvas#CA02 {
+    z-index: 10;
+}
+
+
+div#IM01_hide,
+div#IM02_hide {
+    position: absolute;
+    width: 150px;
+    height: 200px;
+    filter: alpha(opacity=3);
+    -moz-opacity: 0.3;
+    opacity: 0.3;
+    z-index: 5;
+}
+
+
+div#message {
+    position: absolute;
+    top: 50px;
+    left: 710px;
+    padding: 5px;
+    width: 300px;
+    border: solid 1px #cc88aa;
+    background-color: #fff8f8;
+    font-size: 11px;
+}
+
+
+div#mess00,
+div#mess01,
+div#mess02,
+div#mess03,
+div#mess04 {
+    display: none;
+}
