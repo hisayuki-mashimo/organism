@@ -87,6 +87,8 @@ Map.prototype = {
             };
         }
 
+        var ref = this;
+
         for(var Y = 1; Y <= this.region_limit; Y ++){
             var image_Y = this.image_base_Y - region_center + Y;
             for(var X = 1; X <= this.region_limit; X ++){
@@ -94,19 +96,30 @@ Map.prototype = {
 
                 var image_node = new Image();
                 var image_src = this.image_base_src;
-                image_src = image_src.replace(/__Y__/, image_Y);
-                image_src = image_src.replace(/__X__/, image_X);
+                image_src  = image_src.replace(/__Y__/, image_Y);
+                image_src  = image_src.replace(/__X__/, image_X);
+                image_src += '&region_Y=' + Y + '&region_X=' + X;
                 image_node.src = image_src;
                 var pos_Y = (Y - 1) * this.region_size;
                 var pos_X = (X - 1) * this.region_size;
                 this.map_nodes[this.map_M].context.setTransform(1, 0, 0, 1, 0, 0);
                 this.map_nodes[this.map_M].context.translate(pos_X, pos_Y);
                 this.map_nodes[this.map_M].context.drawImage(image_node, 0, 0);
+
+                image_node.onload = function(){
+                    var Y = this.src.match(/region_Y=[0-9]+/).toString().replace(/region_Y=/, '');
+                    var X = this.src.match(/region_X=[0-9]+/).toString().replace(/region_X=/, '');
+
+                    var map_node_M = ref.map_nodes[ref.map_M];
+                    var pos_Y = (Y - 1) * ref.region_size;
+                    var pos_X = (X - 1) * ref.region_size;
+                    map_node_M.context.setTransform(1, 0, 0, 1, 0, 0);
+                    map_node_M.context.translate(pos_X, pos_Y);
+                    map_node_M.context.drawImage(this, 0, 0);
+                };
                 this.image_nodes[this.map_M][Y + '_' + X] = image_node;
             }
         }
-//$(this.map_nodes['A'].canvas.parentNode).css('background-color', '#ff0000');
-//$(this.map_nodes['B'].canvas.parentNode).css('background-color', '#0000ff');
     },
 
 
@@ -162,6 +175,8 @@ Map.prototype = {
         map_node_M.context.setTransform(1, 0, 0, 1, 0, 0);
         map_node_M.context.clearRect(0, 0, map_node_M.canvas.width, map_node_M.canvas.height);
 
+        var ref = this;
+
         for(var Y = 1; Y <= this.region_limit; Y ++){
             var image_Y = this.image_base_Y - region_center + Y;
             for(var X = 1; X <= this.region_limit; X ++){
@@ -180,20 +195,32 @@ Map.prototype = {
                             case 'L': var image_node = image_node_S[Y + '_' + this.region_limit];   break;
                         }
                         var image_src = this.image_base_src;
-                        image_src = image_src.replace(/__Y__/, image_Y);
-                        image_src = image_src.replace(/__X__/, image_X);
+                        image_src  = image_src.replace(/__Y__/, image_Y);
+                        image_src  = image_src.replace(/__X__/, image_X);
+                        image_src += '&region_Y=' + Y + '&region_X=' + X;
                         image_node.src = image_src;
                         break;
                 }
-                this.image_nodes[this.map_M][Y + '_' + X] = image_node;
-//DR(image_node.src);
 
                 var pos_Y = (Y - 1) * this.region_size;
                 var pos_X = (X - 1) * this.region_size;
                 map_node_M.context.setTransform(1, 0, 0, 1, 0, 0);
                 map_node_M.context.translate(pos_X, pos_Y);
-//map_node_M.context.globalAlpha = 0.8;
                 map_node_M.context.drawImage(image_node, 0, 0);
+
+                image_node.onload = function(){
+                    var Y = this.src.match(/region_Y=[0-9]+/).toString().replace(/region_Y=/, '');
+                    var X = this.src.match(/region_X=[0-9]+/).toString().replace(/region_X=/, '');
+
+                    var map_node_M = ref.map_nodes[ref.map_M];
+                    var pos_Y = (Y - 1) * ref.region_size;
+                    var pos_X = (X - 1) * ref.region_size;
+                    map_node_M.context.setTransform(1, 0, 0, 1, 0, 0);
+                    map_node_M.context.translate(pos_X, pos_Y);
+                    map_node_M.context.drawImage(this, 0, 0);
+                };
+
+                this.image_nodes[this.map_M][Y + '_' + X] = image_node;
             }
         }
 

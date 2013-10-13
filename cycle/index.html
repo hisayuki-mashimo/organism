@@ -45,9 +45,9 @@
                         <div id="bgm01" class="bgm_select">BGM&nbsp;1</div>
                         <div id="bgm02" class="bgm_select">BGM&nbsp;2</div>
                         <div id="bgm03" class="bgm_select">BGM&nbsp;3</div>
-                        <audio id="AD01" src="resource/bgm/1.mp3" preload></audio>
-                        <audio id="AD02" src="resource/bgm/2.mp3" preload></audio>
-                        <audio id="AD03" src="resource/bgm/3.mp3" preload></audio>
+                        <audio id="AD01" preload="metadata" src="resource/bgm/1.mp3"></audio>
+                        <audio id="AD02" preload="metadata" src="resource/bgm/2.mp3"></audio>
+                        <audio id="AD03" preload="metadata" src="resource/bgm/3.mp3"></audio>
 
                         <div id="audio_scroller_frame">
                             <div id="audio_scroller_rail">
@@ -58,6 +58,8 @@
                     </td>
                 </tr>
             </table>
+
+            <button onclick="javascript:window.location.href='../etc/index.html';">全体に戻る</button>
         </div>
 
         <script type="text/javascript" src="library/jquery-1.8.0.min.js"></script>
