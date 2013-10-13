@@ -33,7 +33,7 @@ Area.prototype = {
 
     phase:              1,
     rest_limit:         2000,
-    rest_point:         new Number(10),
+    rest_point:         new Number(20),
     rest_limit_node:    null,
     rest_point_node:    null,
 

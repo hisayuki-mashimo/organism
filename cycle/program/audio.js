@@ -151,7 +151,7 @@ Audio.prototype = {
      */
     changeVolume: function(per)
     {
-        var volume = Math.round(per * 10) / 10;
+        var volume = Math.round(per * 100) / 100;
         switch (true) {
             case (volume < 0): volume = 0; break;
             case (volume > 1): volume = 1; break;
@@ -183,13 +183,9 @@ Audio_Scroller.prototype = {
 
     bar_length:         null,
     bar_first_per:      0,
-
-
-    client_pos:         0,
-    client_min_pos:     0,
-    client_max_pos:     null,
     bar_pos:            0,
     bar_max_pos:        null,
+    bar_client_pos_X:   0,
 
 
     _lock_bar:          true,
@@ -216,16 +212,24 @@ Audio_Scroller.prototype = {
 
         this.bar_length          = this.bar_node.clientWidth;
         this.bar_max_pos         = bar_base_length - this.bar_length;
+        this.bar_client_pos_X    = this.bar_node.getBoundingClientRect().left;
         this.bar_node.style.top  = '0px';
         this.bar_node.style.left = '0px';
 
-        var ref = this;
-
-        this.bar_node.onmousedown = function(event){
+        var gauze_node = document.createElement('div');
+        gauze_node.style.position = 'absolute';
+        gauze_node.style.top = '0px';
+        gauze_node.style.left = '0px';
+        gauze_node.style.width = bar_base_node.clientWidth + 'px';
+        gauze_node.style.height = bar_base_node.clientHeight + 'px';
+        gauze_node.style.zIndex = 10;
+        bar_base_node.appendChild(gauze_node);
+        gauze_node.onmousedown = function(event){
             ref._lock_bar = false;
-            ref._pre_cursor_pos = event.clientX;
-            this.style.backgroundColor = '#f8f8ff';
+            ref._moveBar(event);
         };
+
+        var ref = this;
 
         var document_func_move = document.onmousemove;
         document.onmousemove = function(event){
@@ -257,35 +261,52 @@ Audio_Scroller.prototype = {
         };
 
         if (this.bar_first_per > 0) {
-            this._scrollBar(null, this.bar_first_per);
+            this._moveBar(null, this.bar_first_per);
         }
 
-        this._scrollBar(null, 0.8);
+        this._moveBar(null, 0.5);
     },
 
 
     /**
-     * スクロール(サイドバー)
+     * 移動
      *
      * @param   MouseEvent  event
      * @param   int         specified_per
      */
-    _scrollBar: function(event, specified_per)
+    _moveBar: function(event, specified_per)
     {
         if (specified_per) {
             this.bar_pos = Math.floor(this.bar_max_pos * specified_per);
         } else {
-            var scroll_pos = parseInt(this.bar_node.style.left.replace(/px/, ''));
-            this.bar_pos = scroll_pos + event.clientX - this._pre_cursor_pos;
+            this.bar_pos = event.clientX - this.bar_client_pos_X;
         }
         if (this.bar_pos < 0)                   this.bar_pos = 0;
         if (this.bar_pos > this.bar_max_pos)    this.bar_pos = this.bar_max_pos;
         this.bar_node.style.left = this.bar_pos + 'px';
 
         var per = this.bar_pos / this.bar_max_pos;
-        this.client_pos = Math.floor(this.client_min_pos * per);
-        if (this.client_pos > 0)                    this.client_pos = 0;
-        if (this.client_pos < this.client_min_pos)  this.client_pos = this.client_min_pos;
+
+        if (event) this._pre_cursor_pos = event.clientX;
+
+        this.audio.changeVolume(per);
+    },
+
+
+    /**
+     * スクロール
+     *
+     * @param   MouseEvent  event
+     */
+    _scrollBar: function(event)
+    {
+        var scroll_pos = parseInt(this.bar_node.style.left.replace(/px/, ''));
+        this.bar_pos = scroll_pos + event.clientX - this._pre_cursor_pos;
+        if (this.bar_pos < 0)                   this.bar_pos = 0;
+        if (this.bar_pos > this.bar_max_pos)    this.bar_pos = this.bar_max_pos;
+        this.bar_node.style.left = this.bar_pos + 'px';
+
+        var per = this.bar_pos / this.bar_max_pos;
 
         if (event) this._pre_cursor_pos = event.clientX;
 
