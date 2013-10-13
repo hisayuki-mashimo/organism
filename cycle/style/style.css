@@ -71,14 +71,48 @@ div#energy_frame {
 }
 
 
-table#STR td,
-table#SLF td {
-    padding: 0px;
-    width: 67px;
-    height: 40px;
-    vertical-align: middle;
-    text-align: center;
-    font-size: 0px;
+div.bgm_select {
+    padding: 2px;
+    cursor: pointer;
+}
+div.bgm_select:hover {
+    background-color: #f0f0ff;
+}
+div.bgm_select_selected {
+    background-color: #ffe0e0;
+}
+
+
+div#audio_scroller_frame {
+    position: relative;
+    top: 0px;
+    left: 0px;
+    width: 125px;
+    height: 13px;
+    margin: 2px 0px;
+}
+div#audio_scroller_rail {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 125px;
+    height: 13px;
+}
+div#audio_scroller {
+    position: absolute;
+    width: 13px;
+    height: 13px;
+    background: url('../resource/volume.png');
+    z-index: 2;
+}
+div#audio_scroller_mark {
+    position: absolute;
+    top: 6px;
+    left: 0px;
+    width: 100%;
+    height: 1px;
+    background-color: #aaaaaa;
+    z-index: 1;
 }
 
 
@@ -126,10 +160,10 @@ div#mess_complete {
     position: absolute;
     top: 160px;
     left: 150px;
-    padding: 5px;
+    padding: 2px;
     width: 300px;
-    height: 30px;
     text-align: center;
+    background-color: rgba(224, 224, 255, 0.8);
     color: #444488;
 }
 

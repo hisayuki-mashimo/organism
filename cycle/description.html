@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Context-Type" context="text/html" charset="utf-8" />
+        <link type="text/css" rel="stylesheet" href="style/style.css" />
+        <title>HTML5試験</title>
+        <style type="text/css">
+            div#frame {
+                width: 100%;
+            }
+            div#description {
+                margin: 0px auto;
+                padding: 10px;
+                width: 600px;
+                border: solid 1px #ff0000;
+            }
+            h3#description_title {
+                text-align: center;
+                font-size: 12px;
+            }
+            table#description_list {
+                border-collapse: collapse;
+                border: none;
+            }
+            td.subject,
+            td.content {
+                vertical-align: top;
+                font-size: 12px;
+            }
+            td.subject {
+                padding-right: 5px;
+                text-align: right;
+            }
+            td.content {
+                padding-bottom: 20px;
+                text-align: left;
+            }
+            div#confirm {
+                margin: 0px auto;
+                padding: 10px;
+                width: 600px;
+            }
+            div.spacer {
+                height: 10px;
+                font-size: 0px;
+            }
+            div.center {
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="spacer"></div>
+
+        <div id="frame">
+            <div id="description">
+                <h3 id="description_title">概要</h3>
+                <table id="description_list">
+                    <tr>
+                        <td class="subject">1)</td>
+                        <td class="content">
+                            プレイヤー(以下甲)は、バルーンに乗り、不規則に出現する敵(以下乙)を一定数かわしきってゲームクリアするものとします。
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="subject">2)</td>
+                        <td class="content">
+                            甲が乙に接触するしないに関わらず、乙が消滅せずに画面内の視覚から外れたことを以て、甲が乙をかわしきったものとします。
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="subject">3)</td>
+                        <td class="content">
+                            甲は、乙に接触した際、一定数のダメージを受けるものとします。<br />
+                            また、甲に一定限度のダメージが累積した際、甲はやられ、ゲーム失敗となります。<br />
+                            また、バルーンは甲ではありませんので、乙に接触しても甲にダメージは累積されません。
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="subject">4)</td>
+                        <td class="content">
+                            甲が乙に接触した際は、乙も同様にダメージを受けるものとします。<br />
+                            また、乙に一定限度のダメージが累積した際、乙はやられ、消滅するものとします。
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="subject">5)</td>
+                        <td class="content">
+                            ゲームには制限時間が設定され、甲はその期間内にクリアの条件を達成できない場合、ゲームオーバーとなります。<br />
+                            また、残制限時間は数値にて画面端に明示するものとします。<br />
+                            但し、数値は必ずしも特定の時間に換算することはできません。
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="subject">6)</td>
+                        <td class="content">
+                            甲はスペースキーの押下に従い、跳躍することができるものとします。<br />
+                            その際、スペースキー押下継続時間に応じて、若干の跳躍高度の変化が生じます。
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="subject">7)</td>
+                        <td class="content">
+                            操作主体(甲ではありません)はエンタ―キーの押下により、ゲーム進行を無期限に中断・再開できるものとします。<br />
+                            エンタ―キー押下時の挙動は、ゲーム進行状態を、その時点と相反する状態に変化させるものとします。<br />
+                            また、この機能の使用により、甲がゲーム進行上不利になることはないものとします。
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="subject">8)</td>
+                        <td class="content">
+                            ゲームオーバーと判定された際は、即時に甲や乙の動作を停止し、画面上でその旨を通知するものとします。
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="subject">9)</td>
+                        <td class="content">
+                            ゲームクリアの条件が達成された際は、画面上に簡単なねぎらいの文章を表示し、その成果を称賛するものとします。
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="spacer"></div>
+
+            <div id="confirm">
+                <form action="index.html" name="confirm" method="get">
+                    <div class="center">
+                        <!--
+                        BGM選択&nbsp;
+                        <input type="radio" name="bgm" value="0" id="bgm_0" />&nbsp;<label for="bgm_0">なし</label>&nbsp;&nbsp;
+                        <input type="radio" name="bgm" value="1" id="bgm_1" />&nbsp;<label for="bgm_1">BGM&nbsp;1</label>&nbsp;&nbsp;
+                        <input type="radio" name="bgm" value="2" id="bgm_2" />&nbsp;<label for="bgm_2">BGM&nbsp;2</label>&nbsp;&nbsp;
+                        <input type="radio" name="bgm" value="3" id="bgm_3" />&nbsp;<label for="bgm_3">BGM&nbsp;3</label><br />
+                        -->
+                        <input type="submit" value="ゲームを開始する" />
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!--
+        <script type="text/javascript">
+            window.onload = function(){
+                document.confirm.bgm[0].checked = true;
+            };
+        </script>
+        -->
+    </body>
+</html>
