@@ -207,7 +207,7 @@ Operator.prototype = {
      */
     fail: function(failed_case)
     {
-        $('#pause_back').hide();
+        $('#pause_back').show();
         $('#complete_back').hide();
         $('#mess_pause').hide();
         $('#mess_complete').hide();
