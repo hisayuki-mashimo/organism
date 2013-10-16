@@ -153,6 +153,7 @@ div#complete_back {
 
 div#mess_pause,
 div#mess_hp_empty,
+div#mess_time_over,
 div#mess_complete {
     position: absolute;
     top: 50%;
@@ -163,7 +164,8 @@ div#mess_complete {
     line-height: 20px;
 }
 div#mess_pause,
-div#mess_hp_empty {
+div#mess_hp_empty,
+div#mess_time_over {
     color: #000088;
 }
 div#mess_complete {

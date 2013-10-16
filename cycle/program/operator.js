@@ -183,6 +183,7 @@ Operator.prototype = {
             $('#complete_back').hide();
             $('#mess_pause').show();
             $('#mess_hp_empty').hide();
+            $('#mess_time_over').hide();
             $('#mess_complete').hide();
 
             $(this.nodes.announce).fadeIn(250);
@@ -214,6 +215,11 @@ Operator.prototype = {
         switch (failed_case) {
             case 'hp_empty':
                 $('#mess_hp_empty').show();
+                $('#mess_time_over').hide();
+                break;
+            case 'time_over':
+                $('#mess_time_over').show();
+                $('#mess_hp_empty').hide();
                 break;
         }
         $(this.nodes.announce).fadeIn(250);
@@ -233,6 +239,7 @@ Operator.prototype = {
         $('#mess_pause').hide();
         $('#mess_complete').show();
         $('#mess_hp_empty').hide();
+        $('#mess_time_over').hide();
         $(this.nodes.announce).fadeIn(250);
 
         this.audio.stopBgm();
