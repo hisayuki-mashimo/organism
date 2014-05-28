@@ -39,7 +39,9 @@ vd_elase = function(attributes, imploder){
 
 
 vd = function(){
-    vd_base(arguments, '<br />');
+    var attributes = Array.prototype.slice.call(arguments);
+    attributes.push('');
+    vd_base(attributes, '<br />');
 };
 
 
