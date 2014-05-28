@@ -183,6 +183,12 @@
                     progress_count = 0;
                 }
 
+                var radar_poses = $(frame_node).offset();
+                var radar_center_X = radar_poses.left + RadarObjectTheta.object_basis._center;
+                var radar_center_Y = radar_poses.top  + RadarObjectTheta.object_basis._center;
+
+                var move_type = 'vector';
+
                 var move_switch = false;
                 var latest_base_X = 0;
                 var latest_base_Y = 0;
@@ -192,6 +198,7 @@
                 var move_vector_theta = (30) / 180 * Math.PI;
                 var move_length_theta = (0) / 180 * Math.PI;
                 var diff_vector_theta = (0.05) / 180 * Math.PI;
+                var diff_rotate_theta = (0) / 180 * Math.PI;
                 var diff_length_theta = (1.5) / 180 * Math.PI;
                 var rotate_theta_base = (15) / 180 * Math.PI;
                 var vector_theta_base = (0) / 180 * Math.PI;
@@ -243,25 +250,48 @@
                         vector_theta_base = vector_theta;
                         length_theta_base = length_theta;
 
-                        var diff_X = latest_move_X - latest_base_X;
-                        var diff_Y = latest_move_Y - latest_base_Y;
+                        if (move_type === 'vector') {
+                            var diff_X = latest_move_X - latest_base_X;
+                            var diff_Y = latest_move_Y - latest_base_Y;
+
+                            var direction_X = (diff_X > 0) ? -1 :  1;
+                            var direction_Y = (diff_Y > 0) ?  1 : -1;
+                            var abs_X = Math.abs(diff_X);
+                            var abs_Y = Math.abs(diff_Y);
+
+                            if (abs_X > 30) abs_X = 30;
+                            if (abs_Y > 30) abs_Y = 30;
+                            var theta_diff_X = (abs_X / 200) * direction_X;
+                            var theta_diff_Y = (abs_Y / 200) * direction_Y;
+
+                            move_rotate_theta = 0;
+                            move_vector_theta = OperaterTheta.getThetaByLengthes('Y', theta_diff_X, theta_diff_Y) * -1 + Math.PI;
+                            move_length_theta = 0;
+                            diff_length_theta = OperaterTheta.getLengthByPytha(null, theta_diff_X, theta_diff_Y);
+                            diff_rotate_theta = 0;
+                        } else {
+                            var LD0X = latest_base_X - radar_center_X;
+                            var LD0Y = latest_base_Y - radar_center_Y;
+                            var LD1X = latest_move_X - radar_center_X;
+                            var LD1Y = latest_move_Y - radar_center_Y;
+
+                            var TD0 = OperaterTheta.getThetaByLengthes('Y', LD0X, LD0Y);
+                            var TD1 = OperaterTheta.getThetaByLengthes('Y', LD1X, LD1Y);
+                            var TD2 = TD1 - TD0;
+
+                            var direction_T = (TD2 > 0) ? 1 : -1;
+                            var abs_T = Math.abs(TD2);
+                            if (abs_T > 0.2) abs_T = 0.2;
+                            theta_diff = abs_T * direction_T;
+
+                            move_rotate_theta = 0;
+                            move_length_theta = 0;
+                            diff_length_theta = 0;
+                            diff_rotate_theta = theta_diff;
+                        }
+
                         latest_base_X = latest_move_X;
                         latest_base_Y = latest_move_Y;
-
-                        var direction_X = (diff_X > 0) ? -1 :  1;
-                        var direction_Y = (diff_Y > 0) ?  1 : -1;
-                        var abs_X = Math.abs(diff_X);
-                        var abs_Y = Math.abs(diff_Y);
-                        if (abs_X > 30) abs_X = 30;
-                        if (abs_Y > 30) abs_Y = 30;
-                        theta_diff_X = (abs_X / 200) * direction_X;
-                        theta_diff_Y = (abs_Y / 200) * direction_Y;
-
-                        move_vector_theta = OperaterTheta.getThetaByLengthes('Y', theta_diff_X, theta_diff_Y) * -1 + Math.PI;
-                        move_rotate_theta = 0;
-                        move_length_theta = 0;
-                        //diff_length_theta = OperaterTheta.getLengthByPytha(null, theta_diff_X, theta_diff_Y);
-                        diff_length_theta = (abs_X == 0 && abs_Y == 0) ? 0 : Math.PI / 120;
                     }
 
                     if (diff_length_theta > 0) {
@@ -311,11 +341,17 @@
                         rotate_theta = TX + rotate_theta_base;
                         vector_theta = TV2 + TA0;
                         length_theta = TL2;
-
-                        RadarObjectTheta.configureParam(paramsters_progress);
-                        RadarObjectTheta.setDirection(rotate_theta, vector_theta, length_theta);
-                        RadarObjectTheta.output();
                     }
+                    else if (diff_rotate_theta != 0) {
+                        move_rotate_theta += diff_rotate_theta;
+
+                        rotate_theta = rotate_theta_base + move_rotate_theta;
+                        vector_theta = vector_theta_base + move_rotate_theta;
+                    }
+
+                    RadarObjectTheta.configureParam(paramsters_progress);
+                    RadarObjectTheta.setDirection(rotate_theta, vector_theta, length_theta);
+                    RadarObjectTheta.output();
                 };
 
                 execute();
@@ -359,6 +395,16 @@
                     latest_move_Y = event.clientY;
                     latest_base_X = event.clientX;
                     latest_base_Y = event.clientY;
+
+                    var relative_diff_X = latest_base_X - radar_center_X;
+                    var relative_diff_Y = latest_base_Y - radar_center_Y;
+                    var relative_diff_radius = OperaterTheta.getLengthByPytha(null, relative_diff_X, relative_diff_Y);
+
+                    if (relative_diff_radius <= params.alpha) {
+                        move_type = 'vector';
+                    } else {
+                        move_type = 'rotate';
+                    }
                 };
 
                 document.onmousemove = function(event){
