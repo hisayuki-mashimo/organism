@@ -54,7 +54,7 @@
             <tr>
                 <td id="form_frame">
                     <div id="form">
-                        <form name="FM01" action="http://zhen-xia02.hayabusa-lab.jp/organism/develop/polygon/radar/index.php" method="get">
+                        <form name="FM01" action="" method="get">
                             <input type="hidden" name="type" value="<?php echo $type; ?>" />
                             <table>
                                 <tr>
@@ -400,7 +400,7 @@
                     var relative_diff_Y = latest_base_Y - radar_center_Y;
                     var relative_diff_radius = OperaterTheta.getLengthByPytha(null, relative_diff_X, relative_diff_Y);
 
-                    if (relative_diff_radius <= params.alpha) {
+                    if (relative_diff_radius <= RadarObjectTheta.max_radius) {
                         move_type = 'vector';
                     } else {
                         move_type = 'rotate';

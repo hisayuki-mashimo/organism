@@ -40,9 +40,7 @@ Polyhedron_Radar_Basis_Theta.prototype = {
         parameter_relations:    null,
         parameter_text_params:  null,
 
-        _theta_X:               0,
-        _theta_Y:               0,
-        _theta_Z:               0,
+        max_radius:             0,
 
         // メソッド共有変数
         shaft_surfaces:         null,
@@ -140,6 +138,10 @@ Polyhedron_Radar_Basis_Theta.prototype = {
             embody.parameter_relations.push(i);
 
             embody.shaft_surfaces[i] = ['O', i];
+
+            if (embody.object_basis.reles[i].R > embody.max_radius) {
+                embody.max_radius = embody.object_basis.reles[i].R;
+            }
         }
 
         if (embody.parameters.length === 0) {

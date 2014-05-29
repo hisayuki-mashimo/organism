@@ -8,7 +8,7 @@ var params          = {
     basis_stroke_style: 'rgba(160,   0, 160, 0.2)',
     shaft_fill_style:   'rgba(255, 255, 255, 0.0)',
     shaft_stroke_style: 'rgba(184,   0,  32, 0.4)',
-    meter_fill_style:   'rgba( 64,   0,  32, 0.06)',
+    meter_fill_style:   'rgba( 64,   0,  32, 0.08)',
     meter_stroke_style: 'rgba(160,   0, 160, 0.1)',
     param_fill_style:   'rgba(  0,  80, 255, 0.5)',
     param_stroke_style: 'rgba(  0,  80, 255, 0.8)',
