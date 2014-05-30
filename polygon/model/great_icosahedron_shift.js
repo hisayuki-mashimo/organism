@@ -25,6 +25,8 @@ GreatIcosahedronShift.prototype = {
      */
     configure: function()
     {
+        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+
         var pai         = Math.PI;
         var theta072    = pai * 2 / 5;
         var theta036    = pai * 2 / 10;
@@ -56,7 +58,7 @@ GreatIcosahedronShift.prototype = {
         var LB03 = LB00 * sin036;
         var LB04 = LA00 * cos072;
 
-        var XB00 = this.getLengthByPytha((XA00 * 3 / 2), LB04, null);
+        var XB00 = getLengthByPytha((XA00 * 3 / 2), LB04, null);
         var LA05 = XB00 * (RA00.C / RA00.D) / 2;
 
         var LC00 = LA00 * (RA00.C / RA00.D);

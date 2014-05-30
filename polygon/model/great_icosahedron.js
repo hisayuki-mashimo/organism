@@ -21,6 +21,8 @@ GreatIcosahedron.prototype = {
      */
     configure: function()
     {
+        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+
         var pai         = Math.PI;
         var theta036    = pai * 2 / 10;
         var sin036      = Math.sin(theta036);
@@ -53,7 +55,7 @@ GreatIcosahedron.prototype = {
         var LC01 = LC00 * (RA01.A / RA01.C);
         var LC02 = LC00 * (RA01.B / RA01.C);
 
-        var XA00 = this.getLengthByPytha((LA00 + LA01), (LB00 + LA01), null);
+        var XA00 = getLengthByPytha((LA00 + LA01), (LB00 + LA01), null);
         var LA03 = XA00 * (RA00.A / RA00.C) / 2;
         var LB03 = XA00 * (RA00.D / RA00.C) / 2
         var LC03 = (XA00 * (RA00.C / RA00.D)) - LA03;

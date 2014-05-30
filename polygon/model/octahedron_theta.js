@@ -21,7 +21,9 @@ Octahedron_Theta.prototype = {
      */
     configure: function()
     {
-        var pai         = Math.PI;
+        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+
+        var pai = Math.PI;
 
         // 正三角形比率
         var RA_A00 = {
@@ -34,7 +36,7 @@ Octahedron_Theta.prototype = {
         var LX_A01 = LX_A00 * (RA_A00.B / RA_A00.C);
         var LX_A02 = LX_A00 * (RA_A00.A / RA_A00.C);
         var LX_A03 = LX_A00 + LX_A02;
-        var LX_A04 = this.getLengthByPytha(LX_A03, LX_A01, null);
+        var LX_A04 = getLengthByPytha(LX_A03, LX_A01, null);
 
         var LT_A00 = LX_A04;
 

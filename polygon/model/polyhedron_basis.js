@@ -1,10 +1,20 @@
 /**
  * 多面体データ基礎構造構築機能
  *
- *
+ * @param   object  params
  */
-var Polyhedron_Basis = function()
+var Polyhedron_Basis = function(params)
 {
+    // プロパティ定義
+    for (var i in params) {
+        if (this[i] !== undefined) {
+            this[i] = params[i];
+        }
+    }
+
+    if (this.geometry_calculator === null) {
+        throw 'Undefined property(geometry_calculator).';
+    }
 };
 
 
@@ -39,6 +49,12 @@ Polyhedron_Basis.prototype = {
         reles:          null,
         surfaces:       null
     },
+
+
+    /**
+     * 依存ライブラリ
+     */
+    geometry_calculator:    null,
 
 
 
@@ -98,9 +114,6 @@ Polyhedron_Basis.prototype = {
                     ref.output(this, theta_X, theta_Y, theta_Z);
                 };
             }
-            embody.getLengthByPytha = function(hypotenuse, cathetus1, cathetus2){
-                return ref.getLengthByPytha(hypotenuse, cathetus1, cathetus2);
-            };
             embody.lockOn = function(pos_code, theta_X, theta_Y, theta_Z){
                 var poses = this.reles[pos_code];
                 ref.lockOn(this, poses, theta_X, theta_Y, theta_Z);
@@ -138,32 +151,6 @@ Polyhedron_Basis.prototype = {
         var sin_Z = Math.sin(theta_Z);
         var cos_Z = Math.cos(theta_Z);
 
-        /*for (var i in embody.surfaces) {
-            embody.canvas_context.beginPath();
-            for (var j = 0; j < embody.surfaces[i].length; j ++) {
-                var X0 = embody.surfaces[i][j].X;
-                var Y0 = embody.surfaces[i][j].Y;
-                var Z0 = embody.surfaces[i][j].Z;
-                var X1 = (X0 * cos_X) + (Z0 * sin_X);
-                var Z1 = (Z0 * cos_X) - (X0 * sin_X);
-                var X2 = (X1 * cos_Y) + (Y0 * sin_Y);
-                var Y2 = (Y0 * cos_Y) - (X1 * sin_Y);
-                var Y3 = (Y2 * cos_Z) - (Z1 * sin_Z);
-                var X = parseFloat(X2);
-                var Y = parseFloat(Y3);
-
-                if (j == 0) {
-                    embody.canvas_context.moveTo(embody._center + X, embody._center + Y);
-                } else {
-                    embody.canvas_context.lineTo(embody._center + X, embody._center + Y);
-                }
-            }
-            embody.canvas_context.closePath();
-            embody.canvas_context.fillStyle     = embody.fill_style;
-            embody.canvas_context.fill();
-            embody.canvas_context.strokeStyle   = embody.stroke_style;
-            embody.canvas_context.stroke();
-        }*/
         var coordinates =new Array();
         for (var i in embody.surfaces) {
             var poses = new Array();
@@ -215,25 +202,6 @@ Polyhedron_Basis.prototype = {
 
 
     /**
-     * 三平方の定理による辺の長の返却
-     *
-     * @param   float   hypotenuse
-     * @param   float   cathetus1
-     * @param   float   cathetus2
-     */
-    getLengthByPytha: function(hypotenuse, cathetus1, cathetus2)
-    {
-        switch (null) {
-            case hypotenuse:    var line_length = Math.pow((Math.pow(cathetus1,  2) + Math.pow(cathetus2, 2)), (1 / 2)); break;
-            case cathetus1:     var line_length = Math.pow((Math.pow(hypotenuse, 2) - Math.pow(cathetus2, 2)), (1 / 2)); break;
-            case cathetus2:     var line_length = Math.pow((Math.pow(hypotenuse, 2) - Math.pow(cathetus1, 2)), (1 / 2)); break;
-        }
-
-        return line_length;
-    },
-
-
-    /**
      * 指定座標の表示
      *
      * @param   object  embody
@@ -243,7 +211,7 @@ Polyhedron_Basis.prototype = {
      */
     lockOn: function(embody, poses, theta_X, theta_Y, theta_Z)
     {
-        var poses_shift = this.getPosesByThetas(poses, {X: theta_X, Y: theta_Y, Z: theta_Z});
+        var poses_shift = this.geometry_calculator.getPosesByThetas(poses, {X: theta_X, Y: theta_Y, Z: theta_Z});
 
         embody.canvas_context.setTransform(1, 0, 0, 1, embody._center, embody._center);
         embody.canvas_context.beginPath();
@@ -258,31 +226,5 @@ Polyhedron_Basis.prototype = {
         embody.canvas_context.closePath();
         embody.canvas_context.strokeStyle = 'rgb(255, 0, 0)';
         embody.canvas_context.stroke();
-    },
-
-
-    /**
-     * 軸の傾斜に対応する座標の返却
-     *
-     * @param   object  poses
-     * @param   object  thetas
-     */
-    getPosesByThetas: function(poses, thetas)
-    {
-        var X0 = poses.X;
-        var Y0 = poses.Y;
-        var Z0 = poses.Z;
-        var X1 = (X0 * Math.cos(thetas.X)) + (Z0 * Math.sin(thetas.X));
-        var Z1 = (Z0 * Math.cos(thetas.X)) - (X0 * Math.sin(thetas.X));
-        var X2 = (X1 * Math.cos(thetas.Y)) + (Y0 * Math.sin(thetas.Y));
-        var Y2 = (Y0 * Math.cos(thetas.Y)) - (X1 * Math.sin(thetas.Y));
-        var Y3 = (Y2 * Math.cos(thetas.Z)) - (Z1 * Math.sin(thetas.Z));
-
-        return {
-            X: parseFloat(X2) * -1,
-            Y: parseFloat(Y3) * -1,
-            Z: parseFloat(Z1) * -1
-        };
     }
 };
-

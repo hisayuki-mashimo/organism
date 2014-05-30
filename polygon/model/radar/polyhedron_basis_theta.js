@@ -1,7 +1,7 @@
 /**
  * 多面体データレーダーグラム基礎構造構築機能
  *
- * @var Polyhedron_Basis_Theta operator_basis
+ * @param   Polyhedron_Basis_Theta operator_basis
  */
 var Polyhedron_Radar_Basis_Theta = function(operator_basis)
 {
@@ -109,8 +109,6 @@ Polyhedron_Radar_Basis_Theta.prototype = {
                     ref.output(this);
                 };
             }
-            embody.getLengthByPytha     = this.operator_basis.getLengthByPytha;
-            embody.finalizeRatioByPytha = this.operator_basis.finalizeRatioByPytha;
 
             embody.object_basis.canvas_context.font = '12px';
             //embody.object_basis.canvas_context.font = "12px 'osaka,sans-serif'";
@@ -241,6 +239,10 @@ Polyhedron_Radar_Basis_Theta.prototype = {
      */
     setDirection: function(embody, rotate_theta, vector_theta, length_theta)
     {
+        var getLengthByPytha    = this.operator_basis.geometry_calculator.getLengthByPytha;
+        var getLengthesByTheta  = this.operator_basis.geometry_calculator.getLengthesByTheta;
+        var getThetaByLengthes  = this.operator_basis.geometry_calculator.getThetaByLengthes;
+
         embody.object_basis.moment_surfaces = new Array();
 
         var surface_group = {
@@ -269,23 +271,23 @@ Polyhedron_Radar_Basis_Theta.prototype = {
                         var Y = 0;
                         var Z = 0;
                     } else {
-                        var LS0 = this.operator_basis.getLengthesByTheta('Z', reles[pos_code].X);
+                        var LS0 = getLengthesByTheta('Z', reles[pos_code].X);
                         var RY0 = LS0.Y;
                         var LZ0 = LS0.X;
                         var TY1 = reles[pos_code].Y + rotate_theta - axis_theta;
-                        var LS1 = this.operator_basis.getLengthesByTheta('Y', TY1);
+                        var LS1 = getLengthesByTheta('Y', TY1);
                         var LX1 = LS1.X * RY0;
                         var LY1 = LS1.Y * RY0;
-                        var TX1 = this.operator_basis.getThetaByLengthes('X', LX1, LZ0);
-                        var RX1 = this.operator_basis.getLengthByPytha(null, LX1, LZ0);
+                        var TX1 = getThetaByLengthes('X', LX1, LZ0);
+                        var RX1 = getLengthByPytha(null, LX1, LZ0);
                         var TX2 = TX1 + length_theta;
-                        var LS2 = this.operator_basis.getLengthesByTheta('X', TX2);
+                        var LS2 = getLengthesByTheta('X', TX2);
                         var LX2 = LS2.X * RX1;
                         var LZ2 = LS2.Y * RX1;
-                        var RY2 = this.operator_basis.getLengthByPytha(null, LX2, LY1);
-                        var TY2 = this.operator_basis.getThetaByLengthes('Y', LX2, LY1);
+                        var RY2 = getLengthByPytha(null, LX2, LY1);
+                        var TY2 = getThetaByLengthes('Y', LX2, LY1);
                         var TY3 = TY2 + axis_theta;
-                        var LS3 = this.operator_basis.getLengthesByTheta('Y', TY3);
+                        var LS3 = getLengthesByTheta('Y', TY3);
                         var LX3 = LS3.X * RY2;
                         var LY3 = LS3.Y * RY2;
                         var X = LX3 * reles[pos_code].R;

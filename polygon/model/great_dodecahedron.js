@@ -21,6 +21,8 @@ GreatDodecahedron.prototype = {
      */
     configure: function()
     {
+        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+
         var pai         = Math.PI;
         var theta072    = pai * 2 / 5;
         var theta036    = pai * 2 / 10;
@@ -56,7 +58,7 @@ GreatDodecahedron.prototype = {
         var LC04 = LC00 * cos036;
 
         var XA00 = LA03 * (RA00.C / RA00.B) * 2;
-        var XA01 = this.getLengthByPytha(XA00, LA00, null);
+        var XA01 = getLengthByPytha(XA00, LA00, null);
         var RX00 = {
             A: LA00,
             B: XA01,

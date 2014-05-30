@@ -21,6 +21,8 @@ Icosahedron_Theta.prototype = {
      */
     configure: function()
     {
+        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+
         var pai         = Math.PI;
         var theta072    = pai * 2 / 5;
         var theta036    = pai * 2 / 10;
@@ -48,8 +50,8 @@ Icosahedron_Theta.prototype = {
         var LX_A01 = LX_A00 * (RA_A00.B / RA_A00.C);
         var LX_A02 = LX_A00 * (RA_A00.A / RA_A00.C);
         var LX_A03 = LX_A02 * (RA_A01.D / RA_A01.B);
-        var LX_A04 = this.getLengthByPytha(LX_A03, LX_A02, null);
-        var LX_A05 = this.getLengthByPytha(null, LX_A00, LX_A04);
+        var LX_A04 = getLengthByPytha(LX_A03, LX_A02, null);
+        var LX_A05 = getLengthByPytha(null, LX_A00, LX_A04);
 
         var LX_B00 = LX_A04 * 2;
         var LX_B01 = LX_B00 * (RA_A01.C / RA_A01.D);

@@ -21,6 +21,8 @@ GreatStellatedDodecahedron.prototype = {
      */
     configure: function()
     {
+        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+
         var pai         = Math.PI;
         var theta072    = pai * 2 / 5;
         var theta036    = pai * 2 / 10;
@@ -59,7 +61,7 @@ GreatStellatedDodecahedron.prototype = {
         var XB00 = LA00 + LA04;
         var XB01 = LA03 / Math.pow(3, 1 / 2);
         var XB02 = LA03 * Math.pow(3, 1 / 2);
-        var XB03 = this.getLengthByPytha(XB00, XB01, null);
+        var XB03 = getLengthByPytha(XB00, XB01, null);
         var RX00 = {
             A: XB01,
             B: XB03,

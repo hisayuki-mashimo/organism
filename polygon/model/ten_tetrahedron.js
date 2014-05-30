@@ -28,6 +28,8 @@ TenTetrahedron.prototype = {
      */
     configure: function()
     {
+        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+
         var pai         = Math.PI;
         var theta072    = pai * 2 / 5;
         var theta036    = pai * 2 / 10;
@@ -57,7 +59,7 @@ TenTetrahedron.prototype = {
 
         var XA00 = LA0Y * (RA00.A / RA00.D) / 2;
         var XA01 = LA0Y * (RA00.C / RA00.D);
-        var XA02 = this.getLengthByPytha(null, LA1X, XA00);
+        var XA02 = getLengthByPytha(null, LA1X, XA00);
         var RX00 = {
             A: XA00,
             B: LA1X,

@@ -21,6 +21,8 @@ GreatStellatedDodecahedronShift.prototype = {
      */
     configure: function()
     {
+        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+
         var pai         = Math.PI;
         var theta072    = pai * 2 / 5;
         var theta036    = pai * 2 / 10;
@@ -67,9 +69,9 @@ GreatStellatedDodecahedronShift.prototype = {
         var LD01 = LD00 * (RA01.A / RA01.C);
         var LD02 = LD00 * (RA01.B / RA01.C);
 
-        var XC00 = this.getLengthByPytha((XA01 - LA02), LA00, null);
-        var XC01 = this.getLengthByPytha((XA01 + LA02), LD00, null);
-        var LD03 = this.getLengthByPytha(LA02, LD01, null);
+        var XC00 = getLengthByPytha((XA01 - LA02), LA00, null);
+        var XC01 = getLengthByPytha((XA01 + LA02), LD00, null);
+        var LD03 = getLengthByPytha(LA02, LD01, null);
         var LE00 = XC01 - LD03;
         var LA03 = LE00 - XC00;
         var LB03 = XC00 + LD03;

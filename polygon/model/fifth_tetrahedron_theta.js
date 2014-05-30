@@ -21,6 +21,8 @@ Fifth_Tetrahedron_Theta.prototype = {
      */
     configure: function()
     {
+        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+
         var pai         = Math.PI;
         var theta060    = pai / 3;
         var sin060      = Math.sin(theta060);
@@ -51,13 +53,13 @@ Fifth_Tetrahedron_Theta.prototype = {
         var LX_A01 = LX_A00 * (RA_A00.B / RA_A00.C);
         var LX_A02 = LX_A00 * (RA_A00.A / RA_A00.C);
         var LX_A03 = LX_A00 + LX_A02;
-        var LX_A04 = this.getLengthByPytha(LX_A03, LX_A02, null); // Oからの△ABCへの垂線
+        var LX_A04 = getLengthByPytha(LX_A03, LX_A02, null); // Oからの△ABCへの垂線
         var RA_X00 = {
             A: LX_A04,
             B: LX_A03
         };
         var LX_A05 = LX_A00 * (RA_X00.B / RA_X00.A);
-        var RA_X01 = this.finalizeRatioByPytha({
+        var RA_X01 = finalizeRatioByPytha({
             A: null,
             B: (RA_A01.D / RA_A01.B) + 1,
             C: (RA_A00.B / RA_A00.A) * (RA_A01.D / RA_A01.C)
@@ -68,7 +70,7 @@ Fifth_Tetrahedron_Theta.prototype = {
         var LX_A09 = LX_A08 * (RA_A01.C / RA_A01.D) / 2;
 
         var LX_B00 = LX_A06 * (RA_X01.C / RA_X01.A) / 2;
-        var RA_X02 = this.finalizeRatioByPytha({
+        var RA_X02 = finalizeRatioByPytha({
             A: null,
             B: 2 + (RA_A01.B / RA_A01.C),
             C: 1
@@ -83,30 +85,30 @@ Fifth_Tetrahedron_Theta.prototype = {
         var LX_C05 = LX_C04 - (LX_A07 / 2);
         var LX_C06 = LX_A05 * 2 / 3;
         var LX_C07 = LX_C06 / 2;
-        var LX_C08 = this.getLengthByPytha(null, LX_C05, LX_C07);
+        var LX_C08 = getLengthByPytha(null, LX_C05, LX_C07);
 
-        var LX_D00 = this.getLengthByPytha(LX_A05, LX_A01, null);
+        var LX_D00 = getLengthByPytha(LX_A05, LX_A01, null);
         var LX_D01 = LX_A01 * 2;
         var LX_D02 = LX_D01 * (RA_A01.A / RA_A01.D) / 2;
-        var LX_D03 = this.getLengthByPytha(null, LX_D00, LX_D02);
+        var LX_D03 = getLengthByPytha(null, LX_D00, LX_D02);
 
         var LX_F00 = LX_B00 - LX_C00;
         var LX_F01 = LX_F00 * (RA_A01.C / RA_A01.D);
         var LX_F02 = LX_C00 + LX_F01;
-        var LX_F03 = this.getLengthByPytha(null, LX_C00, LX_F02);
+        var LX_F03 = getLengthByPytha(null, LX_C00, LX_F02);
 
         var LX_G00 = LX_A04 - LX_A05;
-        var LX_G01 = this.getLengthByPytha(null, LX_D02, LX_G00);
-        var LX_G02 = this.getLengthByPytha(null, LX_A02, LX_G01);
-        var LX_G03 = this.getLengthByPytha(null, LX_A02, LX_D02);
+        var LX_G01 = getLengthByPytha(null, LX_D02, LX_G00);
+        var LX_G02 = getLengthByPytha(null, LX_A02, LX_G01);
+        var LX_G03 = getLengthByPytha(null, LX_A02, LX_D02);
 
-        var LX_H00 = this.getLengthByPytha(null, LX_G03, LX_G00);
+        var LX_H00 = getLengthByPytha(null, LX_G03, LX_G00);
 
         var LX_I00 = LX_A07 * (RA_A01.A / RA_A01.D) / 2;
-        var LX_I01 = this.getLengthByPytha(null, LX_B00, LX_I00);
+        var LX_I01 = getLengthByPytha(null, LX_B00, LX_I00);
         var LX_I02 = LX_G00 * (RA_A01.A / RA_A01.D);
-        var LX_I03 = this.getLengthByPytha(null, LX_I00, LX_I02);
-        var LX_I04 = this.getLengthByPytha(null, LX_B00, LX_I03);
+        var LX_I03 = getLengthByPytha(null, LX_I00, LX_I02);
+        var LX_I04 = getLengthByPytha(null, LX_B00, LX_I03);
 
         var LX_J00 = LX_C00 * (RA_A01.C / RA_A01.D);
 

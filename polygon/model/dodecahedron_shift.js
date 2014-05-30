@@ -21,6 +21,8 @@ DodecahedronShift.prototype = {
      */
     configure: function()
     {
+        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+
         var pai         = Math.PI;
         var theta072    = pai * 2 / 5;
         var theta036    = pai * 2 / 10;
@@ -55,7 +57,7 @@ DodecahedronShift.prototype = {
         var LB04 = LA02 * (RA00.D / RA00.C);
         var LB05 = ((LA02 * 2) * (RA01.B / RA01.C)) - LB03;
 
-        var LC00 = this.getLengthByPytha(null, LB04, LB02);
+        var LC00 = getLengthByPytha(null, LB04, LB02);
         var RX00 = {
             A: LB02,
             B: LB04,

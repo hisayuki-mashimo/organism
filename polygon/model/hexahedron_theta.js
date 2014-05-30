@@ -15,6 +15,8 @@ Hexahedron_Theta.prototype = {
      */
     configure: function()
     {
+        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+
         var pai = Math.PI;
 
         // 直角二等辺三角形比率
@@ -26,7 +28,7 @@ Hexahedron_Theta.prototype = {
         var LX_A00 = this.alpha;
         var LX_A01 = LX_A00 * (RA_A00.B / RA_A00.A);
         var LX_A02 = LX_A01 / 2;
-        var LX_A03 = this.getLengthByPytha(null, LX_A00, LX_A02);
+        var LX_A03 = getLengthByPytha(null, LX_A00, LX_A02);
 
         var LT_A00 = LX_A03;
 

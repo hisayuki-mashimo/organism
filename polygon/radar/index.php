@@ -87,6 +87,7 @@
 <div id="debug" style="color:#ff0000;"></div>
 
         <script type="text/javascript" src="../../library/jquery-1.8.0.min.js"></script>
+        <script type="text/javascript" src="../library/geometry_calculator.js"></script>
         <script type="text/javascript" src="../library/md5.js"></script>
         <script type="text/javascript" src="../../library/debug.js"></script>
         <script type="text/javascript" src="../model/polyhedron_basis_theta.js"></script>
@@ -122,9 +123,13 @@
                     paramsters_progress.push(0);
                 }
 
-                var OperaterTheta      = new Polyhedron_Basis_Theta();
+                var OperaterTheta      = new Polyhedron_Basis_Theta({geometry_calculator: geometry_calculator});
                 var OperaterRadarTheta = new Polyhedron_Radar_Basis_Theta(OperaterTheta);
                 var RadarObjectTheta   = OperaterRadarTheta.summons(object_code, frame_node, params);
+
+                var getLengthesByTheta  = geometry_calculator.getLengthesByTheta;
+                var getLengthByPytha    = geometry_calculator.getLengthByPytha;
+                var getThetaByLengthes  = geometry_calculator.getThetaByLengthes;
 
                 if (sei || mei) {
                     var string_md5  = CybozuLabs.MD5.calc(sei + '+=+' + mei);
@@ -265,9 +270,9 @@
                             var theta_diff_Y = (abs_Y / 200) * direction_Y;
 
                             move_rotate_theta = 0;
-                            move_vector_theta = OperaterTheta.getThetaByLengthes('Y', theta_diff_X, theta_diff_Y) * -1 + Math.PI;
+                            move_vector_theta = getThetaByLengthes('Y', theta_diff_X, theta_diff_Y) * -1 + Math.PI;
                             move_length_theta = 0;
-                            diff_length_theta = OperaterTheta.getLengthByPytha(null, theta_diff_X, theta_diff_Y);
+                            diff_length_theta = getLengthByPytha(null, theta_diff_X, theta_diff_Y);
                             diff_rotate_theta = 0;
                         } else {
                             var LD0X = latest_base_X - radar_center_X;
@@ -275,8 +280,8 @@
                             var LD1X = latest_move_X - radar_center_X;
                             var LD1Y = latest_move_Y - radar_center_Y;
 
-                            var TD0 = OperaterTheta.getThetaByLengthes('Y', LD0X, LD0Y);
-                            var TD1 = OperaterTheta.getThetaByLengthes('Y', LD1X, LD1Y);
+                            var TD0 = getThetaByLengthes('Y', LD0X, LD0Y);
+                            var TD1 = getThetaByLengthes('Y', LD1X, LD1Y);
                             var TD2 = TD1 - TD0;
 
                             var direction_T = (TD2 > 0) ? 1 : -1;
@@ -299,41 +304,41 @@
 
                         var TA0 = move_vector_theta - (Math.PI / 2);
                         var TY0 = vector_theta_base - TA0;
-                        var LS0 = OperaterTheta.getLengthesByTheta('Z', length_theta_base);
+                        var LS0 = getLengthesByTheta('Z', length_theta_base);
                         var RY0 = LS0.Y;
                         var LZ0 = LS0.X;
-                        var LS1 = OperaterTheta.getLengthesByTheta('Y', TY0);
+                        var LS1 = getLengthesByTheta('Y', TY0);
                         var LX1 = LS1.X * RY0;
                         var LY1 = LS1.Y * RY0;
-                        var RX1 = OperaterTheta.getLengthByPytha(null, LX1, LZ0);
-                        var TX1 = OperaterTheta.getThetaByLengthes('X', LX1, LZ0);
+                        var RX1 = getLengthByPytha(null, LX1, LZ0);
+                        var TX1 = getThetaByLengthes('X', LX1, LZ0);
                         var TX2 = TX1 + move_length_theta;
-                        var LS2 = OperaterTheta.getLengthesByTheta('X', TX2);
+                        var LS2 = getLengthesByTheta('X', TX2);
                         var LX2 = LS2.X * RX1;
                         var LZ2 = LS2.Y * RX1;
-                        var RY2 = OperaterTheta.getLengthByPytha(null, LX2, LY1);
-                        var TL2 = OperaterTheta.getThetaByLengthes('Z', LZ2, RY2);
-                        var TV2 = OperaterTheta.getThetaByLengthes('Y', LX2, LY1);
+                        var RY2 = getLengthByPytha(null, LX2, LY1);
+                        var TL2 = getThetaByLengthes('Z', LZ2, RY2);
+                        var TV2 = getThetaByLengthes('Y', LX2, LY1);
 
                         if (LY1 == 0) {
                             var TX = 0;
                         } else {
-                            var LS3 = OperaterTheta.getLengthesByTheta('X', TX1);
+                            var LS3 = getLengthesByTheta('X', TX1);
                             var LX3 = LS3.X * RX1;
                             var LZ3 = LS3.Y * RX1;
-                            var RY3 = OperaterTheta.getLengthByPytha(null, LX3, LY1);
-                            var TL3 = OperaterTheta.getThetaByLengthes('Z', LZ3, RY3);
-                            var TV3 = OperaterTheta.getThetaByLengthes('Y', LX3, LY1);
+                            var RY3 = getLengthByPytha(null, LX3, LY1);
+                            var TL3 = getThetaByLengthes('Z', LZ3, RY3);
+                            var TV3 = getThetaByLengthes('Y', LX3, LY1);
                             var L0 = Math.sin(TV3);
                             var L1 = Math.cos(TV3);
                             var L2 = Math.cos(TL3) * L1;
-                            var T0 = OperaterTheta.getThetaByLengthes('Y', L2, L0);
+                            var T0 = getThetaByLengthes('Y', L2, L0);
                             var T1 = T0 + TV3;
 
                             var L3 = Math.sin(TV2);
                             var L4 = Math.cos(TV2);
                             var L5 = Math.cos(TL2) * L4;
-                            var T2 = OperaterTheta.getThetaByLengthes('Y', L5, L3);
+                            var T2 = getThetaByLengthes('Y', L5, L3);
                             var T3 = T2 + TV2;
                             var TX = T3 - T1;
                         }
@@ -398,7 +403,7 @@
 
                     var relative_diff_X = latest_base_X - radar_center_X;
                     var relative_diff_Y = latest_base_Y - radar_center_Y;
-                    var relative_diff_radius = OperaterTheta.getLengthByPytha(null, relative_diff_X, relative_diff_Y);
+                    var relative_diff_radius = getLengthByPytha(null, relative_diff_X, relative_diff_Y);
 
                     if (relative_diff_radius <= RadarObjectTheta.max_radius) {
                         move_type = 'vector';

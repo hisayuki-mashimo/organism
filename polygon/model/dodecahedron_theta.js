@@ -1,5 +1,5 @@
 /**
- * ³\“ρ–Κ‘Μ
+ * ζ­£εδΊιΆδ½“
  *
  */
 var Dodecahedron_Theta = function()
@@ -8,7 +8,7 @@ var Dodecahedron_Theta = function()
 
 
 Dodecahedron_Theta.prototype = {
-    // O•”έ’θ’l
+    // ε¤–ιƒ¨θ¨­ε®ε€¤
     fill_style:     'rgba(255, 192, 208, 0.5)',
     stroke_style:   'rgba(240, 128, 132, 0.5)',
 
@@ -16,54 +16,39 @@ Dodecahedron_Theta.prototype = {
 
 
     /**
-     * ‰ϊ‰»
+     * εζε–
      *
      */
     configure: function()
     {
-        var pai         = Math.PI;
-        var theta072    = pai * 2 / 5;
-        var theta036    = pai * 2 / 10;
-        var sin072      = Math.sin(theta072);
-        var cos072      = Math.cos(theta072);
-        var sin036      = Math.sin(theta036);
-        var cos036      = Math.cos(theta036);
+        var getLengthByPytha        = this.basis.geometry_calculator.getLengthByPytha;
+        var finalizeRatioByPytha    = this.basis.geometry_calculator.finalizeRatioByPytha;
 
-        // ³Op`”δ—¦
-        var RA_A00 = {
-            A: 1,
-            B: Math.pow(3, 1 / 2),
-            C: 2
-        };
-
-        // άδ―”δ—¦
+        // δΊ”θ’ζζ―”η‡
         var RA_A01 = {
-            A: (4 * Math.pow(cos036, 2)) - 2,
+            A: (4 * Math.pow(Math.cos(Math.PI * 2 / 10), 2)) - 2,
             B: 1,
-            C: (4 * Math.pow(cos036, 2)) - 1,
-            D: (4 * Math.pow(cos036, 2))
+            C: (4 * Math.pow(Math.cos(Math.PI * 2 / 10), 2)) - 1,
+            D: (4 * Math.pow(Math.cos(Math.PI * 2 / 10), 2))
         };
 
         var LX_A00 = this.alpha;
-        var RA_X00 = this.finalizeRatioByPytha({
-            A: null,
-            B: (RA_A01.D / RA_A01.B) + 1,
-            C: (RA_A00.B / RA_A00.A) * (RA_A01.D / RA_A01.C)
-        });
-        var LX_A01 = LX_A00 * 2;
-        var LX_A02 = LX_A01 * (RA_X00.C / RA_X00.A) / 2;
-        var LX_A03 = LX_A02 * (RA_A01.C / RA_A01.D);
-        var LX_A04 = LX_A03 * 2;
-        var LX_A05 = this.getLengthByPytha(LX_A04, LX_A02, null);
-        var LX_A06 = LX_A05 * 2;
-        var LX_A07 = LX_A06 * (RA_A01.C / (RA_A01.A + RA_A01.C));
-        var LX_A08 = LX_A02 * (RA_A01.D / RA_A01.C);
-        var LX_A09 = this.getLengthByPytha(null, LX_A03, LX_A08);
+        var LX_A01 = LX_A00 * (RA_A01.A / RA_A01.C);
+        var LX_A02 = LX_A00 + LX_A01;
+        var LX_A03 = LX_A02 / 2;
+        var LX_A04 = LX_A03 * (RA_A01.B / RA_A01.C);
+        var LX_A05 = LX_A01 + LX_A04;
+        var LX_A06 = getLengthByPytha(LX_A00, LX_A05, null);
+        var LX_A07 = LX_A06 * (RA_A01.C / RA_A01.B);
+        var LX_A08 = LX_A07 * (RA_A01.D / RA_A01.C);
+        var LX_A09 = getLengthByPytha(LX_A08, LX_A05, null);
+        var LX_A10 = getLengthByPytha(null, LX_A00, LX_A09);
+        var LX_A11 = getLengthByPytha(LX_A10, LX_A06, null);
 
-        var LT_A00 = LX_A09;
+        var LT_A00 = LX_A10;
 
-        var TX_A00 = Math.asin(LX_A07 / LX_A09);
-        var TX_B00 = Math.asin(LX_A07 / LX_A09) + (Math.asin(LX_A03 / LX_A09) * 2);
+        var TX_A00 = Math.asin(LX_A00 / LX_A10);
+        var TX_B00 = Math.asin(LX_A00 / LX_A10) + (Math.asin(LX_A06 / LX_A11) * 2);
 
         var TY_A00 = 0;
 
@@ -82,9 +67,9 @@ Dodecahedron_Theta.prototype = {
                 this.reles[i + n + 'SR'] = {R: base_R};
 
                 this.reles[i + n + 'AO'].X = base_X;
-                this.reles[i + n + 'AO'].Y = base_Y + ((pai * 2 / 5) * n);
-                this.reles[i + n + 'SR'].X = base_X + pai;
-                this.reles[i + n + 'SR'].Y = (base_Y + ((pai * 2 / 5) * n)) * -1;
+                this.reles[i + n + 'AO'].Y = base_Y + ((Math.PI * 2 / 5) * n);
+                this.reles[i + n + 'SR'].X = base_X + Math.PI;
+                this.reles[i + n + 'SR'].Y = (base_Y + ((Math.PI * 2 / 5) * n)) * -1;
             }
         }
 

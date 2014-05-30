@@ -21,6 +21,8 @@ Tetrahedron_Theta.prototype = {
      */
     configure: function()
     {
+        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+
         var pai = Math.PI;
 
         // 正三角形比率
@@ -34,7 +36,7 @@ Tetrahedron_Theta.prototype = {
         var LX_A01 = LX_A00 * (RA_A00.B / RA_A00.C);
         var LX_A02 = LX_A00 * (RA_A00.A / RA_A00.C);
         var LX_A03 = LX_A00 + LX_A02;
-        var LX_A04 = this.getLengthByPytha(LX_A03, LX_A02, null); // Oからの△ABCへの垂線
+        var LX_A04 = getLengthByPytha(LX_A03, LX_A02, null); // Oからの△ABCへの垂線
         var RA_X00 = {
             A: LX_A04,
             B: LX_A03

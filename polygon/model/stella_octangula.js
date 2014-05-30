@@ -21,6 +21,8 @@ StellaOctangula.prototype = {
      */
     configure: function()
     {
+        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+
         // 正三角形比率
         var RA00 = {
             A: 1,
@@ -36,7 +38,7 @@ StellaOctangula.prototype = {
         var LB01 = LB00 * (RA00.A / RA00.C);
         var LB02 = LB00 * (RA00.B / RA00.C);
 
-        var XA00 = this.getLengthByPytha((LA02 * 2), LA00, null);
+        var XA00 = getLengthByPytha((LA02 * 2), LA00, null);
         var LA03 = XA00 / 4;
         var LC00 = XA00 * 3 / 4;
 

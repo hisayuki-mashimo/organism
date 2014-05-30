@@ -26,6 +26,8 @@ FifthTetrahedron.prototype = {
      */
     configure: function()
     {
+        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+
         var pai         = Math.PI;
         var theta072    = pai * 2 / 5;
         var theta036    = pai * 2 / 10;
@@ -55,7 +57,7 @@ FifthTetrahedron.prototype = {
 
         var XA00 = LA00 * (RA00.A / RA00.D) / 2;
         var XA01 = LA00 * (RA00.C / RA00.D);
-        var XA02 = this.getLengthByPytha(null, LA02, XA00);
+        var XA02 = getLengthByPytha(null, LA02, XA00);
         var RX00 = {
             A: XA00,
             B: LA02,

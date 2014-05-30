@@ -17,6 +17,8 @@ Tetrahedron.prototype = {
      */
     configure: function()
     {
+        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+
         // 正三角形比率
         var RA00 = {
             A: 1,
@@ -28,7 +30,7 @@ Tetrahedron.prototype = {
         var LA01 = LA00 * (RA00.A / RA00.C);
         var LA02 = LA00 * (RA00.B / RA00.C);
 
-        var XA00 = this.getLengthByPytha((LA02 * 2), LA00, null);
+        var XA00 = getLengthByPytha((LA02 * 2), LA00, null);
         var LA03 = XA00 / 3;
 
         var LB00 = XA00 * 2 / 3;

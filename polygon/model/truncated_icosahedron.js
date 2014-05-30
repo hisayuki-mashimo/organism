@@ -21,6 +21,8 @@ TruncatedIcosahedron.prototype = {
      */
     configure: function()
     {
+        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+
         var pai         = Math.PI;
         var theta072    = pai * 2 / 5;
         var theta036    = pai * 2 / 10;
@@ -35,7 +37,7 @@ TruncatedIcosahedron.prototype = {
             C: 1 + cos036
         };
         var L00 = (this.alpha * sin036) * 2;
-        var L01 = this.getLengthByPytha(L00, this.alpha, null);
+        var L01 = getLengthByPytha(L00, this.alpha, null);
         var L02 = L01 * (ratio00.B / ratio00.A);
         var L03 = (L01 * 2) + (L02 * 3 / 2);
         this.reles.A00 = {

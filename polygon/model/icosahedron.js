@@ -17,6 +17,8 @@ Icosahedron.prototype = {
      */
     configure: function()
     {
+        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+
         var pai         = Math.PI;
         var theta060    = pai * 2 / 6;
         var theta072    = pai * 2 / 5;
@@ -49,7 +51,7 @@ Icosahedron.prototype = {
         var LB02 = LB00 * (RA01.B / RA01.C);
 
         var XB01 = XA00 * (1 + cos036);
-        var XB01 = this.getLengthByPytha(XB01, LA01, null);
+        var XB01 = getLengthByPytha(XB01, LA01, null);
         var LA03 = XB01 / 2;
         var LB03 = (XB01 * (RA00.C / RA00.D)) - LA03;
 

@@ -17,6 +17,8 @@ Octahedron.prototype = {
      */
     configure: function()
     {
+        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+
         var pai         = Math.PI;
         var theta060    = pai * 2 / 6;
         var sin060      = Math.sin(theta060);
@@ -32,7 +34,7 @@ Octahedron.prototype = {
         var LA00 = this.alpha;
         var LA01 = LA00 * (RA00.A / RA00.C);
         var LA02 = LA00 * (RA00.B / RA00.C);
-        var LA03 = this.getLengthByPytha(LA02, LA01, null);
+        var LA03 = getLengthByPytha(LA02, LA01, null);
 
         this.reles.A00 = {X: 0,         Y: LA00 * -1,   Z: LA03 * -1};
         this.reles.A01 = {X: LA02,      Y: LA01,        Z: LA03 * -1};
