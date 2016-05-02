@@ -1,0 +1,53 @@
+* {
+    margin: 0px;
+    padding: 0px;
+}
+
+
+div#map {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 500px;
+    height: 500px;
+}
+
+
+table#map_matrix {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    /*width: 500px;
+    height: 500px;*/
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+
+table#map_matrix td {
+    width: 10px;
+    height: 10px;
+    border: solid 1px #f0f0f0;
+    font-size: 0px;
+}
+
+
+table#map_matrix td.decided {
+    background-color: #fff0f0;
+}
+
+
+div#map_gauze {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 500px;
+    height: 500px;
+    font-size: 0px;
+    /*overflow: hidden;*/
+    /*background-color: #ffffff;*/
+    cursor: pointer;
+    filter: alpha(opacity=0);
+    -moz-opacity: 0.0;
+    opacity: 0.0;
+}
