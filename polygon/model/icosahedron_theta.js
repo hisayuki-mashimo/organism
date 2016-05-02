@@ -8,29 +8,12 @@ var Icosahedron_Theta = function()
 
 
 Icosahedron_Theta.prototype = {
-    // 外部設定値
-    fill_style:     'rgba(192, 192, 255, 0.8)',
-    stroke_style:   'rgb(128, 128, 240)',
-
-
-
-
     /**
      * 初期化
      *
      */
     configure: function()
     {
-        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
-
-        var pai         = Math.PI;
-        var theta072    = pai * 2 / 5;
-        var theta036    = pai * 2 / 10;
-        var sin072      = Math.sin(theta072);
-        var cos072      = Math.cos(theta072);
-        var sin036      = Math.sin(theta036);
-        var cos036      = Math.cos(theta036);
-
         // 正三角形比率
         var RA_A00 = {
             A: 1,
@@ -40,18 +23,18 @@ Icosahedron_Theta.prototype = {
 
         // 五芒星比率
         var RA_A01 = {
-            A: (4 * Math.pow(cos036, 2)) - 2,
+            A: (4 * Math.pow(Math.cos(Math.PI * 2 / 10), 2)) - 2,
             B: 1,
-            C: (4 * Math.pow(cos036, 2)) - 1,
-            D: (4 * Math.pow(cos036, 2))
+            C: (4 * Math.pow(Math.cos(Math.PI * 2 / 10), 2)) - 1,
+            D: (4 * Math.pow(Math.cos(Math.PI * 2 / 10), 2))
         };
 
         var LX_A00 = this.alpha;
         var LX_A01 = LX_A00 * (RA_A00.B / RA_A00.C);
         var LX_A02 = LX_A00 * (RA_A00.A / RA_A00.C);
         var LX_A03 = LX_A02 * (RA_A01.D / RA_A01.B);
-        var LX_A04 = getLengthByPytha(LX_A03, LX_A02, null);
-        var LX_A05 = getLengthByPytha(null, LX_A00, LX_A04);
+        var LX_A04 = this.basis.geometry_calculator.getLengthByPytha(LX_A03, LX_A02, null);
+        var LX_A05 = this.basis.geometry_calculator.getLengthByPytha(null, LX_A00, LX_A04);
 
         var LX_B00 = LX_A04 * 2;
         var LX_B01 = LX_B00 * (RA_A01.C / RA_A01.D);
@@ -60,13 +43,13 @@ Icosahedron_Theta.prototype = {
         var LT_A00 = LX_A05;
 
         var TX_A00 = Math.asin(LX_A00 / LX_A05);
-        var TX_B00 = pai - Math.acos(LX_B02 / LX_A05);
+        var TX_B00 = Math.PI - Math.acos(LX_B02 / LX_A05);
 
         var TY_A00 = 0;
 
         var reles_base = {
             A0: {R: LT_A00, X: TX_A00, Y: TY_A00},
-            B0: {R: LT_A00, X: TX_B00, Y: TY_A00},
+            B0: {R: LT_A00, X: TX_B00, Y: TY_A00}
         };
 
         for (var i in reles_base) {
@@ -79,9 +62,9 @@ Icosahedron_Theta.prototype = {
                 this.reles[i + n + 'SR'] = {R: base_R};
 
                 this.reles[i + n + 'AO'].X = base_X;
-                this.reles[i + n + 'AO'].Y = base_Y + ((pai * 2 / 3) * n);
-                this.reles[i + n + 'SR'].X = base_X + pai;
-                this.reles[i + n + 'SR'].Y = (base_Y + ((pai * 2 / 3) * n)) * -1;
+                this.reles[i + n + 'AO'].Y = base_Y + ((Math.PI * 2 / 3) * n);
+                this.reles[i + n + 'SR'].X = base_X + Math.PI;
+                this.reles[i + n + 'SR'].Y = (base_Y + ((Math.PI * 2 / 3) * n)) * -1;
             }
         }
 

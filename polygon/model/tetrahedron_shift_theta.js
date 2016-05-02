@@ -2,12 +2,12 @@
  * 正四面体
  *
  */
-var Tetrahedron_Theta = function()
+var Tetrahedron_Shift_Theta = function()
 {
 };
 
 
-Tetrahedron_Theta.prototype = {
+Tetrahedron_Shift_Theta.prototype = {
     /**
      * 初期化
      *
@@ -34,8 +34,8 @@ Tetrahedron_Theta.prototype = {
 
         var LT_A00 = LX_A05;
 
-        var TX_A00 = Math.asin(LX_A00 / LX_A05);
-        var TX_Z00 = Math.PI;
+        var TX_A00 = Math.PI - Math.asin(LX_A00 / LX_A05);
+        var TX_Z00 = 0;
 
         var TY_A00 = Math.PI * 2 / 3 * 0;
         var TY_A01 = Math.PI * 2 / 3 * 1;

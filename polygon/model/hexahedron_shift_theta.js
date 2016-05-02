@@ -4,21 +4,12 @@ var Hexahedron_Shift_Theta = function()
 
 
 Hexahedron_Shift_Theta.prototype = {
-    // 外部設定値
-    fill_style:     'rgba(244, 192, 244, 0.8)',
-    stroke_style:   'rgb(200, 128, 200)',
-
-
     /**
      * 初期化
      *
      */
     configure: function()
     {
-        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
-
-        var pai = Math.PI;
-
         // 直角二等辺三角形比率
         var RA_A00 = {
             A: 1,
@@ -35,7 +26,7 @@ Hexahedron_Shift_Theta.prototype = {
         var LX_A00 = this.alpha;
         var LX_A01 = LX_A00 * (RA_A00.B / RA_A00.A);
         var LX_A02 = LX_A01 / 2;
-        var LX_A03 = getLengthByPytha(null, LX_A00, LX_A02);
+        var LX_A03 = this.basis.geometry_calculator.getLengthByPytha(null, LX_A00, LX_A02);
 
         var LT_A00 = LX_A03;
 
@@ -60,15 +51,13 @@ Hexahedron_Shift_Theta.prototype = {
                 this.reles[i + n + 'SR'] = {R: base_R};
 
                 this.reles[i + n + 'AO'].X = base_X;
-                this.reles[i + n + 'AO'].Y = base_Y + ((pai * 2 / 3) * n);
-                this.reles[i + n + 'SR'].X = base_X + pai;
-                this.reles[i + n + 'SR'].Y = (base_Y + ((pai * 2 / 3) * n)) * -1;
+                this.reles[i + n + 'AO'].Y = base_Y + ((Math.PI * 2 / 3) * n);
+                this.reles[i + n + 'SR'].X = base_X + Math.PI;
+                this.reles[i + n + 'SR'].Y = (base_Y + ((Math.PI * 2 / 3) * n)) * -1;
             }
         }
 
-//this.reles.O = {R: 0, X: 0, Y: 0};
         this.surfaces = {
-            //A0_A: ['O', 'Z00AO'],
             A0_A: ['Z00AO', 'A00AO', 'A01SR', 'A01AO'],
             A1_A: ['Z00AO', 'A01AO', 'A00SR', 'A02AO'],
             A2_A: ['Z00AO', 'A02AO', 'A02SR', 'A00AO'],

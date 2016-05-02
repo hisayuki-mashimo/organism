@@ -21,18 +21,11 @@ Fifth_Tetrahedron_Theta.prototype = {
      */
     configure: function()
     {
-        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+        var getLengthByPytha     = this.basis.geometry_calculator.getLengthByPytha;
+        var finalizeRatioByPytha = this.basis.geometry_calculator.finalizeRatioByPytha;
 
-        var pai         = Math.PI;
-        var theta060    = pai / 3;
-        var sin060      = Math.sin(theta060);
-        var cos060      = Math.cos(theta060);
-        var theta072    = pai * 2 / 5;
-        var theta036    = pai * 2 / 10;
-        var sin072      = Math.sin(theta072);
-        var cos072      = Math.cos(theta072);
-        var sin036      = Math.sin(theta036);
-        var cos036      = Math.cos(theta036);
+        var pai    = Math.PI;
+        var cos036 = Math.cos(pai * 2 / 10);
 
         // 正三角形比率
         var RA_A00 = {

@@ -2,12 +2,12 @@
  * 正十二面体
  *
  */
-var Dodecahedron_Theta = function()
+var Dodecahedron_Shift_Theta = function()
 {
 };
 
 
-Dodecahedron_Theta.prototype = {
+Dodecahedron_Shift_Theta.prototype = {
     /**
      * 初期化
      *
@@ -36,14 +36,19 @@ Dodecahedron_Theta.prototype = {
 
         var LT_A00 = LX_A10;
 
-        var TX_A00 = Math.asin(LX_A00 / LX_A10);
-        var TX_B00 = Math.asin(LX_A00 / LX_A10) + (Math.asin(LX_A06 / LX_A10) * 2);
+        var TX_A00 = Math.asin(LX_A06 / LX_A10) * 2;
+        var TX_B00 = Math.asin(LX_A06 / LX_A10) + (Math.PI / 2);
+        var TX_Z00 = 0;
 
         var TY_A00 = 0;
+        var TY_B00 = Math.asin(LX_A06 / LX_A10);
+        var TY_B10 = Math.asin(LX_A06 / LX_A10) * -1;
 
         var reles_base = {
             A0: {R: LT_A00, X: TX_A00, Y: TY_A00},
-            B0: {R: LT_A00, X: TX_B00, Y: TY_A00}
+            B0: {R: LT_A00, X: TX_B00, Y: TY_B00},
+            B1: {R: LT_A00, X: TX_B00, Y: TY_B10},
+            Z0: {R: LT_A00, X: TX_Z00, Y: TY_A00}
         };
 
         for (var i in reles_base) {
@@ -51,30 +56,30 @@ Dodecahedron_Theta.prototype = {
             var base_X = reles_base[i].X;
             var base_Y = reles_base[i].Y;
 
-            for (var n = 0; n < 5; n ++) {
+            for (var n = 0; n < 3; n ++) {
                 this.reles[i + n + 'AO'] = {R: base_R};
                 this.reles[i + n + 'SR'] = {R: base_R};
 
                 this.reles[i + n + 'AO'].X = base_X;
-                this.reles[i + n + 'AO'].Y = base_Y + ((Math.PI * 2 / 5) * n);
+                this.reles[i + n + 'AO'].Y = base_Y + ((Math.PI * 2 / 3) * n);
                 this.reles[i + n + 'SR'].X = base_X + Math.PI;
-                this.reles[i + n + 'SR'].Y = (base_Y + ((Math.PI * 2 / 5) * n)) * -1;
+                this.reles[i + n + 'SR'].Y = (base_Y + ((Math.PI * 2 / 3) * n)) * -1;
             }
         }
 
         this.surfaces = {
-            A0_A: ['A00AO', 'A01AO', 'A02AO', 'A03AO', 'A04AO'],
-            A0_R: ['A00SR', 'A01SR', 'A02SR', 'A03SR', 'A04SR'],
-            B0_A: ['A00AO', 'B00AO', 'B02SR', 'B01AO', 'A01AO'],
-            B1_A: ['A01AO', 'B01AO', 'B01SR', 'B02AO', 'A02AO'],
-            B2_A: ['A02AO', 'B02AO', 'B00SR', 'B03AO', 'A03AO'],
-            B3_A: ['A03AO', 'B03AO', 'B04SR', 'B04AO', 'A04AO'],
-            B4_A: ['A04AO', 'B04AO', 'B03SR', 'B00AO', 'A00AO'],
-            B0_R: ['A00SR', 'B00SR', 'B02AO', 'B01SR', 'A01SR'],
-            B1_R: ['A01SR', 'B01SR', 'B01AO', 'B02SR', 'A02SR'],
-            B2_R: ['A02SR', 'B02SR', 'B00AO', 'B03SR', 'A03SR'],
-            B3_R: ['A03SR', 'B03SR', 'B04AO', 'B04SR', 'A04SR'],
-            B4_R: ['A04SR', 'B04SR', 'B03AO', 'B00SR', 'A00SR']
+            A0_A: ['Z00AO', 'A00AO', 'B01SR', 'B11SR', 'A01AO'],
+            A1_A: ['Z00AO', 'A01AO', 'B00SR', 'B10SR', 'A02AO'],
+            A2_A: ['Z00AO', 'A02AO', 'B02SR', 'B12SR', 'A00AO'],
+            A0_R: ['Z00SR', 'A00SR', 'B01AO', 'B11AO', 'A01SR'],
+            A1_R: ['Z00SR', 'A01SR', 'B00AO', 'B10AO', 'A02SR'],
+            A2_R: ['Z00SR', 'A02SR', 'B02AO', 'B12AO', 'A00SR'],
+            B0_A: ['A00AO', 'B01SR', 'B00AO', 'B10AO', 'B12SR'],
+            B1_A: ['A01AO', 'B00SR', 'B01AO', 'B11AO', 'B11SR'],
+            B2_A: ['A02AO', 'B02SR', 'B02AO', 'B12AO', 'B10SR'],
+            B0_R: ['A00SR', 'B01AO', 'B00SR', 'B10SR', 'B12AO'],
+            B1_R: ['A01SR', 'B00AO', 'B01SR', 'B11SR', 'B11AO'],
+            B2_R: ['A02SR', 'B02AO', 'B02SR', 'B12SR', 'B10AO']
         };
     }
 };

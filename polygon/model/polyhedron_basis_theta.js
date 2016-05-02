@@ -135,9 +135,9 @@ Polyhedron_Basis_Theta.prototype = {
      */
     setDirection: function(embody, rotate_theta, vector_theta, length_theta)
     {
-        var getLengthByPytha    = this.geometry_calculator.getLengthByPytha;
-        var getLengthesByTheta  = this.geometry_calculator.getLengthesByTheta;
-        var getThetaByLengthes  = this.geometry_calculator.getThetaByLengthes;
+        var getLengthByPytha   = this.geometry_calculator.getLengthByPytha;
+        var getLengthesByTheta = this.geometry_calculator.getLengthesByTheta;
+        var getThetaByLengthes = this.geometry_calculator.getThetaByLengthes;
 
         embody.moment_surfaces = new Array();
 
@@ -213,9 +213,9 @@ Polyhedron_Basis_Theta.prototype = {
             }
 
             embody.canvas_context.closePath();
-            embody.canvas_context.fillStyle     = embody.fill_style;
+            embody.canvas_context.fillStyle = embody.fill_style;
             embody.canvas_context.fill();
-            embody.canvas_context.strokeStyle   = embody.stroke_style;
+            embody.canvas_context.strokeStyle = embody.stroke_style;
             embody.canvas_context.stroke();
         }
     }

@@ -3,7 +3,7 @@ var parameter_count = 4;
 var params          = {
     alpha:              100,
     size:               350,
-    parameter_texts:    ['行動力', '適応力', '独創性', '情熱性'],
+    parameter_texts:    ['天運', '健康運', '金運', '勝負運'],
     basis_fill_style:   'rgba(255, 255, 255, 0.0)',
     basis_stroke_style: 'rgba(  0, 112,  64, 0.5)',
     shaft_fill_style:   'rgba(255, 255, 255, 0.0)',

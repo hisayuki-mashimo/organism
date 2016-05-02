@@ -5,9 +5,9 @@
         <link type="text/css" rel="stylesheet" href="style/style.css" />
         <title>にせ姓名判断</title>
 
-<?php $type = isset($_GET['type']) ? intval($_GET['type'])          : null; ?>
-<?php $sei  = isset($_GET['sei'])  ? htmlspecialchars($_GET['sei']) : '';   ?>
-<?php $mei  = isset($_GET['sei'])  ? htmlspecialchars($_GET['mei']) : '';   ?>
+<?php $type = isset($_GET['parameter_type']) ? intval($_GET['parameter_type'])  : null; ?>
+<?php $sei  = isset($_GET['sei'])  ? htmlspecialchars($_GET['sei'])             : '';   ?>
+<?php $mei  = isset($_GET['sei'])  ? htmlspecialchars($_GET['mei'])             : '';   ?>
 <?php switch ($type): ?>
 <?php case  4: ?>
 <?php case  8: ?>
@@ -55,13 +55,19 @@
                 <td id="form_frame">
                     <div id="form">
                         <form name="FM01" action="" method="get">
-                            <input type="hidden" name="type" value="<?php echo $type; ?>" />
-                            <table>
+                            <table style="width:100%;">
                                 <tr>
-                                    <td>
+                                    <td style="text-align:left;">
                                         姓:<input type="text" name="sei" size="10" value="<?php echo $sei; ?>" />
                                         名:<input type="text" name="mei" size="10" value="<?php echo $mei; ?>" />
                                         <input type="submit" value="診断" />
+                                    </td>
+                                    <td style="text-align:right;">
+                                        <select name="parameter_type">
+                                            <option value="4"<?php if ($type === 4): ?> selected<?php endif; ?>>基本</option>
+                                            <option value="8"<?php if ($type === 8): ?> selected<?php endif; ?>>性格傾向</option>
+                                            <option value="20"<?php if ($type === 20): ?> selected<?php endif; ?>>適正能力</option>
+                                        </select>
                                     </td>
                                 </tr>
                             </table>
@@ -84,7 +90,6 @@
                 <td colspan="2" class="col_spacer"></td>
             </tr>
         </table>
-<div id="debug" style="color:#ff0000;"></div>
 
         <script type="text/javascript" src="../../library/jquery-1.8.0.min.js"></script>
         <script type="text/javascript" src="../library/geometry_calculator.js"></script>
@@ -108,6 +113,10 @@
 <?php endswitch; ?>
         <script type="text/javascript">
             window.onload = function(){
+                document.FM01.parameter_type.onchange = function(){
+                    document.FM01.submit();
+                };
+
                 var frame_node = document.getElementById('radar');
 
                 var parameters          = [];
@@ -302,50 +311,17 @@
                     if (diff_length_theta > 0) {
                         move_length_theta += diff_length_theta;
 
-                        var TA0 = move_vector_theta - (Math.PI / 2);
-                        var TY0 = vector_theta_base - TA0;
-                        var LS0 = getLengthesByTheta('Z', length_theta_base);
-                        var RY0 = LS0.Y;
-                        var LZ0 = LS0.X;
-                        var LS1 = getLengthesByTheta('Y', TY0);
-                        var LX1 = LS1.X * RY0;
-                        var LY1 = LS1.Y * RY0;
-                        var RX1 = getLengthByPytha(null, LX1, LZ0);
-                        var TX1 = getThetaByLengthes('X', LX1, LZ0);
-                        var TX2 = TX1 + move_length_theta;
-                        var LS2 = getLengthesByTheta('X', TX2);
-                        var LX2 = LS2.X * RX1;
-                        var LZ2 = LS2.Y * RX1;
-                        var RY2 = getLengthByPytha(null, LX2, LY1);
-                        var TL2 = getThetaByLengthes('Z', LZ2, RY2);
-                        var TV2 = getThetaByLengthes('Y', LX2, LY1);
-
-                        if (LY1 == 0) {
-                            var TX = 0;
-                        } else {
-                            var LS3 = getLengthesByTheta('X', TX1);
-                            var LX3 = LS3.X * RX1;
-                            var LZ3 = LS3.Y * RX1;
-                            var RY3 = getLengthByPytha(null, LX3, LY1);
-                            var TL3 = getThetaByLengthes('Z', LZ3, RY3);
-                            var TV3 = getThetaByLengthes('Y', LX3, LY1);
-                            var L0 = Math.sin(TV3);
-                            var L1 = Math.cos(TV3);
-                            var L2 = Math.cos(TL3) * L1;
-                            var T0 = getThetaByLengthes('Y', L2, L0);
-                            var T1 = T0 + TV3;
-
-                            var L3 = Math.sin(TV2);
-                            var L4 = Math.cos(TV2);
-                            var L5 = Math.cos(TL2) * L4;
-                            var T2 = getThetaByLengthes('Y', L5, L3);
-                            var T3 = T2 + TV2;
-                            var TX = T3 - T1;
-                        }
-
-                        rotate_theta = TX + rotate_theta_base;
-                        vector_theta = TV2 + TA0;
-                        length_theta = TL2;
+                        var thetas = geometry_calculator.getThetasByRelative(
+                            rotate_theta_base,
+                            vector_theta_base,
+                            length_theta_base,
+                            move_rotate_theta,
+                            move_vector_theta,
+                            move_length_theta
+                        );
+                        rotate_theta = thetas.rotate_theta;
+                        vector_theta = thetas.vector_theta;
+                        length_theta = thetas.length_theta;
                     }
                     else if (diff_rotate_theta != 0) {
                         move_rotate_theta += diff_rotate_theta;
