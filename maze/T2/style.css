@@ -1,0 +1,113 @@
+/* ▼ 全体 ▼ */
+*{
+    margin:  0px;
+    padding: 0px;
+    color:   #111122;
+}
+
+body{
+    background-color: #000000;
+}
+/* ▲ 全体 ▲ */
+
+
+
+
+/* ▼ 地図 ▼ */
+div.s{
+    float:      left;
+    margin:     0px;
+    padding:    0px;
+    width:      15px;
+    height:     15px;
+    font-size:  10px;
+    text-align: center;
+    color:      #111122;
+}
+
+div.c{
+    clear: both;
+}
+
+div.s0{ background: url("./images/0.png"); }
+div.s1{ background: url("./images/1.png"); }
+div.s2{ background: url("./images/2.png"); }
+/* ▲ 地図 ▲ */
+
+
+
+
+/* ▼ 操作 ▼ */
+div#display{
+    width:  100%;
+    height: 100%;
+}
+
+div.display_visible{
+    background-color: #000000;
+}
+div.display_imvisible{
+    background: url("../resources/17/777_portal.png");
+}
+div.operate_visible{
+    display: block;
+}
+div.operate_imvisible{
+    display: none;
+}
+
+div#meter{
+    width:     165px;
+    height:    30px;
+    font-size: 0px;
+    cursor:    pointer;
+}
+
+div#signal{
+    width:  110px;
+    height: 65px;
+    float:  left;
+    cursor: pointer;
+}
+
+div#display_switch{
+    width:  100px;
+    height: 65px;
+    float:  left;
+    cursor: pointer;
+}
+
+div#clear{
+    clear: both;
+}
+/* ▲ 操作 ▲ */
+
+
+
+
+/* ▼ 補助機能 ▼ */
+div.navigater_ver,
+div.navigater_nex{
+    position: absolute;
+    width:     14px;
+    height:    14px;
+    font-size: 0px;
+}
+
+div.navigated{
+    background-color: #00FFEE;
+    opacity: 0.2;
+    filter:  alpha(opacity=20);
+    cursor:  pointer;
+}
+
+div.navigate_border{
+    position:         absolute;
+    background-color: #4444EE;
+    /*opacity:          0.2;*/
+    opacity: 0.2;
+    filter:  alpha(opacity=20);
+    font-size:        0px;
+    overflow:         hidden;
+}
+/* ▲ 補助機能 ▲ */

@@ -1,0 +1,102 @@
+*{
+    margin:  0px;
+    padding: 0px;
+    color:   #FFFFFF;
+}
+
+div.s{
+    float:      left;
+    margin:     0px;
+    padding:    0px;
+    width:      15px;
+    height:     15px;
+    font-size:  10px;
+    text-align: center;
+}
+
+div.s0    { background: url("../resources/13/00000.png"); }
+div.s1    { background: url("../resources/13/10000.png"); }
+
+div.s21111{ background: url("../resources/13/21111.png"); }
+div.s21100{ background: url("../resources/13/21100.png"); }
+div.s20110{ background: url("../resources/13/20110.png"); }
+div.s20011{ background: url("../resources/13/20011.png"); }
+div.s21001{ background: url("../resources/13/21001.png"); }
+div.s21101{ background: url("../resources/13/21101.png"); }
+div.s21110{ background: url("../resources/13/21110.png"); }
+div.s20111{ background: url("../resources/13/20111.png"); }
+div.s21011{ background: url("../resources/13/21011.png"); }
+
+div.s41110{ background: url("../resources/13/41110.png"); }
+div.s40111{ background: url("../resources/13/40111.png"); }
+div.s41011{ background: url("../resources/13/41011.png"); }
+div.s41101{ background: url("../resources/13/41101.png"); }
+div.s41100{ background: url("../resources/13/41100.png"); }
+div.s40110{ background: url("../resources/13/40110.png"); }
+div.s40011{ background: url("../resources/13/40011.png"); }
+div.s41001{ background: url("../resources/13/41001.png"); }
+div.s41000{ background: url("../resources/13/41000.png"); }
+div.s40100{ background: url("../resources/13/40100.png"); }
+div.s40010{ background: url("../resources/13/40010.png"); }
+div.s40001{ background: url("../resources/13/40001.png"); }
+div.s41010{ background: url("../resources/13/41010.png"); }
+div.s40101{ background: url("../resources/13/40101.png"); }
+
+div.s31000{ background: url("../resources/13/31000.png"); }
+div.s30100{ background: url("../resources/13/30100.png"); }
+div.s30010{ background: url("../resources/13/30010.png"); }
+div.s30001{ background: url("../resources/13/30001.png"); }
+
+div.sxxxxo{ background: url("../resources/13/xxxxo.png"); }
+div.sxoxxx{ background: url("../resources/13/xoxxx.png"); }
+div.sxxxxx{ background: url("../resources/13/xxxxx.png"); }
+
+
+
+
+
+
+
+
+div.c{
+    clear: both;
+}
+
+span.g{
+    color:     #FF4444;
+    font-size: 10px;
+}
+
+div#display{
+    width:  100%;
+    height: 100%;
+}
+
+div.display_visible{
+    background-color: #000000;
+}
+div.display_imvisible{
+    background: url("../resources/13/smy_mgr_bck.png");
+}
+
+div#meter{
+    width:     165px;
+    height:    30px;
+    font-size: 0px;
+    cursor:    pointer;
+}
+div#signal{
+    width:  110px;
+    height: 65px;
+    float:  left;
+    cursor: pointer;
+}
+div#switch{
+    width:  100px;
+    height: 65px;
+    float:  left;
+    cursor: pointer;
+}
+div#clear{
+    clear: both;
+}
