@@ -1,0 +1,22 @@
+table#meter {
+  position:        absolute;
+  left:            10px;
+  top:             340px;
+  border:          1px solid #AAAAAA;
+  /*border-collapse: collapse;*/
+  border-collapse: separate;
+  border-spacing:  1;
+}
+
+table#meter th {
+  width:       10px;
+  font-weight: normal;
+  border:      1px solid #AAAAAA;
+  text-align:  right;
+}
+
+table#meter td {
+  width:      40px;
+  border: 1px solid #AAAAAA;
+  text-align: right;
+}
