@@ -1,0 +1,254 @@
+<html>
+    <head>
+        <link type="text/css" rel="stylesheet" href="can.css" />
+    </head>
+    <body>
+        <canvas id="CA01" width="641px" height="481px"></canvas>
+        <canvas id="CA02" width="641px" height="481px"></canvas>
+        <!--<div id="IM01_hide"></div>
+        <div id="IM02_hide"></div>-->
+        <div id="message">
+            <div id="messPRE">
+                // 画像を中心座標(400px, 150px)に、<br />
+                // 2.5ラジアン(約143°)傾けて描画させる手順の例<br />
+            </div>
+            <div id="mess00">
+                <br />
+                // canvasとcontext(フォークリフト)の呼び出し<br />
+                var canvas = document.getElementById('canvas');<br />
+                var context = canvas.getContext('2d');<br />
+                <br />
+                // フォークリフトを初期位置(左上)に戻す<br />
+                // (1回目はおまじない)<br />
+                context.setTransform(1, 0, 0, 1, 0, 0);<br />
+            </div>
+            <div id="mess01">
+                <br />
+                // 移動させたい座標に移動<br />
+                context.translate(400, 150);<br />
+            </div>
+            <div id="mess02">
+                <br />
+                // 傾斜させたい角度に回転(ラジアン: 180°= π)<br />
+                context.rotate(2.5);<br />
+            </div>
+            <div id="mess03">
+                <br />
+                // 画像の(全長・全幅)÷2の距離だけバック<br />
+                context.translate(-75, -100);<br />
+            </div>
+            <div id="mess04">
+                <br />
+                // 画像オブジェクトの召喚<br />
+                var image_node = new Image();<br />
+                image_node.src = 'CAN01.png';<br />
+                <br />
+                // 画像の描画<br />
+                context.drawImage(image_object, 0, 0);<br />
+            </div>
+        </div>
+
+        <div id="debug"></div>
+
+        <script type="text/javascript" src="../library/jquery-1.8.0.min.js"></script>
+        <script type="text/javascript">
+            $(document).ready(function(){
+                CX01        = document.getElementById('CA01').getContext('2d');
+                CX02        = document.getElementById('CA02').getContext('2d');
+                IM01        = new Image();
+                IM02        = new Image();
+                IM01.src    = 'CAN01.png';
+                IM02.src    = 'CAN02.png';
+                IM_CX       = 75;
+                IM_CY       = 100;
+                CA_X0       = 0.5;
+                CA_Y0       = 0.5;
+                CA_W        = 600;
+                CA_H        = 480;
+
+                animater    = false;
+                animation   = null;
+                phase       = 0;
+                passed      = 0;
+
+                CX01.setTransform(1, 0, 0, 1, CA_X0, CA_Y0);
+                CX01.globalAlpha = 0.3;
+                CX01.drawImage(IM01, 0, 0);
+                CX01.setTransform(1, 0, 0, 1, CA_X0, CA_Y0);
+                CX01.fillStyle = 'rgba(255, 0, 0, 0.5)';
+                CX01.fillRect(0, 0, 150, 200);
+
+                CX01.setTransform(1, 0, 0, 1, CA_X0, CA_Y0);
+                CX01.translate(400, 250);
+                CX01.rotate(2.0);
+                CX01.translate(IM_CX * -1, IM_CY * -1);
+                CX01.globalAlpha = 0.3;
+                CX01.drawImage(IM01, 0, 0);
+                CX01.fillStyle = 'rgba(0, 255, 0, 0.5)';
+                CX01.fillRect(0, 0, 150, 200);
+
+                CX02.setTransform(1, 0, 0, 1, CA_X0, CA_Y0);
+                CX02.strokeStyle = 'rgb(255, 0, 0)';
+                CX02.beginPath();
+                CX02.moveTo(0, 250);
+                CX02.lineTo(640, 250);
+                CX02.closePath();
+                CX02.stroke();
+
+                CX02.setTransform(1, 0, 0, 1, CA_X0, CA_Y0);
+                CX02.strokeStyle = 'rgb(255, 0, 0)';
+                CX02.beginPath();
+                CX02.moveTo(400, 0);
+                CX02.lineTo(400, 480);
+                CX02.closePath();
+                CX02.stroke();
+
+                CX02.setTransform(1, 0, 0, 1, CA_X0, CA_Y0);
+                CX02.lineWidth = 1;
+                CX02.strokeStyle = 'rgb(200, 200, 200)';
+                CX02.strokeRect(0, 0, 640, 480);
+
+                $(document).keydown(function(event){
+                    if(event.keyCode == 13){
+                        if(animater == false){
+                            for(var i = 0; i <= 4; i ++){
+                                var mess_node = document.getElementById('mess0' + i);
+                                if(i <= phase){
+                                    $(mess_node).show();
+                                    if(i == phase){
+                                        $(mess_node).css('color', '#ff4444');
+                                    }
+                                    else{
+                                        $(mess_node).css('color', '#000000');
+                                    }
+                                }
+                            }
+                            animater = true;
+                            animation = setInterval(function(){
+                                execute();
+                            }, 25);
+                        }
+                        else{
+                            clearInterval(animation);
+                            animater = false;
+                        }
+                    }
+                });
+
+
+                function execute()
+                {
+                    CX02.clearRect(CA_X0 * -1, CA_X0 * -1, 640, 480);
+                    CX02.setTransform(1, 0, 0, 1, CA_X0, CA_Y0);
+                    switch(phase){
+                        case 0: execute00(true); break;
+                        case 1: execute01(true); break;
+                        case 2: execute02(true); break;
+                        case 3: execute03(true); break;
+                        case 4: execute04(true); break;
+                    }
+
+                    CX02.setTransform(1, 0, 0, 1, CA_X0, CA_Y0);
+                    CX02.strokeStyle = 'rgb(255, 0, 0)';
+                    CX02.beginPath();
+                    CX02.moveTo(0, 250);
+                    CX02.lineTo(640, 250);
+                    CX02.closePath();
+                    CX02.stroke();
+
+                    CX02.setTransform(1, 0, 0, 1, CA_X0, CA_Y0);
+                    CX02.strokeStyle = 'rgb(255, 0, 0)';
+                    CX02.beginPath();
+                    CX02.moveTo(400, 0);
+                    CX02.lineTo(400, 480);
+                    CX02.closePath();
+                    CX02.stroke();
+
+                    CX02.setTransform(1, 0, 0, 1, CA_X0, CA_Y0);
+                    CX02.lineWidth = 1;
+                    CX02.strokeStyle = 'rgb(200, 200, 200)';
+                    CX02.strokeRect(0, 0, 640, 480);
+
+                    passed ++;
+                    switch(true){
+                        case ((phase == 0) && (passed > 1)):
+                        case ((phase == 1) && (passed > 200)):
+                        case ((phase == 2) && (passed > 300)):
+                        case ((phase == 3) && (passed > 400)):
+                        case ((phase == 4) && (passed > 401)):
+                            clearInterval(animation);
+                            animater = false;
+                            phase ++;
+                            break;
+                        case (phase == 5):
+                            clearInterval(animation);
+                            break;
+                    }
+                }
+
+                function execute00(done)
+                {
+                    if(done == true){
+                        execute0XPost();
+                    }
+                }
+
+
+                function execute01(done)
+                {
+                    var MV_X = 400 * ((passed <= 200) ? passed : 200) / 200;
+                    var MV_Y = 250 * ((passed <= 200) ? passed : 200) / 200;
+                    CX02.translate(MV_X, MV_Y);
+                    if(done == true){
+                        execute0XPost();
+                    }
+                }
+
+
+                function execute02(done)
+                {
+                    execute01();
+                    var MV_S = 2.0 * (((passed <= 300) ? passed : 300) - 200) / 100;
+                    CX02.rotate(MV_S);
+                    if(done == true){
+                        execute0XPost();
+                    }
+                }
+
+
+                function execute03(done)
+                {
+                    execute02();
+                    var MV_X = IM_CX * (passed - 300) / 100 * -1;
+                    var MV_Y = IM_CY * (passed - 300) / 100 * -1;
+                    CX02.translate(MV_X, MV_Y);
+                    if(done == true){
+                        execute0XPost();
+                    }
+                }
+
+
+                function execute04(done)
+                {
+                    execute03();
+                    CX02.globalAlpha = 1.0;
+                    CX02.drawImage(IM02, 0, 0);
+                }
+
+
+                function execute0XPost()
+                {
+                    CX02.fillStyle = 'rgba(200, 240, 255, 0.7)';
+                    CX02.fillRect(0, 0, 640, 480);
+
+                    CX02.lineWidth = 1;
+                    CX02.strokeStyle = 'rgb(160, 200, 255)';
+                    CX02.strokeRect(0, 0, 640, 480);
+
+                    CX02.globalAlpha = 0.4;
+                    CX02.drawImage(IM02, 0, 0);
+                }
+            });
+        </script>
+    </body>
+</html>

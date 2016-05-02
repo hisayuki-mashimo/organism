@@ -1,0 +1,52 @@
+<html>
+    <head>
+        <meta http-equiv="Context-Type" context="text/html" charset="utf-8" />
+        <title>HTML5試験</title>
+    </head>
+    <body>
+        <canvas id="CA01" width="500px" height="500px"></canvas>
+
+        <div id="debug"></div>
+
+        <script type="text/javascript" src="jquery-1.8.0.min.js"></script>
+        <script type="text/javascript">
+            window.onload = function(){
+                var CA01 = document.getElementById('CA01');
+                var CA01_ctx = CA01.getContext('2d');
+
+                var OJ01 = new Object();
+                OJ01.image = new Image();
+                OJ01.image.src = 'OJ03.png?rand=' + new Date().getTime();
+                OJ01.x = 110;
+                OJ01.cx = 21;
+                OJ01.y = 110;
+                OJ01.cy = 21;
+                OJ01.sitaX = 0;
+                OJ01.sitaY = 0;
+
+                var sita_base = Math.PI;
+                var count = 0;
+
+                var animation = setInterval(function(){
+                    CA01_ctx.setTransform(1, 0, 0, 1, 50, 50);
+                    //CA01_ctx.clearRect(0, 0, CA01.width, CA01.height);
+
+                    OJ01.sitaX += 0.05;
+                    OJ01.sitaY += 0.01;
+                    var OJ01_x = OJ01.x + OJ01.x * Math.cos(sita_base * OJ01.sitaY);
+                    var OJ01_y = OJ01.y + OJ01.y * Math.sin(sita_base * OJ01.sitaY);
+                    CA01_ctx.setTransform(1, 0, 0, 1, 50, 50);
+                    CA01_ctx.translate(OJ01_y + OJ01.cy, OJ01_x + OJ01.cx);
+                    CA01_ctx.rotate(OJ01.sitaX);
+                    CA01_ctx.translate(OJ01.cy * -1, OJ01.cx * -1);
+                    CA01_ctx.drawImage(OJ01.image, 0, 0);
+
+                    count ++;
+                    if(count >= 5000){
+                        clearInterval(animation);
+                    }
+                }, 25);
+            };
+        </script>
+    </body>
+</html>

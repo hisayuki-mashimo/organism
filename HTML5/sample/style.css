@@ -1,0 +1,45 @@
+div.h1 {
+    width: 500px;
+    margin: 5px 0px;
+    padding: 2px;
+    background-color: #8866aa;
+    color: #ffffff;
+    font-size: 12px;
+}
+
+table {
+    width: 500px;
+    border-collapse: collapse;
+}
+th,
+td {
+    border: solid 1px #000000;
+    text-align: left;
+    font-size: 12px;
+}
+th {
+    background-color: #eeccff;
+    font-weight: normal;
+}
+td{
+    text-align: center;
+}
+
+th.td_C,
+td.td_C {
+    text-align: center;
+}
+
+th.td_R,
+td.td_R {
+    text-align: right;
+}
+
+th.td_L,
+td.td_L {
+    text-align: left;
+}
+
+td.GRAY {
+    background-color: #cccccc;
+}

@@ -1,0 +1,104 @@
+<html>
+    <head>
+        <style type="text/css">
+            table {
+                border-collapse: collapse;
+            }
+            table#STR td,
+            table#SLF td {
+                padding: 0px;
+                width: 20px;
+                height: 20px;
+                border: solid 1px #ff8888;
+                font-size: 0px;
+            }
+            div#OJ01 {
+                background-color: #ff8888;
+                width: 20px;
+                height: 20px;
+            }
+            div#arrow {
+                margin: 10px 0px;
+                padding: 0px;
+                width: 64px;
+                text-align: center;
+                color: #aa88ff;
+            }
+        </style>
+    </head>
+
+    <body>
+        <table id="STR">
+            <tr>
+                <td id="STR01"><div id="OJ01" draggable="true"></div></td>
+                <td id="STR02"></td>
+                <td id="STR03"></td>
+            </tr>
+            <tr>
+                <td id="STR04"></td>
+                <td id="STR05"></td>
+                <td id="STR06"></td>
+            </tr>
+            <tr>
+                <td id="STR07"></td>
+                <td id="STR08"></td>
+                <td id="STR09"></td>
+            </tr>
+        </table>
+
+        <div id="arrow">
+            ▼▼▼
+        </div>
+
+        <table id="SLF">
+            <tr>
+                <td id="SLF01"></td>
+                <td id="SLF02"></td>
+                <td id="SLF03"></td>
+            </tr>
+            <tr>
+                <td id="SLF04"></td>
+                <td id="SLF05"></td>
+                <td id="SLF06"></td>
+            </tr>
+            <tr>
+                <td id="SLF07"></td>
+                <td id="SLF08"></td>
+                <td id="SLF09"></td>
+            </tr>
+        </table>
+
+        <div id="debug"></div>
+
+        <script type="text/javascript" src="../library/jquery-1.8.0.min.js"></script>
+        <script type="text/javascript">
+            document.getElementById('OJ01').ondragstart = function(event){
+                event.dataTransfer.setData('tar', event.target.id);
+            };
+            $('table#STR td').each(function(){
+                this.ondragover = function(event){
+                    event.preventDefault();
+                };
+                this.ondrop = function(event){
+                    var element_id = event.dataTransfer.getData('tar');
+                    var element = document.getElementById(element_id);
+                    var new_box = event.currentTarget;
+                    new_box.appendChild(element);
+                    event.preventDefault();
+                };
+            });
+            $('table#SLF td').each(function(){
+                this.ondragover = function(event){
+                    event.preventDefault();
+                };
+                this.ondrop = function(event){
+                    var element_id = event.dataTransfer.getData('tar');
+                    var element = document.getElementById(element_id);
+                    var new_box = event.currentTarget;
+                    new_box.appendChild(element);
+                    event.preventDefault();
+                };
+            });
+        </script>
+    </body>
+</html>

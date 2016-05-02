@@ -1,0 +1,106 @@
+<html>
+    <head>
+        <meta http-equiv="Context-Type" context="text/html" charset="utf-8" />
+        <title>HTML5試験</title>
+        <style type="text/css">
+            table {
+                border-collapse: collapse;
+            }
+            td {
+                border: solid 1px #aaaaff;
+                padding: 0px;
+                vertivat-align: middle;
+                text-align: center;
+                width: 24px;
+                height: 24px;
+            }
+            td.N {
+                background-color: #eeeeee;
+            }
+            td#C32 {
+                width: 72px;
+                height: 24px;
+            }
+        </style>
+    </head>
+    <body>
+
+        <table>
+            <tr>
+                <td id="C90">Z</td>
+                <td id="C88">X</td>
+                <td id="C67">C</td>
+            </tr>
+            <tr>
+                <td class="N"></td>
+                <td id="C38">↑</td>
+                <td class="N"></td>
+            </tr>
+            <tr>
+                <td id="C37">←</td>
+                <td class="N"></td>
+                <td id="C39">→</td>
+            </tr>
+            <tr>
+                <td class="N"></td>
+                <td id="C40">↓</td>
+                <td class="N"></td>
+            </tr>
+            <tr>
+                <td id="C32" colspan="3">space</td>
+            </tr>
+        </table>
+        <div id="debug"></div>
+
+        <script type="text/javascript" src="../library/jquery-1.8.0.min.js"></script>
+        <script type="text/javascript">
+            window.onload = function(){
+                $(document).keydown(function(e){
+                    //document.getElementById('debug').innerHTML = e.keyCode;
+                    switch(e.keyCode){
+                        case 38:
+                        case 39:
+                        case 40:
+                        case 37:
+                        case 90:
+                        case 88:
+                        case 67:
+                        case 32:
+                            $('#C' + e.keyCode).css('background-color', '#ffaaaa');
+                            break;
+                    }
+                });
+                /*document.onkeydown = function(e){
+                    //document.getElementById('debug').innerHTML = e.keyCode;
+                    switch(e.keyCode){
+                        case 38:
+                        case 39:
+                        case 40:
+                        case 37:
+                        case 90:
+                        case 88:
+                        case 67:
+                        case 32:
+                            $('#C' + e.keyCode).css('background-color', '#ffaaaa');
+                            break;
+                    }
+                };*/
+                $(document).keyup(function(e){
+                    //document.getElementById('debug').innerHTML = '';
+                    switch(e.keyCode){
+                        case 38:
+                        case 39:
+                        case 40:
+                        case 37:
+                        case 90:
+                        case 88:
+                        case 67:
+                        case 32:
+                            $('#C' + e.keyCode).css('background-color', '#ffffff');
+                            break;
+                    }
+                });
+            };
+        </script>
+    </body>
+</html>

@@ -1,0 +1,168 @@
+<html>
+    <head>
+        <style type="text/css">
+            table#hune {
+                border-collapse: collapse;
+            }
+            table#hune th,
+            table#hune td {
+                border: solid 1px #000000;
+                font-size: 12px;
+            }
+            table#hune th {
+                background-color: #eeccff;
+                font-weight: normal;
+            }
+            div#source {
+                margin: 10px 0px;
+            }
+            div#source pre {
+                padding: 5px;
+                border: solid 1px #888888;
+                background-color: #cccccc;
+                font-size: 12px;
+            }
+            div#kaisetsu {
+                margin-left: 5px;
+                padding: 5px;
+                border: solid 1px #888888;
+                background-color: #cccccc;
+                font-size: 12px;
+            }
+        </style>
+    </head>
+    <body>
+        <table>
+            <tr>
+                <td colspan="2">
+                    <div id="source">
+                        <pre>
+// 船概要
+var 船 = function(){};
+船.prototype = {
+    名前: 'ニャー号',
+    船長: {
+        名前: 'ルドルフ',
+        年齢: 36
+    }
+};
+
+// 3隻の船が就航(船長は名目上すべてルドルフ氏)
+var 船1号 = new 船();
+var 船2号 = new 船();
+var 船3号 = new 船();
+
+// 船名はそれぞれオリジナルに
+船1号.名前 = 'ニャゴロー1号';
+船2号.名前 = 'ニャゴロー2号';
+船3号.名前 = 'ニャゴロー3号';
+
+// 船2号の船長(ルドルフ氏)が年齢詐称
+船2号.船長.年齢 = 25;
+
+// 船3号の船長がアリス女史に
+船3号.船長 = {
+    名前: '沢山アリス',
+    年齢: 18
+};
+                        </pre>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <table id="hune">
+                        <tr><th colspan="3">船1号</th></tr>
+                        <tr><th>船名</th><td id="H1N" colspan="2"></td></tr>
+                        <tr><th>船長</th><td id="H1CN"></td><td id="H1CA"></td></tr>
+
+                        <tr><th colspan="3">船2号</th></tr>
+                        <tr><th>船名</th><td id="H2N" colspan="2"></td></tr>
+                        <tr><th>船長</th><td id="H2CN"></td><td id="H2CA"></td></tr>
+
+                        <tr><th colspan="3">船3号</th></tr>
+                        <tr><th>船名</th><td id="H3N" colspan="2"></td></tr>
+                        <tr><th>船長</th><td id="H3CN"></td><td id="H3CA"></td></tr>
+                    </table>
+                </td>
+                <td>
+                    <div id="kaisetsu">
+                        <ul>
+                            <li><a href="http://d.hatena.ne.jp/yupug/20070413/1176472206">参考資料1</a></li>
+                            <li><a href="http://d.hatena.ne.jp/amachang/20070413/1176421425">参考資料2</a></li>
+                            <li>
+                                prototypeはクラスでないので、定義したプロパティは既に実体化している。
+                                <ul>
+                                    <li>
+                                        ので、「船の船長」は、入れ物である役職ではなく、「ルドルフ氏」という人格であった。
+                                        <ul>
+                                            <li>
+                                                そのため、「船1号の船長」と「船2号の船長」は同一人物なので、一方の年齢を詐称すると左の通り。
+                                            </li>
+                                            <li>
+                                                が、「船3号」ではルドルフ氏が更迭されたため、「船長の年齢」は後任のアリス女史の年齢に等しい。
+                                            </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <div>
+                            ～JavaScript版ユークリッド定理～<br />
+                            (オブジェクトA) = (オブジェクトB)とした際、<br />
+                            一方のプロパティを変更すると双方が連動するが、<br />
+                            (オブジェクトB)自体を(オブジェクトC)に変更すると、<br />
+                            (オブジェクトA)は(オブジェクトC)にはならず、関係も断ち切れる。<br />
+                            <br />
+                            要は、「『参照渡し』とは、変数自体でなく変数以下全てのプロパティを連動させる挙動である」と考えて差し支えないんではないかと思われます。<br />
+                            (そうすると、論理型や数値型は値渡しというようなことを考える必要がなくなる。)
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <script type="text/javascript">
+            // 船概要
+            var 船 = function(){};
+            船.prototype = {
+                名前: 'ニャー号',
+                船長: {
+                    名前: 'ルドルフ',
+                    年齢: 36
+                }
+            };
+
+            // 3隻の船が就航(船長は名目上すべてルドルフ氏)
+            var 船1号 = new 船();
+            var 船2号 = new 船();
+            var 船3号 = new 船();
+
+            // 船名はそれぞれオリジナルに
+            船1号.名前 = 'ニャゴロー1号';
+            船2号.名前 = 'ニャゴロー2号';
+            船3号.名前 = 'ニャゴロー3号';
+
+            // 船2号の船長(ルドルフ氏)が年齢詐称
+            船2号.船長.年齢 = 25;
+
+            // 船3号の船長がアリス女史に
+            船3号.船長 = {
+                名前: '沢山アリス',
+                年齢: 18
+            };
+
+            document.getElementById('H1N').innerHTML    = 船1号.名前;
+            document.getElementById('H1CN').innerHTML   = 船1号.船長.名前;
+            document.getElementById('H1CA').innerHTML   = 船1号.船長.年齢 + '歳';
+
+            document.getElementById('H2N').innerHTML    = 船2号.名前;
+            document.getElementById('H2CN').innerHTML   = 船2号.船長.名前;
+            document.getElementById('H2CA').innerHTML   = 船2号.船長.年齢 + '歳';
+
+            document.getElementById('H3N').innerHTML    = 船3号.名前;
+            document.getElementById('H3CN').innerHTML   = 船3号.船長.名前;
+            document.getElementById('H3CA').innerHTML   = 船3号.船長.年齢 + '歳';
+        </script>
+    </body>
+</html>
