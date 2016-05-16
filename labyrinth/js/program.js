@@ -70,6 +70,8 @@ Labylinth.prototype = {
     build: function()
     {
         if (this._build_phase == 2) {
+            this.progress.built = true;
+
             return;
         }
 
@@ -173,16 +175,16 @@ Labylinth.prototype = {
             case 'T':
             case 'B':
                 this._build_piller = {
-                    X: pillers_side[pillers_side_pointer],
-                    Y: pillers_side_pointer
+                    X: parseInt(pillers_side[pillers_side_pointer]),
+                    Y: parseInt(pillers_side_pointer)
                 };
                 break;
 
             case 'R':
             case 'L':
                 this._build_piller = {
-                    X: pillers_side_pointer,
-                    Y: pillers_side[pillers_side_pointer]
+                    X: parseInt(pillers_side_pointer),
+                    Y: parseInt(pillers_side[pillers_side_pointer])
                 };
                 break;
         }

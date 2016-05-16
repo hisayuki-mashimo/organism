@@ -37,8 +37,7 @@
     <script type="text/javascript">
         var operator = new Labylinth();
 
-        var animation        = null;
-        var animation_status = 0;
+        var animation_status = 1;
 
         var flame_node    = document.getElementById('flame');
         var flame_context = flame_node.getContext('2d');
@@ -52,20 +51,18 @@
         var params = {size: {X: 30, Y: 30}};
 
         var makeLabyrinth = function(){
-            animation = setInterval(function(){
-                operator.build();
+            operator.build();
 
-                maze_context.setTransform(1, 0, 0, 1, pos_side_X, pos_side_Y);
-                maze_context.beginPath();
-                maze_context.moveTo((operator.progress.from.X * 10), (operator.progress.from.Y * 10));
-                maze_context.lineTo((operator.progress.to.X   * 10), (operator.progress.to.Y   * 10));
-                maze_context.closePath();
-                maze_context.stroke();
+            maze_context.setTransform(1, 0, 0, 1, pos_side_X, pos_side_Y);
+            maze_context.beginPath();
+            maze_context.moveTo((operator.progress.from.X * 10), (operator.progress.from.Y * 10));
+            maze_context.lineTo((operator.progress.to.X   * 10), (operator.progress.to.Y   * 10));
+            maze_context.closePath();
+            maze_context.stroke();
 
-                if (operator.progress.built) {
-                    clearInterval(animation);
-                }
-            }, 10);
+            if (! operator.progress.built && (animation_status == 1)) {
+                setTimeout(makeLabyrinth, 10);
+            };
         };
 
         window.onload = function(){
@@ -122,7 +119,6 @@
                     case 1:
                         animation_status = 0;
                         document.operator.switch.value = '再開';
-                        clearInterval(animation);
                         break;
                 }
 
