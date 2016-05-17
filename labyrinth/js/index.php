@@ -40,8 +40,8 @@
             <fieldset>
                 <legend>迷路の規模</legend>
 
-                縦<input type="text" name="X" size="3" maxlength="3" value="20" />&nbsp;
-                横<input type="text" name="Y" size="3" maxlength="3" value="20" />
+                縦<input type="text" name="X" size="3" maxlength="3" value="30" />&nbsp;
+                横<input type="text" name="Y" size="3" maxlength="3" value="30" />
 
                 <input type="button" name="make"   value="作成" />&nbsp;
                 <input type="button" name="switch" value="停止" />&nbsp;
@@ -82,7 +82,7 @@
         var pos_side_Y = 0.5;
 
         var params = {
-            size:  {X: 30, Y: 30},
+            size:  {X: 10, Y: 10},
             solve: {
                 start_X: Math.floor(Math.random() * 10),
                 start_Y: Math.floor(Math.random() * 10),
@@ -193,41 +193,46 @@
         };
 
         window.onload = function(){
-            canvas_R_node.setAttribute('width',  ((params.size.X * 10) + 1));
-            canvas_R_node.setAttribute('height', ((params.size.Y * 10) + 1));
-            canvas_S_node.setAttribute('width',  ((params.size.X * 10) + 1));
-            canvas_S_node.setAttribute('height', ((params.size.Y * 10) + 1));
-            canvas_M_node.setAttribute('width',  ((params.size.X * 10) + 1));
-            canvas_M_node.setAttribute('height', ((params.size.Y * 10) + 1));
-            canvas_F_node.setAttribute('width',  ((params.size.X * 10) + 1));
-            canvas_F_node.setAttribute('height', ((params.size.Y * 10) + 1));
+            var init = function(){
+                params.size.X = parseInt(document.operator.X.value);
+                params.size.Y = parseInt(document.operator.Y.value);
 
-            canvas_R_context.strokeStyle = 'rgb(236, 240, 255)';
-            canvas_S_context.fillStyle   = 'rgb( 64, 255, 128)';
-            canvas_M_context.strokeStyle = 'rgb(255,   0, 128)';
-            canvas_F_context.strokeStyle = 'rgb(  0, 128, 255)';
+                canvas_R_node.setAttribute('width',  ((params.size.X * 10) + 1));
+                canvas_R_node.setAttribute('height', ((params.size.Y * 10) + 1));
+                canvas_S_node.setAttribute('width',  ((params.size.X * 10) + 1));
+                canvas_S_node.setAttribute('height', ((params.size.Y * 10) + 1));
+                canvas_M_node.setAttribute('width',  ((params.size.X * 10) + 1));
+                canvas_M_node.setAttribute('height', ((params.size.Y * 10) + 1));
+                canvas_F_node.setAttribute('width',  ((params.size.X * 10) + 1));
+                canvas_F_node.setAttribute('height', ((params.size.Y * 10) + 1));
 
-            /*
-            for (var X = 1; X < params.size.X; X ++) {
-                canvas_R_context.beginPath();
-                canvas_R_context.moveTo(pos_side_X + (X * 10), pos_side_Y);
-                canvas_R_context.lineTo(pos_side_X + (X * 10), pos_side_Y + (params.size.Y * 10));
-                canvas_R_context.stroke();
-                canvas_R_context.closePath();
-            }
+                canvas_R_context.strokeStyle = 'rgb(236, 240, 255)';
+                canvas_S_context.fillStyle   = 'rgb( 64, 255, 128)';
+                canvas_M_context.strokeStyle = 'rgb(255,   0, 128)';
+                canvas_F_context.strokeStyle = 'rgb(  0, 128, 255)';
 
-            for (var Y = 1; Y < params.size.Y; Y ++) {
-                canvas_R_context.beginPath();
-                canvas_R_context.moveTo(pos_side_X,                        pos_side_Y + (Y * 10));
-                canvas_R_context.lineTo(pos_side_X + (params.size.X * 10), pos_side_Y + (Y * 10));
-                canvas_R_context.stroke();
-                canvas_R_context.closePath();
-            }
-            */
+                for (var X = 1; X < params.size.X; X ++) {
+                    canvas_R_context.beginPath();
+                    canvas_R_context.moveTo(pos_side_X + (X * 10), pos_side_Y);
+                    canvas_R_context.lineTo(pos_side_X + (X * 10), pos_side_Y + (params.size.Y * 10));
+                    canvas_R_context.stroke();
+                    canvas_R_context.closePath();
+                }
 
-            canvas_F_context.strokeRect(pos_side_X, pos_side_X, params.size.X * 10, params.size.Y * 10);
+                for (var Y = 1; Y < params.size.Y; Y ++) {
+                    canvas_R_context.beginPath();
+                    canvas_R_context.moveTo(pos_side_X,                        pos_side_Y + (Y * 10));
+                    canvas_R_context.lineTo(pos_side_X + (params.size.X * 10), pos_side_Y + (Y * 10));
+                    canvas_R_context.stroke();
+                    canvas_R_context.closePath();
+                }
+
+                canvas_F_context.strokeRect(pos_side_X, pos_side_X, params.size.X * 10, params.size.Y * 10);
+            };
 
             document.operator.make.onclick = function(){
+                init();
+
                 operator.init(params);
                 operator.prepare();
 
