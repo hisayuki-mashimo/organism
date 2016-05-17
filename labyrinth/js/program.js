@@ -19,6 +19,9 @@ Labylinth.prototype = {
     _build_pillers:       {},
     _build_piller_params: {},
 
+    _solve_piller_params: {},
+    _solve_chain:         [],
+
     _direction_id: {
         T: 1,
         R: 2,
@@ -29,7 +32,23 @@ Labylinth.prototype = {
     // 外部参照関数
     init: function(params)
     {
-        if (params.size !== undefined) this.size = params.size;
+        if (params.size  !== undefined) this.size = params.size;
+
+        if (params.solve !== undefined) {
+            this._solve_piller_params = {
+                start_X: params.solve.start_X,
+                start_Y: params.solve.start_Y,
+                end_X:   params.solve.end_X,
+                end_Y:   params.solve.end_Y
+            };
+        } else {
+            this._solve_piller_params = {
+                start_X: 0,
+                start_Y: 0,
+                end_X:   params.size.X - 1,
+                end_Y:   params.size.Y - 1
+            };
+        }
 
         this.progress.extended = false;
         this.progress.built    = false;
@@ -44,6 +63,8 @@ Labylinth.prototype = {
         this._build_piller_params.R = {};
         this._build_piller_params.B = {};
         this._build_piller_params.L = {};
+
+        this._solve_chain = [];
     },
 
     prepare: function()
@@ -92,6 +113,133 @@ Labylinth.prototype = {
                 this.progress.extended = false;
             }
         }
+    },
+
+    solve: function()
+    {
+        if (! this.progress.solve) {
+            this.progress.solve = {
+                coordinate: {
+                    X: this._solve_piller_params.start_X,
+                    Y: this._solve_piller_params.start_Y,
+                    D: 'T'
+                }
+            };
+
+            this._solve_chain.push({
+                X: this._solve_piller_params.start_X,
+                Y: this._solve_piller_params.start_Y
+            });
+        }
+
+        var ego_direction_left = this._getEgoDirections(this.progress.solve.coordinate.D, 'L');
+        var ego_directions     = this._getEgoDirections(ego_direction_left);
+        var ego_direction_keys = Object.keys(ego_directions);
+
+        for (var pointer = 0; pointer < ego_direction_keys.length; pointer ++) {
+            var next_direction  = ego_directions[ego_direction_keys[pointer]];
+            var next_coordinate = this._slide(this.progress.solve.coordinate.X, this.progress.solve.coordinate.Y, next_direction);
+
+            if (next_coordinate.X >= this.size.X) continue;
+            if (next_coordinate.Y >= this.size.Y) continue;
+
+            var next_piller = this._getPiller(next_coordinate.X, next_coordinate.Y);
+
+            if (next_piller === null) continue;
+            var judge = true;
+
+            switch (next_direction) {
+                case 'T':
+                    var target_piller = this._getPiller(this.progress.solve.coordinate.X, this.progress.solve.coordinate.Y);
+                    if (target_piller & this._direction_id['R']) judge = false;
+                    break;
+
+                case 'R':
+                    var target_coordinate = this._slide(this.progress.solve.coordinate.X, this.progress.solve.coordinate.Y, next_direction);
+                    var target_piller = this._getPiller(target_coordinate.X, target_coordinate.Y);
+                    if (target_piller & this._direction_id['B']) judge = false;
+                    break;
+
+                case 'B':
+                    var target_coordinate = this._slide(this.progress.solve.coordinate.X, this.progress.solve.coordinate.Y, next_direction);
+                    var target_piller = this._getPiller(target_coordinate.X, target_coordinate.Y);
+                    if (target_piller & this._direction_id['R']) judge = false;
+                    break;
+
+                case 'L':
+                    var target_piller = this._getPiller(this.progress.solve.coordinate.X, this.progress.solve.coordinate.Y);
+                    if (target_piller & this._direction_id['B']) judge = false;
+                    break;
+            }
+
+            if (! judge) continue;
+
+            this.progress.solve.coordinate = {
+                X: next_coordinate.X,
+                Y: next_coordinate.Y,
+                D: next_direction
+            };
+
+            if ((next_coordinate.X == this._solve_piller_params.end_X) && (next_coordinate.Y == this._solve_piller_params.end_Y)) {
+                this.progress.solved = true;
+
+                this.progress.solve.elase_coordinate = null;
+
+                this._solve_chain.splice(0, 1);
+
+                return;
+            }
+
+            switch (true) {
+                case (this._solve_chain.length <= 1):
+                case (this._solve_chain[this._solve_chain.length - 2].X != next_coordinate.X):
+                case (this._solve_chain[this._solve_chain.length - 2].Y != next_coordinate.Y):
+                    this.progress.solve.elase_coordinate = null;
+
+                    this._solve_chain.push({X: next_coordinate.X, Y: next_coordinate.Y});
+                    break;
+
+                default:
+                    this.progress.solve.elase_coordinate = {
+                        X: this._solve_chain[this._solve_chain.length - 1].X,
+                        Y: this._solve_chain[this._solve_chain.length - 1].Y
+                    };
+
+                    this._solve_chain.splice((this._solve_chain.length - 1), 1);
+                    break;
+            }
+
+            break;
+        }
+    },
+
+    export: function()
+    {
+        var pillers = [];
+
+        for (var X = 0; X <= ((this.size.X * 2) - 2); X ++) {
+            pillers[X] = [];
+
+            for (var Y = 0; Y <= ((this.size.Y * 2) - 2); Y ++) {
+                pillers[X][Y] = ((X % 2) && (Y % 2)) ? 0 : 1;
+            }
+        }
+
+        for (var X = 0; X < this.size.X; X ++) {
+            for (var Y = 0; Y < this.size.Y; Y ++) {
+                var piller = this._getPiller(X, Y);
+
+                if (piller & this._direction_id.R) {
+                    pillers[(X * 2)][(Y * 2) - 1] = 0;
+                }
+
+                if (piller & this._direction_id.B) {
+                    pillers[(X * 2) - 1][(Y * 2)] = 0;
+                }
+            }
+        }
+
+        return pillers;
     },
 
     // 内部参照関数
