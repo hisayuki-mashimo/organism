@@ -1,3 +1,8 @@
+/**
+ * 迷路生成機能
+ *
+ * @return Object
+ */
 var Labylinth = function(params){
     if (params !== undefined) {
         this.init(params);
@@ -5,17 +10,39 @@ var Labylinth = function(params){
 };
 
 Labylinth.prototype = {
-    // 外部参照変数
+    // 外部参照変数 ----------------------------------------------------------------------------------------------------
+
+    /**
+     * サイズ
+     *
+     * var Object
+     */
     size: {},
 
+    /**
+     * 進捗情報
+     *
+     * @var Object
+     */
     progress: {},
 
-    // 内部管理変数
-    _pillers:       {},
+    // 内部管理変数 ----------------------------------------------------------------------------------------------------
+
+    /**
+     * 支柱情報
+     *
+     * @var Object
+     */
+    _pillers: {},
+
+    /**
+     * 未定義支柱情報
+     *
+     * @var Object
+     */
     _pillers_blank: {},
 
-    _build_phase:             0,
-    _build_coordinate:        {},
+    _build_coordinate:        null,
     _build_coordinates:       {},
     _build_coordinate_params: {},
 
@@ -29,7 +56,14 @@ Labylinth.prototype = {
         L: 8
     },
 
-    // 外部参照関数
+    // 外部参照関数 ----------------------------------------------------------------------------------------------------
+
+    /**
+     * 初期化
+     *
+     * @param  Object
+     * @return void
+     */
     init: function(params)
     {
         if (params.size  !== undefined) this.size = params.size;
@@ -56,8 +90,7 @@ Labylinth.prototype = {
         this._pillers       = {};
         this._pillers_blank = {};
 
-        this._build_phase               = 0;
-        this._build_coordinate          = {};
+        this._build_coordinate          = null;
         this._build_coordinates         = {};
         this._build_coordinate_params.T = {};
         this._build_coordinate_params.R = {};
@@ -65,10 +98,7 @@ Labylinth.prototype = {
         this._build_coordinate_params.L = {};
 
         this._solve_chain = [];
-    },
 
-    prepare: function()
-    {
         Array.apply(this, Array(this.size.X + 1)).forEach(function(value_X, X){
             Array.apply(this, Array(this.size.Y + 1)).forEach(function(value_Y, Y){
                 this._pillers[X + '.' + Y] = 0;
@@ -88,38 +118,54 @@ Labylinth.prototype = {
         }, this);
     },
 
-    build: function()
+    /**
+     * 構築
+     *
+     * @return void
+     */
+    buildProgress: function()
     {
-        if (this._build_phase == 2) {
-            this.progress.built = true;
-
-            return;
-        }
-
-        if (this._build_phase == 0) {
+        if (! this._build_coordinate) {
             this._specifyBuildPiller();
-
-            this._build_phase = 1;
         }
 
         this._extendPiller();
 
         if (this.progress.extended) {
             if (! Object.keys(this._pillers_blank).length) {
-                this._build_phase = 2;
+                this.progress.built = true;
             } else {
-                this._build_phase = 0;
+                this._build_coordinate = null;
 
                 this.progress.extended = false;
             }
         }
     },
 
-    solve: function()
+    /**
+     * 構築
+     *
+     * @return void
+     */
+    build: function()
+    {
+        this.buildProgress();
+
+        if (! this.progress.built) {
+            this.build();
+        }
+    },
+
+    /**
+     * 解析
+     *
+     * @return void
+     */
+    solveProgress: function()
     {
         if (this.progress.solve) {
              var pres_coordinate = this.progress.solve.coordinate;
-             var pres_direction  = this._getEgoDirections(this.progress.solve.coordinate.D, 'L');
+             var pres_direction  = this._getEgoDirections(this.progress.solve.coordinate.D).L;
         } else {
             var pres_coordinate = {
                 X: this._solve_piller_params.start_X,
@@ -212,6 +258,25 @@ Labylinth.prototype = {
         }, this);
     },
 
+    /**
+     * 解析
+     *
+     * @return void
+     */
+    solve: function()
+    {
+        this.solveProgress();
+
+        if (! this.progress.solved) {
+            this.solve();
+        }
+    },
+
+    /**
+     * 出力
+     *
+     * @return Array
+     */
     export: function()
     {
         var pillers = [];
@@ -236,7 +301,13 @@ Labylinth.prototype = {
         return pillers;
     },
 
-    // 内部参照関数
+    // 内部参照関数(実行系) ----------------------------------------------------------------------------------------------------
+
+    /**
+     * 起点支柱の抽出
+     *
+     * @return void
+     */
     _specifyBuildPiller: function()
     {
         var pillers_blank_pointers = Object.keys(this._pillers_blank);
@@ -254,6 +325,11 @@ Labylinth.prototype = {
         this._build_coordinate_params.L[this._build_coordinate.X] = this._build_coordinate.Y;
     },
 
+    /**
+     * 支柱からの壁の延長
+     *
+     * @return void
+     */
     _extendPiller: function()
     {
         var pres_coordinate = this._build_coordinate;
@@ -294,7 +370,7 @@ Labylinth.prototype = {
                     break;
             }
 
-            this._pillers[next_coordinate.X + '.' + next_coordinate.Y] += this._direction_id[this._getEgoDirections(next_direction, 'B')];
+            this._pillers[next_coordinate.X + '.' + next_coordinate.Y] += this._direction_id[this._getEgoDirections(next_direction).B];
             this._pillers[pres_coordinate.X + '.' + pres_coordinate.Y] += this._direction_id[next_direction];
 
             delete this._pillers_blank[next_coordinate.X + '.' + next_coordinate.Y];
@@ -332,11 +408,26 @@ Labylinth.prototype = {
         this._build_coordinate = {X: X, Y: Y};
     },
 
+    // 内部参照関数(参照系) ----------------------------------------------------------------------------------------------------
+
+    /**
+     * 支柱の返却
+     *
+     * @return Object
+     */
     _getPiller: function(X, Y)
     {
         return (this._pillers[X + '.' + Y] !== undefined) ? this._pillers[X + '.' + Y] : null;
     },
 
+    /**
+     * 指定方向への移動先座標の返却
+     *
+     * @param  Number X         X座標
+     * @param  Number Y         Y座標
+     * @param  String direction 方向
+     * @return Object
+     */
     _slide: function(X, Y, direction)
     {
         switch (direction) {
@@ -347,6 +438,13 @@ Labylinth.prototype = {
         }
     },
 
+    /**
+     * 方向群の返却
+     *
+     * @param  Array  exclude_directions 除外する方向
+     * @param  bool   do_shuffle         ランダムソート指示
+     * @return Object
+     */
     _getDirections: function(exclude_directions, do_shuffle)
     {
         var directions = ['T', 'R', 'B', 'L'];
@@ -356,6 +454,8 @@ Labylinth.prototype = {
                 directions.forEach(function(direction, pointer){
                     if (exclude_direction === direction) {
                         directions.splice(pointer, 1);
+
+                        return;
                     }
                 });
             });
@@ -377,15 +477,19 @@ Labylinth.prototype = {
         return directions;
     },
 
-    _getEgoDirections: function(direction, relative_direction)
+    /**
+     * 指定方向に対する相対方向群の返却
+     *
+     * @param  String direction 方向
+     * @return Object
+     */
+    _getEgoDirections: function(direction)
     {
         switch (direction) {
-            case 'T': var directions = {'T': 'T', 'R': 'R', 'B': 'B', 'L': 'L'}; break;
-            case 'R': var directions = {'T': 'R', 'R': 'B', 'B': 'L', 'L': 'T'}; break;
-            case 'B': var directions = {'T': 'B', 'R': 'L', 'B': 'T', 'L': 'R'}; break;
-            case 'L': var directions = {'T': 'L', 'R': 'T', 'B': 'R', 'L': 'B'}; break;
+            case 'T': return {T: 'T', R: 'R', B: 'B', L: 'L'};
+            case 'R': return {T: 'R', R: 'B', B: 'L', L: 'T'};
+            case 'B': return {T: 'B', R: 'L', B: 'T', L: 'R'};
+            case 'L': return {T: 'L', R: 'T', B: 'R', L: 'B'};
         }
-
-        return relative_direction ? directions[relative_direction] : directions;
     }
 };
