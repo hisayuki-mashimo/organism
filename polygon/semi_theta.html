@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Context-Type" context="text/html" charset="utf-8" />
+        <title>HTML5試験</title>
+    </head>
+
+    <body>
+        <div id="FR01"></div>
+        <script type="text/javascript" src="../library/jquery-1.8.0.min.js"></script>
+        <script type="text/javascript" src="../library/debug.js"></script>
+        <script type="text/javascript" src="library/geometry_calculator.js"></script>
+        <script type="text/javascript" src="model/polyhedron_basis_theta.js"></script>
+        <script type="text/javascript" src="model/snub_cube_theta.js"></script>
+        <script type="text/javascript">
+            window.onload = function () {
+                var frame_node01 = document.getElementById('FR01');
+                var params01 = { alpha: 50, size: 200, fill_style: 'rgba(255, 255, 255, 0.8)', stroke_style: 'rgba(224, 224, 224, 1.0)' };
+
+                var Operater = new Polyhedron_Basis_Theta({ geometry_calculator: geometry_calculator });
+                var SnubCubeObject = Operater.summons('Snub_Cube_Theta', frame_node01, params01);
+
+                var animation = null;
+
+                var theta_R = 0;
+                var theta_V = 0;
+                var theta_L = 0;
+
+                var animate = function () {
+                    SnubCubeObject.setDirection(theta_R, theta_V, theta_L);
+                    SnubCubeObject.output();
+
+                    theta_R += 0.015;
+                    theta_V += 0.025;
+                    theta_L += 0.035;
+                };
+
+                document.onkeydown = function (event) {
+                    switch (event.keyCode) {
+                        case 13:
+                            if (animation) {
+                                clearInterval(animation);
+                                animation = null;
+                            } else {
+                                animation = setInterval(animate, 50);
+                            }
+                            break;
+                    }
+                };
+
+                animate();
+            };
+        </script>
+    </body>
+</html>

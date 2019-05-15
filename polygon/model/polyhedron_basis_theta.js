@@ -3,8 +3,7 @@
  *
  * @param   object  params
  */
-var Polyhedron_Basis_Theta = function(params)
-{
+var Polyhedron_Basis_Theta = function (params) {
     // プロパティ定義
     for (var i in params) {
         if (this[i] !== undefined) {
@@ -25,37 +24,37 @@ Polyhedron_Basis_Theta.prototype = {
      */
     property: {
         // 依存モデル
-        basis:              null,
+        basis: null,
 
         // HTMLデータ
-        frame_node:         null,
-        canvas_node:        null,
-        canvas_context:     null,
+        frame_node: null,
+        canvas_node: null,
+        canvas_context: null,
 
 
         // 外部設定値
-        alpha:              20,
-        size:               100,
-        fill_style:         null,
-        stroke_style:       null,
+        alpha: 20,
+        size: 100,
+        fill_style: null,
+        stroke_style: null,
 
 
         // 内部設定値
-        _center:            null,
+        _center: null,
 
 
         // メソッド共有変数
-        reles:              null,
-        moment_poses:       null,
-        surfaces:           null,
-        moment_surfaces:    null,
+        reles: null,
+        moment_poses: null,
+        surfaces: null,
+        moment_surfaces: null,
     },
 
 
     /**
      * 依存ライブラリ
      */
-    geometry_calculator:    null,
+    geometry_calculator: null,
 
 
     /**
@@ -65,8 +64,7 @@ Polyhedron_Basis_Theta.prototype = {
      * @param   string  frame_node
      * @param   object  params
      */
-    summons: function(embody_key, frame_node, params)
-    {
+    summons: function (embody_key, frame_node, params) {
         try {
             // 実体化
             eval('var embody = new ' + embody_key + '();');
@@ -87,20 +85,20 @@ Polyhedron_Basis_Theta.prototype = {
             }
 
             // 内部変数の初期化
-            embody._center      = embody.size / 2 + 0.5;
-            embody.reles        = {};
+            embody._center = embody.size / 2 + 0.5;
+            embody.reles = {};
             embody.moment_poses = {};
 
             // HTMLデータの初期化
             if (frame_node === undefined) {
                 throw 'Undefined param(frame).';
             }
-            embody.frame_node       = frame_node;
-            embody.canvas_node      = document.createElement('canvas');
-            embody.canvas_context   = embody.canvas_node.getContext('2d');
-            $(embody.canvas_node).attr('width',   (embody._center * 2) + 'px');
-            $(embody.canvas_node).attr('height',  (embody._center * 2) + 'px');
-            $(embody.canvas_node).css('position',   'absolute');
+            embody.frame_node = frame_node;
+            embody.canvas_node = document.createElement('canvas');
+            embody.canvas_context = embody.canvas_node.getContext('2d');
+            $(embody.canvas_node).attr('width', (embody._center * 2) + 'px');
+            $(embody.canvas_node).attr('height', (embody._center * 2) + 'px');
+            $(embody.canvas_node).css('position', 'absolute');
             embody.frame_node.appendChild(embody.canvas_node);
 
             // 共通メソッド定義
@@ -108,17 +106,17 @@ Polyhedron_Basis_Theta.prototype = {
             if (embody.configure === undefined) {
                 throw 'Undefined method(configure()).';
             }
-            embody.setDirection = function(rotate_theta, vector_theta, length_theta){
+            embody.setDirection = function (rotate_theta, vector_theta, length_theta) {
                 ref.setDirection(this, rotate_theta, vector_theta, length_theta);
             };
-            embody.output = function(){
+            embody.output = function () {
                 ref.output(this);
             };
 
             // 実体初期化
             embody.configure();
         } catch (e) {
-            alert(e);
+            console.warn(e);
         }
 
         return embody;
@@ -133,9 +131,8 @@ Polyhedron_Basis_Theta.prototype = {
      * @param   float   vector_theta
      * @param   float   length_theta
      */
-    setDirection: function(embody, rotate_theta, vector_theta, length_theta)
-    {
-        var getLengthByPytha   = this.geometry_calculator.getLengthByPytha;
+    setDirection: function (embody, rotate_theta, vector_theta, length_theta) {
+        var getLengthByPytha = this.geometry_calculator.getLengthByPytha;
         var getLengthesByTheta = this.geometry_calculator.getLengthesByTheta;
         var getThetaByLengthes = this.geometry_calculator.getThetaByLengthes;
 
@@ -147,7 +144,7 @@ Polyhedron_Basis_Theta.prototype = {
             var poses = new Array();
             var z_index = 0;
 
-            for (var j = 0; j < embody.surfaces[i].length; j ++) {
+            for (var j = 0; j < embody.surfaces[i].length; j++) {
                 var pos_code = embody.surfaces[i][j];
 
                 var LS0 = getLengthesByTheta('Z', embody.reles[pos_code].X);
@@ -175,16 +172,16 @@ Polyhedron_Basis_Theta.prototype = {
                 var Y = LY3 * embody.reles[pos_code].R;
                 var Z = LZ2 * embody.reles[pos_code].R;
 
-                embody.moment_poses[pos_code] = {X: X, Y: Y, Z: Z};
+                embody.moment_poses[pos_code] = { X: X, Y: Y, Z: Z };
 
                 z_index += Z;
             }
 
             z_index = z_index / embody.surfaces[i].length;
-            embody.moment_surfaces.push({code: i, z_index: z_index});
+            embody.moment_surfaces.push({ code: i, z_index: z_index });
         }
 
-        embody.moment_surfaces.sort(function(A, B){return A.z_index - B.z_index;});
+        embody.moment_surfaces.sort(function (A, B) { return A.z_index - B.z_index; });
     },
 
 
@@ -193,17 +190,16 @@ Polyhedron_Basis_Theta.prototype = {
      *
      * @param   object  embody
      */
-    output: function(embody)
-    {
+    output: function (embody) {
         embody.canvas_context.setTransform(1, 0, 0, 1, 0, 0);
         embody.canvas_context.clearRect(0, 0, embody.size, embody.size);
 
-        for (var i = 0; i < embody.moment_surfaces.length; i ++) {
+        for (var i = 0; i < embody.moment_surfaces.length; i++) {
             embody.canvas_context.beginPath();
 
             var surface = embody.surfaces[embody.moment_surfaces[i].code];
 
-            for (var j = 0; j < surface.length; j ++) {
+            for (var j = 0; j < surface.length; j++) {
                 var pos = embody.moment_poses[surface[j]];
                 if (j == 0) {
                     embody.canvas_context.moveTo(embody._center + pos.X, embody._center + pos.Y);
