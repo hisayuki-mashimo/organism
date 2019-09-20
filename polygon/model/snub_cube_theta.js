@@ -54,7 +54,7 @@ Snub_Cube_Theta.prototype = {
        → X = 2AAN / (AA + 1)
        → [(2AAN / (AA + 1)) , ((2AAAN / (AA + 1)) - AN)]
         */
-        var LX_A00 = this.alpha;
+        var LX_A00 = 1;
         var LX_A01 = Math.pow(Math.pow(1188, 1 / 2) + 38, 1 / 3);
         var LX_A02 = Math.pow(2, 1 / 3);
         var LX_A03 = (LX_A01 / (3 * LX_A02)) + (4 * LX_A02 / (3 * LX_A01)) + (1 / 3);
@@ -82,9 +82,9 @@ Snub_Cube_Theta.prototype = {
         var LX_C03 = LX_A04 - LX_C02;
         var LX_C04 = this.basis.geometry_calculator.getLengthByPytha(null, LX_A03, LX_C03);
 
-        var LT_A00 = LX_A05 * LX_A00;
-        var LT_B00 = LX_B07 * LX_A00;
-        var LT_C00 = LX_C04 * LX_A00;
+        var LT_A00 = this.alpha;
+        var LT_B00 = this.alpha / LX_A05 * LX_B07;
+        var LT_C00 = this.alpha / LX_A05 * LX_C04;
 
         var TX_A00 = Math.asin(1 / LX_A05);
         var TX_B00 = Math.asin(LX_B00 / LX_B07);
@@ -99,7 +99,6 @@ Snub_Cube_Theta.prototype = {
             B0: { R: LT_B00, X: TX_B00, Y: TY_B00 },
             C0: { R: LT_C00, X: TX_C00, Y: TY_A00 }
         };
-        console.log(reles_base);
 
         for (var i in reles_base) {
             var base_R = reles_base[i].R;
