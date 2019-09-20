@@ -3,22 +3,41 @@
     <head>
         <meta http-equiv="Context-Type" context="text/html" charset="utf-8" />
         <title>HTML5試験</title>
+        <style type="text/css">
+            #FR {
+                display: flex;
+            }
+            #FR01, #FR02, #FR03 {
+                width: 200px;
+                height: 200px;
+            }
+        </style>
     </head>
 
     <body>
-        <div id="FR01"></div>
+        <div id="FR">
+            <div id="FR01"></div>
+            <div id="FR02"></div>
+            <div id="FR03"></div>
+        </div>
         <script type="text/javascript" src="../library/jquery-1.8.0.min.js"></script>
         <script type="text/javascript" src="../library/debug.js"></script>
         <script type="text/javascript" src="library/geometry_calculator.js"></script>
         <script type="text/javascript" src="model/polyhedron_basis_theta.js"></script>
         <script type="text/javascript" src="model/snub_cube_theta.js"></script>
+        <script type="text/javascript" src="model/icosidodecahedron_theta.js"></script>
+        <script type="text/javascript" src="model/rhombicuboctahedron_theta.js"></script>
         <script type="text/javascript">
             window.onload = function () {
                 var frame_node01 = document.getElementById('FR01');
-                var params01 = { alpha: 50, size: 200, fill_style: 'rgba(255, 255, 255, 0.8)', stroke_style: 'rgba(224, 224, 224, 1.0)' };
+                var frame_node02 = document.getElementById('FR02');
+                var frame_node03 = document.getElementById('FR03');
+                var params01 = { alpha: 50, size: 200, fill_style: 'rgba(255, 255, 255, 0.2)', stroke_style: 'rgba(224, 224, 224, 0.2)' };
 
                 var Operater = new Polyhedron_Basis_Theta({ geometry_calculator: geometry_calculator });
-                var SnubCubeObject = Operater.summons('Snub_Cube_Theta', frame_node01, params01);
+                var ModelObject01 = Operater.summons('Snub_Cube_Theta', frame_node01, params01);
+                var ModelObject02 = Operater.summons('Icosidodecahedron_Theta', frame_node02, params01);
+                var ModelObject03 = Operater.summons('Rhombicuboctahedron_Theta', frame_node03, params01);
 
                 var animation = null;
 
@@ -27,8 +46,12 @@
                 var theta_L = 0;
 
                 var animate = function () {
-                    SnubCubeObject.setDirection(theta_R, theta_V, theta_L);
-                    SnubCubeObject.output();
+                    ModelObject01.setDirection(theta_R, theta_V, theta_L);
+                    ModelObject02.setDirection(theta_R, theta_V, theta_L);
+                    ModelObject03.setDirection(theta_R, theta_V, theta_L);
+                    ModelObject01.output();
+                    ModelObject02.output();
+                    ModelObject03.output();
 
                     theta_R += 0.015;
                     theta_V += 0.025;
