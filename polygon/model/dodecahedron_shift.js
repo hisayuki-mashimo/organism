@@ -2,107 +2,84 @@
  * 正十二面体
  *
  */
-var DodecahedronShift = function()
+var Dodecahedron_Shift_Theta = function()
 {
 };
 
 
-DodecahedronShift.prototype = {
-    // 外部設定値
-    fill_style:     'rgba(120, 255, 160, 0.0)',
-    stroke_style:   'rgb(96, 192, 128)',
-
-
-
-
+Dodecahedron_Shift_Theta.prototype = {
     /**
      * 初期化
      *
      */
     configure: function()
     {
-        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
-
-        var pai         = Math.PI;
-        var theta072    = pai * 2 / 5;
-        var theta036    = pai * 2 / 10;
-        var sin072      = Math.sin(theta072);
-        var cos072      = Math.cos(theta072);
-        var sin036      = Math.sin(theta036);
-        var cos036      = Math.cos(theta036);
-
         // 五芒星比率
-        var RA00 = {
-            A: (4 * Math.pow(cos036, 2)) - 2,
+        var RA_A01 = {
+            A: (4 * Math.pow(Math.cos(Math.PI * 2 / 10), 2)) - 2,
             B: 1,
-            C: (4 * Math.pow(cos036, 2)) - 1,
-            D: (4 * Math.pow(cos036, 2))
+            C: (4 * Math.pow(Math.cos(Math.PI * 2 / 10), 2)) - 1,
+            D: (4 * Math.pow(Math.cos(Math.PI * 2 / 10), 2))
         };
 
-        // 正三角形比率
-        var RA01 = {
-            A: 1,
-            B: Math.pow(3, 1 / 2),
-            C: 2
+        var LX_A00 = this.alpha;
+        var LX_A01 = LX_A00 * (RA_A01.A / RA_A01.C);
+        var LX_A02 = LX_A00 + LX_A01;
+        var LX_A03 = LX_A02 / 2;
+        var LX_A04 = LX_A03 * (RA_A01.B / RA_A01.C);
+        var LX_A05 = LX_A01 + LX_A04;
+        var LX_A06 = this.basis.geometry_calculator.getLengthByPytha(LX_A00, LX_A05, null);
+        var LX_A07 = LX_A06 * (RA_A01.C / RA_A01.B);
+        var LX_A08 = LX_A07 * (RA_A01.D / RA_A01.C);
+        var LX_A09 = this.basis.geometry_calculator.getLengthByPytha(LX_A08, LX_A05, null);
+        var LX_A10 = this.basis.geometry_calculator.getLengthByPytha(null, LX_A00, LX_A09);
+
+        var LT_A00 = LX_A10;
+
+        var TX_A00 = Math.asin(LX_A06 / LX_A10) * 2;
+        var TX_B00 = Math.asin(LX_A06 / LX_A10) + (Math.PI / 2);
+        var TX_Z00 = 0;
+
+        var TY_A00 = 0;
+        var TY_B00 = Math.asin(LX_A06 / LX_A10);
+        var TY_B10 = Math.asin(LX_A06 / LX_A10) * -1;
+
+        var reles_base = {
+            A0: {R: LT_A00, X: TX_A00, Y: TY_A00},
+            B0: {R: LT_A00, X: TX_B00, Y: TY_B00},
+            B1: {R: LT_A00, X: TX_B00, Y: TY_B10},
+            Z0: {R: LT_A00, X: TX_Z00, Y: TY_A00}
         };
 
-        var LA00 = this.alpha;
-        var LA01 = LA00 * (RA01.A / RA01.C);
-        var LA02 = LA00 * (RA01.B / RA01.C);
+        for (var i in reles_base) {
+            var base_R = reles_base[i].R;
+            var base_X = reles_base[i].X;
+            var base_Y = reles_base[i].Y;
 
-        var LB00 = LA02;
-        var LB01 = (LA00 * (RA00.D / RA00.C)) - LA01;
-        var LB02 = LA02 * (RA00.B / RA00.C);
-        var LB03 = LA01 * (RA00.D / RA00.B);
-        var LB04 = LA02 * (RA00.D / RA00.C);
-        var LB05 = ((LA02 * 2) * (RA01.B / RA01.C)) - LB03;
+            for (var n = 0; n < 3; n ++) {
+                this.reles[i + n + 'AO'] = {R: base_R};
+                this.reles[i + n + 'SR'] = {R: base_R};
 
-        var LC00 = getLengthByPytha(null, LB04, LB02);
-        var RX00 = {
-            A: LB02,
-            B: LB04,
-            C: LC00
-        };
-        var LB06 = LB02 * (RX00.B / RX00.C);
-        var LA03 = ((LC00 - LB06) * (RA00.C / RA00.D)) + LB06;
-
-        this.reles.A00 = {X: 0,         Y: LA00 * -1,   Z: LA03 * -1};
-        this.reles.A01 = {X: LA02,      Y: LA01,        Z: LA03 * -1};
-        this.reles.A02 = {X: LA02 * -1, Y: LA01,        Z: LA03 * -1};
-        this.reles.B00 = {X: LB00,      Y: LB01 * -1,   Z: LB06 * -1};
-        this.reles.B01 = {X: LB02,      Y: LB03,        Z: LB06 * -1};
-        this.reles.B02 = {X: LB04 * -1, Y: LB05 * -1,   Z: LB06 * -1};
-        this.reles.B03 = {X: LB00 * -1, Y: LB01 * -1,   Z: LB06 * -1};
-        this.reles.B04 = {X: LB04,      Y: LB05 * -1,   Z: LB06 * -1};
-        this.reles.B05 = {X: LB02 * -1, Y: LB03,        Z: LB06 * -1};
-        this.reles.C00 = {X: 0,         Y: 0,           Z: LC00 * -1};
-
-        var reles_rear = {};
-        for (var i in this.reles) {
-            reles_rear[i + 'R'] = {
-                X: this.reles[i].X * -1,
-                Y: this.reles[i].Y * -1,
-                Z: this.reles[i].Z * -1
-            };
-        }
-        for (var i in reles_rear) {
-            this.reles[i] = reles_rear[i];
+                this.reles[i + n + 'AO'].X = base_X;
+                this.reles[i + n + 'AO'].Y = base_Y + ((Math.PI * 2 / 3) * n);
+                this.reles[i + n + 'SR'].X = base_X + Math.PI;
+                this.reles[i + n + 'SR'].Y = (base_Y + ((Math.PI * 2 / 3) * n)) * -1;
+            }
         }
 
         this.surfaces = {
-            S00A:   [this.reles.A00,    this.reles.B00,     this.reles.B04,     this.reles.A01,     this.reles.C00],
-            S01A:   [this.reles.A01,    this.reles.B01,     this.reles.B05,     this.reles.A02,     this.reles.C00],
-            S02A:   [this.reles.A02,    this.reles.B02,     this.reles.B03,     this.reles.A00,     this.reles.C00],
-            S00R:   [this.reles.A00R,   this.reles.B00R,    this.reles.B04R,    this.reles.A01R,    this.reles.C00R],
-            S01R:   [this.reles.A01R,   this.reles.B01R,    this.reles.B05R,    this.reles.A02R,    this.reles.C00R],
-            S02R:   [this.reles.A02R,   this.reles.B02R,    this.reles.B03R,    this.reles.A00R,    this.reles.C00R],
-
-            S03A:   [this.reles.A00,    this.reles.B03,     this.reles.B01R,    this.reles.B05R,    this.reles.B00],
-            S04A:   [this.reles.A01,    this.reles.B04,     this.reles.B02R,    this.reles.B03R,    this.reles.B01],
-            S05A:   [this.reles.A02,    this.reles.B05,     this.reles.B00R,    this.reles.B04R,    this.reles.B02],
-            S03R:   [this.reles.A00R,   this.reles.B03R,    this.reles.B01,     this.reles.B05,     this.reles.B00R],
-            S04R:   [this.reles.A01R,   this.reles.B04R,    this.reles.B02,     this.reles.B03,     this.reles.B01R],
-            S05R:   [this.reles.A02R,   this.reles.B05R,    this.reles.B00,     this.reles.B04,     this.reles.B02R],
+            A0_A: ['Z00AO', 'A00AO', 'B01SR', 'B11SR', 'A01AO'],
+            A1_A: ['Z00AO', 'A01AO', 'B00SR', 'B10SR', 'A02AO'],
+            A2_A: ['Z00AO', 'A02AO', 'B02SR', 'B12SR', 'A00AO'],
+            A0_R: ['Z00SR', 'A00SR', 'B01AO', 'B11AO', 'A01SR'],
+            A1_R: ['Z00SR', 'A01SR', 'B00AO', 'B10AO', 'A02SR'],
+            A2_R: ['Z00SR', 'A02SR', 'B02AO', 'B12AO', 'A00SR'],
+            B0_A: ['A00AO', 'B01SR', 'B00AO', 'B10AO', 'B12SR'],
+            B1_A: ['A01AO', 'B00SR', 'B01AO', 'B11AO', 'B11SR'],
+            B2_A: ['A02AO', 'B02SR', 'B02AO', 'B12AO', 'B10SR'],
+            B0_R: ['A00SR', 'B01AO', 'B00SR', 'B10SR', 'B12AO'],
+            B1_R: ['A01SR', 'B00AO', 'B01SR', 'B11SR', 'B11AO'],
+            B2_R: ['A02SR', 'B02AO', 'B02SR', 'B12SR', 'B10AO']
         };
     }
 };

@@ -1,88 +1,80 @@
-var Dodecahedron = function()
+/**
+ * Ê≠£ÂçÅ‰∫åÈù¢‰Ωì
+ *
+ */
+var Dodecahedron_Theta = function()
 {
 };
 
 
-Dodecahedron.prototype = {
-    // äOïîê›íËíl
-    fill_style:     'rgba(255, 192, 200, 0.0)',
-    stroke_style:   'rgb(240, 128, 132)',
-
-
-
-
+Dodecahedron_Theta.prototype = {
     /**
-     * èâä˙âª
+     * ÂàùÊúüÂåñ
      *
      */
     configure: function()
     {
-        var pai         = Math.PI;
-        var theta072    = pai * 2 / 5;
-        var theta036    = pai * 2 / 10;
-        var sin072      = Math.sin(theta072);
-        var cos072      = Math.cos(theta072);
-        var sin036      = Math.sin(theta036);
-        var cos036      = Math.cos(theta036);
-
-        var LA00 = this.alpha;
-        var LA01 = LA00 * sin072;
-        var LA02 = LA00 * cos072;
-        var LA03 = LA00 * sin036;
-        var LA04 = LA00 * cos036;
-
-        var RX00 = {
-            A: LA03,
-            B: LA01,
-            C: LA02 + LA04
+        // ‰∫îËäíÊòüÊØîÁéá
+        var RA_A01 = {
+            A: (4 * Math.pow(Math.cos(Math.PI * 2 / 10), 2)) - 2,
+            B: 1,
+            C: (4 * Math.pow(Math.cos(Math.PI * 2 / 10), 2)) - 1,
+            D: (4 * Math.pow(Math.cos(Math.PI * 2 / 10), 2))
         };
-        var LA05 = LA04 * (RX00.B / RX00.A);
 
-        var XA00 = LA03 * (RX00.B / RX00.C);
-        var LB00 = LA02 + LA04 + XA00;
-        var LB01 = LB00 * sin072;
-        var LB02 = LB00 * cos072;
-        var LB03 = LB00 * sin036;
-        var LB04 = LB00 * cos036;
-        var LB05 = LA03 * (RX00.A / RX00.C);
+        var LX_A00 = this.alpha;
+        var LX_A01 = LX_A00 * (RA_A01.A / RA_A01.C);
+        var LX_A02 = LX_A00 + LX_A01;
+        var LX_A03 = LX_A02 / 2;
+        var LX_A04 = LX_A03 * (RA_A01.B / RA_A01.C);
+        var LX_A05 = LX_A01 + LX_A04;
+        var LX_A06 = this.basis.geometry_calculator.getLengthByPytha(LX_A00, LX_A05, null);
+        var LX_A07 = LX_A06 * (RA_A01.C / RA_A01.B);
+        var LX_A08 = LX_A07 * (RA_A01.D / RA_A01.C);
+        var LX_A09 = this.basis.geometry_calculator.getLengthByPytha(LX_A08, LX_A05, null);
+        var LX_A10 = this.basis.geometry_calculator.getLengthByPytha(null, LX_A00, LX_A09);
 
-        this.reles.A00 = {X: 0,         Y: LA00 * -1,   Z: LA05 * -1};
-        this.reles.A01 = {X: LA01,      Y: LA02 * -1,   Z: LA05 * -1};
-        this.reles.A02 = {X: LA03,      Y: LA04,        Z: LA05 * -1};
-        this.reles.A03 = {X: LA03 * -1, Y: LA04,        Z: LA05 * -1};
-        this.reles.A04 = {X: LA01 * -1, Y: LA02 * -1,   Z: LA05 * -1};
-        this.reles.B00 = {X: 0,         Y: LB00 * -1,   Z: LB05 * -1};
-        this.reles.B01 = {X: LB01,      Y: LB02 * -1,   Z: LB05 * -1};
-        this.reles.B02 = {X: LB03,      Y: LB04,        Z: LB05 * -1};
-        this.reles.B03 = {X: LB03 * -1, Y: LB04,        Z: LB05 * -1};
-        this.reles.B04 = {X: LB01 * -1, Y: LB02 * -1,   Z: LB05 * -1};
+        var LT_A00 = LX_A10;
 
-        var reles_rear = {};
-        for (var i in this.reles) {
-            reles_rear[i + 'R'] = {
-                X: this.reles[i].X * -1,
-                Y: this.reles[i].Y * -1,
-                Z: this.reles[i].Z * -1
-            };
-        }
-        for (var i in reles_rear) {
-            this.reles[i] = reles_rear[i];
+        var TX_A00 = Math.asin(LX_A00 / LX_A10);
+        var TX_B00 = Math.asin(LX_A00 / LX_A10) + (Math.asin(LX_A06 / LX_A10) * 2);
+
+        var TY_A00 = 0;
+
+        var reles_base = {
+            A0: {R: LT_A00, X: TX_A00, Y: TY_A00},
+            B0: {R: LT_A00, X: TX_B00, Y: TY_A00}
+        };
+
+        for (var i in reles_base) {
+            var base_R = reles_base[i].R;
+            var base_X = reles_base[i].X;
+            var base_Y = reles_base[i].Y;
+
+            for (var n = 0; n < 5; n ++) {
+                this.reles[i + n + 'AO'] = {R: base_R};
+                this.reles[i + n + 'SR'] = {R: base_R};
+
+                this.reles[i + n + 'AO'].X = base_X;
+                this.reles[i + n + 'AO'].Y = base_Y + ((Math.PI * 2 / 5) * n);
+                this.reles[i + n + 'SR'].X = base_X + Math.PI;
+                this.reles[i + n + 'SR'].Y = (base_Y + ((Math.PI * 2 / 5) * n)) * -1;
+            }
         }
 
         this.surfaces = {
-            S00A:   [this.reles.A00,    this.reles.A01,     this.reles.A02,     this.reles.A03,     this.reles.A04],
-            S00R:   [this.reles.A00R,   this.reles.A01R,    this.reles.A02R,    this.reles.A03R,    this.reles.A04R],
-
-            S01A:   [this.reles.A00,    this.reles.B00,     this.reles.B03R,    this.reles.B01,     this.reles.A01],
-            S02A:   [this.reles.A01,    this.reles.B01,     this.reles.B04R,    this.reles.B02,     this.reles.A02],
-            S03A:   [this.reles.A02,    this.reles.B02,     this.reles.B00R,    this.reles.B03,     this.reles.A03],
-            S04A:   [this.reles.A03,    this.reles.B03,     this.reles.B01R,    this.reles.B04,     this.reles.A04],
-            S05A:   [this.reles.A04,    this.reles.B04,     this.reles.B02R,    this.reles.B00,     this.reles.A00],
-            S01R:   [this.reles.A00R,   this.reles.B00R,    this.reles.B03,     this.reles.B01R,    this.reles.A01R],
-            S02R:   [this.reles.A01R,   this.reles.B01R,    this.reles.B04,     this.reles.B02R,    this.reles.A02R],
-            S03R:   [this.reles.A02R,   this.reles.B02R,    this.reles.B00,     this.reles.B03R,    this.reles.A03R],
-            S04R:   [this.reles.A03R,   this.reles.B03R,    this.reles.B01,     this.reles.B04R,    this.reles.A04R],
-            S05R:   [this.reles.A04R,   this.reles.B04R,    this.reles.B02,     this.reles.B00R,    this.reles.A00R]
+            A0_A: ['A00AO', 'A01AO', 'A02AO', 'A03AO', 'A04AO'],
+            A0_R: ['A00SR', 'A01SR', 'A02SR', 'A03SR', 'A04SR'],
+            B0_A: ['A00AO', 'B00AO', 'B02SR', 'B01AO', 'A01AO'],
+            B1_A: ['A01AO', 'B01AO', 'B01SR', 'B02AO', 'A02AO'],
+            B2_A: ['A02AO', 'B02AO', 'B00SR', 'B03AO', 'A03AO'],
+            B3_A: ['A03AO', 'B03AO', 'B04SR', 'B04AO', 'A04AO'],
+            B4_A: ['A04AO', 'B04AO', 'B03SR', 'B00AO', 'A00AO'],
+            B0_R: ['A00SR', 'B00SR', 'B02AO', 'B01SR', 'A01SR'],
+            B1_R: ['A01SR', 'B01SR', 'B01AO', 'B02SR', 'A02SR'],
+            B2_R: ['A02SR', 'B02SR', 'B00AO', 'B03SR', 'A03SR'],
+            B3_R: ['A03SR', 'B03SR', 'B04AO', 'B04SR', 'A04SR'],
+            B4_R: ['A04SR', 'B04SR', 'B03AO', 'B00SR', 'A00SR']
         };
     }
 };

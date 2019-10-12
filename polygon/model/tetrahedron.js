@@ -1,51 +1,59 @@
-var Tetrahedron = function()
+/**
+ * 正四面体
+ *
+ */
+var Tetrahedron_Theta = function()
 {
 };
 
 
-Tetrahedron.prototype = {
-    // 外部設定値
-    fill_style:     'rgba(255, 255, 128, 0.8)',
-    stroke_style:   'rgb(224, 224, 0)',
-
-
-
-
+Tetrahedron_Theta.prototype = {
     /**
      * 初期化
      *
      */
     configure: function()
     {
-        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
-
         // 正三角形比率
-        var RA00 = {
+        var RA_A00 = {
             A: 1,
             B: Math.pow(3, 1 / 2),
             C: 2
         };
 
-        var LA00 = this.alpha;
-        var LA01 = LA00 * (RA00.A / RA00.C);
-        var LA02 = LA00 * (RA00.B / RA00.C);
+        var LX_A00 = this.alpha;
+        var LX_A01 = LX_A00 * (RA_A00.B / RA_A00.C);
+        var LX_A02 = LX_A00 * (RA_A00.A / RA_A00.C);
+        var LX_A03 = LX_A00 + LX_A02;
+        var LX_A04 = this.basis.geometry_calculator.getLengthByPytha(LX_A03, LX_A02, null); // Oからの△ABCへの垂線
+        var RA_X00 = {
+            A: LX_A04,
+            B: LX_A03
+        };
+        var LX_A05 = LX_A00 * (RA_X00.B / RA_X00.A);
 
-        var XA00 = getLengthByPytha((LA02 * 2), LA00, null);
-        var LA03 = XA00 / 3;
+        var LT_A00 = LX_A05;
 
-        var LB00 = XA00 * 2 / 3;
+        var TX_A00 = Math.asin(LX_A00 / LX_A05);
+        var TX_Z00 = Math.PI;
 
-        this.reles.A00 = {X: 0,         Y: LA00 * -1,   Z: LA03 * -1};
-        this.reles.A01 = {X: LA02,      Y: LA01,        Z: LA03 * -1};
-        this.reles.A02 = {X: LA02 * -1, Y: LA01,        Z: LA03 * -1};
-        this.reles.B00 = {X: 0,         Y: 0,           Z: LB00};
+        var TY_A00 = Math.PI * 2 / 3 * 0;
+        var TY_A01 = Math.PI * 2 / 3 * 1;
+        var TY_A02 = Math.PI * 2 / 3 * 2;
+        var TY_Z00 = 0;
+
+        this.reles = {
+            A0: {R: LT_A00, X: TX_A00, Y: TY_A00},
+            A1: {R: LT_A00, X: TX_A00, Y: TY_A01},
+            A2: {R: LT_A00, X: TX_A00, Y: TY_A02},
+            Z0: {R: LT_A00, X: TX_Z00, Y: TY_Z00}
+        };
 
         this.surfaces = {
-            S00A: [this.reles.A00,   this.reles.A01,     this.reles.A02],
-
-            S01A: [this.reles.A00,   this.reles.A01,     this.reles.B00],
-            S02A: [this.reles.A01,   this.reles.A02,     this.reles.B00],
-            S03A: [this.reles.A02,   this.reles.A00,     this.reles.B00]
+            A0_A: ['A0', 'A1', 'A0'],
+            B0_A: ['A0', 'A1', 'Z0'],
+            B1_A: ['A1', 'A2', 'Z0'],
+            B2_A: ['A2', 'A0', 'Z0']
         };
     }
 };

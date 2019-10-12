@@ -2,17 +2,14 @@
  * 10個の正四面体
  *
  */
-var TenTetrahedron = function()
+var TenTetrahedron_Theta = function()
 {
 };
 
 
-TenTetrahedron.prototype = {
+TenTetrahedron_Theta.prototype = {
     // 外部設定値
-    //fill_style:     'rgba(160, 255, 120, 0.8)',
-    //stroke_style:   'rgb(112, 184, 64)',
     fill_style:     'rgba(224, 128, 176, 0.8)',
-    //fill_style:     'rgba(0, 0, 0, 1.0)',
     stroke_style:   'rgba(160, 64, 88, 0.2)',
     fill_style3:    'rgba(224, 160, 160, 0.8)',
     stroke_style3:  'rgba(176, 64, 64, 0.5)',

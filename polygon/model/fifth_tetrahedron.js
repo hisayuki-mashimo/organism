@@ -2,20 +2,15 @@
  * 5つの正四面体
  *
  */
-var FifthTetrahedron = function()
+var Fifth_Tetrahedron_Theta = function()
 {
 };
 
 
-FifthTetrahedron.prototype = {
+Fifth_Tetrahedron_Theta.prototype = {
     // 外部設定値
-    //fill_style:     'rgba(160, 255, 120, 0.8)',
-    //stroke_style:   'rgb(112, 184, 64)',
     fill_style:     'rgba(160, 160, 224, 0.8)',
-    //fill_style:     'rgba(0, 0, 0, 1.0)',
     stroke_style:   'rgba(64, 64, 176, 0.5)',
-    fill_style2:    'rgba(120, 255, 160, 0.0)',
-    stroke_style2:  'rgba(96, 192, 128, 0.5)',
 
 
 
@@ -26,516 +21,218 @@ FifthTetrahedron.prototype = {
      */
     configure: function()
     {
-        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
+        var getLengthByPytha     = this.basis.geometry_calculator.getLengthByPytha;
+        var finalizeRatioByPytha = this.basis.geometry_calculator.finalizeRatioByPytha;
 
-        var pai         = Math.PI;
-        var theta072    = pai * 2 / 5;
-        var theta036    = pai * 2 / 10;
-        var sin072      = Math.sin(theta072);
-        var cos072      = Math.cos(theta072);
-        var sin036      = Math.sin(theta036);
-        var cos036      = Math.cos(theta036);
+        var pai    = Math.PI;
+        var cos036 = Math.cos(pai * 2 / 10);
+
+        // 正三角形比率
+        var RA_A00 = {
+            A: 1,
+            B: Math.pow(3, 1 / 2),
+            C: 2
+        };
 
         // 五芒星比率
-        var RA00 = {
+        var RA_A01 = {
             A: (4 * Math.pow(cos036, 2)) - 2,
             B: 1,
             C: (4 * Math.pow(cos036, 2)) - 1,
             D: (4 * Math.pow(cos036, 2))
         };
 
-        // 正三角形比率
-        var RA01 = {
-            A: 1,
-            B: Math.pow(3, 1 / 2),
-            C: 2
+        var LX_A00 = this.alpha;
+        var LX_A01 = LX_A00 * (RA_A00.B / RA_A00.C);
+        var LX_A02 = LX_A00 * (RA_A00.A / RA_A00.C);
+        var LX_A03 = LX_A00 + LX_A02;
+        var LX_A04 = getLengthByPytha(LX_A03, LX_A02, null); // Oからの△ABCへの垂線
+        var RA_X00 = {
+            A: LX_A04,
+            B: LX_A03
+        };
+        var LX_A05 = LX_A00 * (RA_X00.B / RA_X00.A);
+        var RA_X01 = finalizeRatioByPytha({
+            A: null,
+            B: (RA_A01.D / RA_A01.B) + 1,
+            C: (RA_A00.B / RA_A00.A) * (RA_A01.D / RA_A01.C)
+        });
+        var LX_A06 = LX_A00 * 2;
+        var LX_A07 = LX_A06 * (RA_X01.B / RA_X01.A);
+        var LX_A08 = LX_A07 * (RA_A01.B / (RA_A01.D + RA_A01.B));
+        var LX_A09 = LX_A08 * (RA_A01.C / RA_A01.D) / 2;
+
+        var LX_B00 = LX_A06 * (RA_X01.C / RA_X01.A) / 2;
+        var RA_X02 = finalizeRatioByPytha({
+            A: null,
+            B: 2 + (RA_A01.B / RA_A01.C),
+            C: 1
+        });
+        var LX_B03 = LX_A05 * (RA_X02.C / RA_X02.A);
+
+        var LX_C00 = LX_B00 * (RA_A01.C / RA_A01.D);
+        var LX_C01 = LX_C00 * (RA_A00.A / RA_A00.B);
+        var LX_C02 = LX_C01 * (RA_A01.C / RA_A01.D);
+        var LX_C03 = LX_A07 + LX_C02;
+        var LX_C04 = LX_C03 * (RA_A01.C / RA_A01.D);
+        var LX_C05 = LX_C04 - (LX_A07 / 2);
+        var LX_C06 = LX_A05 * 2 / 3;
+        var LX_C07 = LX_C06 / 2;
+        var LX_C08 = getLengthByPytha(null, LX_C05, LX_C07);
+
+        var LX_D00 = getLengthByPytha(LX_A05, LX_A01, null);
+        var LX_D01 = LX_A01 * 2;
+        var LX_D02 = LX_D01 * (RA_A01.A / RA_A01.D) / 2;
+        var LX_D03 = getLengthByPytha(null, LX_D00, LX_D02);
+
+        var LX_F00 = LX_B00 - LX_C00;
+        var LX_F01 = LX_F00 * (RA_A01.C / RA_A01.D);
+        var LX_F02 = LX_C00 + LX_F01;
+        var LX_F03 = getLengthByPytha(null, LX_C00, LX_F02);
+
+        var LX_G00 = LX_A04 - LX_A05;
+        var LX_G01 = getLengthByPytha(null, LX_D02, LX_G00);
+        var LX_G02 = getLengthByPytha(null, LX_A02, LX_G01);
+        var LX_G03 = getLengthByPytha(null, LX_A02, LX_D02);
+
+        var LX_H00 = getLengthByPytha(null, LX_G03, LX_G00);
+
+        var LX_I00 = LX_A07 * (RA_A01.A / RA_A01.D) / 2;
+        var LX_I01 = getLengthByPytha(null, LX_B00, LX_I00);
+        var LX_I02 = LX_G00 * (RA_A01.A / RA_A01.D);
+        var LX_I03 = getLengthByPytha(null, LX_I00, LX_I02);
+        var LX_I04 = getLengthByPytha(null, LX_B00, LX_I03);
+
+        var LX_J00 = LX_C00 * (RA_A01.C / RA_A01.D);
+
+        var LT_A00 = LX_A05;
+        var LT_C00 = LX_C08;
+        var LT_D00 = LX_D03;
+        var LT_F00 = LX_F03;
+        var LT_G00 = LX_G02;
+        var LT_H00 = LX_H00;
+        var LT_I00 = LX_I04;
+
+        var TX_A00 = Math.asin(LX_A00 / LX_A05);
+        var TX_A01 = Math.asin(LX_A00 / LX_A05) + pai;
+        var TX_B00 = Math.asin(LX_B03 / LX_A05) * 2;
+        var TX_C00 = Math.asin(LX_C05 / LX_C08) + pai;
+        var TX_D00 = Math.asin(LX_A01 / LX_A05) - Math.asin(LX_D02 / LX_D03) + pai;
+        var TX_E00 = Math.asin(LX_A01 / LX_A05) + Math.asin(LX_D02 / LX_D03);
+        var TX_F00 = Math.asin(LX_C00 / LX_F03) - Math.asin(LX_C00 / LX_A05) + pai;
+        var TX_G00 = Math.asin(LX_G03 / LX_G02) + pai;
+        var TX_H00 = Math.asin(LX_G03 / LX_H00);
+        var TX_I00 = Math.asin(LX_I01 / LX_I04) + pai;
+        var TX_J00 = Math.asin(LX_C05 / LX_C08) + (Math.asin(LX_J00 / LX_C08) * 2) - pai;
+        var TX_Z00 = 0;
+
+        var TY_A00 = 0;
+        var TY_A10 = Math.asin(LX_A09 / LX_A00) * 2;
+        var TY_B00 = Math.asin(LX_B00 / LX_A00);
+        var TY_C00 = TY_B00 + pai;
+        var TY_D00 = TY_A00 + pai;
+        var TY_G00 = Math.asin(LX_D02 / LX_G03) + pai;
+        var TY_H00 = Math.asin(LX_A01 / LX_A00) - Math.asin(LX_D02 / LX_G03);
+        var TY_I00 = Math.asin(LX_A09 / LX_A00) - Math.asin(LX_I00 / LX_I01);
+        var TY_Z00 = 0;
+
+        var reles_base = {
+            A0: {R: LT_A00, X: TX_A00, Y: TY_A00},
+            B0: {R: LT_A00, X: TX_B00, Y: TY_B00},
+            C0: {R: LT_C00, X: TX_C00, Y: TY_C00},
+            D0: {R: LT_D00, X: TX_D00, Y: TY_D00},
+            E0: {R: LT_D00, X: TX_E00, Y: TY_D00},
+            F0: {R: LT_F00, X: TX_F00, Y: TY_C00},
+            G0: {R: LT_G00, X: TX_G00, Y: TY_G00},
+            H0: {R: LT_H00, X: TX_H00, Y: TY_H00},
+            I0: {R: LT_I00, X: TX_I00, Y: TY_I00},
+            J0: {R: LT_C00, X: TX_J00, Y: TY_C00},
+            Z0: {R: LT_A00, X: TX_Z00, Y: TY_Z00}
         };
 
-        var LA00 = this.alpha;
-        var LA01 = LA00 * (RA01.A / RA01.C);
-        var LA02 = LA00 * (RA01.B / RA01.C);
-
-        var XA00 = LA00 * (RA00.A / RA00.D) / 2;
-        var XA01 = LA00 * (RA00.C / RA00.D);
-        var XA02 = getLengthByPytha(null, LA02, XA00);
-        var RX00 = {
-            A: XA00,
-            B: LA02,
-            C: XA02
-        };
-        var XA03 = XA01 * (RX00.A / RX00.C);
-        var RX01 = {
-            A: XA03 * 2,
-            B: XA02 - (XA03 * 2),
-            C: XA02
-        };
-        var LB00 = (RX01.B / RX01.C) * (LA02 * (RA00.B / RA00.D));
-        var LB01 = (RX01.B / RX01.C) * (LA01 * (1 + (RA00.C / RA00.D)));
-        var LB02 = (RX01.B / RX01.C) * (LA02 * (RA00.C / RA00.D));
-        var LB03 = (RX01.B / RX01.C) * (LA01 * (1 + (RA00.B / RA00.D)));
-        var LB04 = (RX01.B / RX01.C) * LA02;
-        var LB05 = (RX01.B / RX01.C) * XA00;
-
-        var LC00 = LB04;
-        var LC01 = LB05 + XA01;
-        var LC02 = (XA01 * (RA01.B / RA01.C)) - LB00;
-        var LC03 = (XA01 * (RA01.A / RA01.C)) + LB01;
-        var LC04 = LB02 + (XA01 * (RA01.B / RA01.C));
-        var LC05 = LB03 - (XA01 * (RA01.A / RA01.C));
-
-        var LE00 = LA00 * (RA00.B / RA00.D);
-        var LE01 = LE00 * (RA01.A / RA01.C);
-        var LE02 = LE00 * (RA01.B / RA01.C);
-
-        var RX02 = {
-            A: 1,
-            B: 2 * Math.pow(2, 1 / 2),
-            C: 3
-        };
-        var XB00 = LA01 * (RX02.B / RX02.A);
-        var LA03 = XB00 / 4;
-        var LD00 = XB00 * 3 / 4;
-        var LB06 = LA03 + ((XB00 / 2) * (RA00.C / RA00.D));
-        var LE03 = (XB00 * (RA00.C / RA00.D)) - LA03;
-
-        var LZ00 = LA02 * (RA00.C / RA00.D);
-        var LZ01 = ((LA00 + LA01) * (RA00.B / RA00.D)) - LA01;
-        var LZ02 = LA02 * ((2 * (RA00.C / RA00.D)) - 1);
-        var LZ03 = LA01;
-        var LZ04 = LA02 * (RA00.B / RA00.D);
-        var LZ05 = ((LA00 + LA01) * (RA00.C / RA00.D)) - LA01;
-
-        var LF00 = (1 / 2) * LZ00;
-        var LF01 = (1 / 2) * LZ01;
-        var LF02 = (1 / 2) * LZ02;
-        var LF03 = (1 / 2) * LZ03;
-        var LF04 = (1 / 2) * LZ04;
-        var LF05 = (1 / 2) * LZ05;
-
-        var LG00 = LB00 * (RA00.C / RA00.D);
-        var LG01 = ((LB01 + LA00) * (RA00.C / RA00.D)) - LA00;
-        var LG02 = ((LB02 + LA02) * (RA00.B / RA00.D)) - LB02;
-        var LG03 = ((LB03 + LA01) * (RA00.C / RA00.D)) - LA01;
-        var LG04 = ((LB04 + LA02) * (RA00.C / RA00.D)) - LA02;
-        var LG05 = ((LB05 + LA01) * (RA00.B / RA00.D)) - LB05;
-        var LG06 = ((LB06 - LA03) * (RA00.C / RA00.D)) + LA03;
-
-        var LH00 = ((LC00 - LB02) * (RA00.B / RA00.D)) + LB02;
-        var LH01 = ((LC01 + LB03) * (RA00.C / RA00.D)) - LC01;
-        var LH02 = ((LC02 + LB04) * (RA00.C / RA00.D)) - LC02;
-        var LH03 = ((LC03 - LB05) * (RA00.B / RA00.D)) + LB05;
-        var LH04 = ((LC04 + LB00) * (RA00.B / RA00.D)) - LB00;
-        var LH05 = ((LB01 - LC05) * (RA00.C / RA00.D)) + LC05;
-
-        var LI00 = ((LB04 - LB00) * (RA00.B / RA00.D)) + LB00;
-        var LI01 = ((LB01 - LB05) * (RA00.C / RA00.D)) + LB05;
-        var LI02 = ((LB02 + LB00) * (RA00.C / RA00.D)) - LB00;
-        var LI03 = ((LB01 - LB03) * (RA00.B / RA00.D)) + LB03;
-        var LI04 = ((LB04 - LB02) * (RA00.C / RA00.D)) + LB02;
-        var LI05 = ((LB03 + LB05) * (RA00.B / RA00.D)) - LB05;
-        var LI06 = LB06 * ((2 * (RA00.C / RA00.D)) - 1);
-
-        var LJ00 = ((LA02 + LB04) * (RA00.C / RA00.D)) - LB04;
-        var LJ01 = ((LA01 + LB05) * (RA00.C / RA00.D)) - LB05;
-        var LJ02 = LB00 * (RA00.B / RA00.D);
-        var LJ03 = ((LA00 + LB01) * (RA00.C / RA00.D)) - LB01;
-        var LJ04 = ((LA02 + LB02) * (RA00.C / RA00.D)) - LB02;
-        var LJ05 = ((LA01 + LB03) * (RA00.C / RA00.D)) - LB03;
-        var LJ06 = ((LB06 - LA03) * (RA00.B / RA00.D)) + LA03;
-
-        var LK00 = ((LC04 + LC00) * (RA00.C / RA00.D)) - LC00;
-        var LK01 = ((LC01 - LC05) * (RA00.B / RA00.D)) + LC05;
-        var LK02 = ((LC00 - LC02) * (RA00.C / RA00.D)) + LC02;
-        var LK03 = ((LC01 + LC03) * (RA00.C / RA00.D)) - LC03;
-        var LK04 = ((LC04 + LC02) * (RA00.B / RA00.D)) - LC02;
-        var LK05 = ((LC05 + LC03) * (RA00.C / RA00.D)) - LC05;
-
-        var LL00 = ((LC04 + LC02) * (RA00.C / RA00.D)) - LC02;
-        var LL01 = ((LC05 + LC03) * (RA00.B / RA00.D)) - LC05;
-        var LL02 = ((LC00 + LC04) * (RA00.C / RA00.D)) - LC04;
-        var LL03 = ((LC01 - LC05) * (RA00.C / RA00.D)) + LC05;
-        var LL04 = ((LC00 - LC02) * (RA00.B / RA00.D)) + LC02;
-        var LL05 = ((LC03 + LC01) * (RA00.C / RA00.D)) - LC01;
-
-        var LM00 = ((LA02 - LC02) * (RA00.C / RA00.D)) + LC02;
-        var LM01 = ((LA01 + LC03) * (RA00.C / RA00.D)) - LC03;
-        var LM02 = LC04 * (RA00.B / RA00.D);
-        var LM03 = ((LA00 + LC05) * (RA00.C / RA00.D)) - LC05;
-        var LM04 = ((LA02 + LC00) * (RA00.C / RA00.D)) - LC00;
-        var LM05 = ((LC01 - LA01) * (RA00.B / RA00.D)) + LA01;
-        var LM06 = LA03 * ((2 * (RA00.C / RA00.D)) - 1);
-
-        var LN00 = ((LA02 + LB02) * (RA00.C / RA00.D)) - LB02;
-        var LN01 = ((LB03 - LA01) * (RA00.B / RA00.D)) + LA01;
-        var LN02 = LB04 * (RA00.B / RA00.D);
-        var LN03 = ((LA00 + LB05) * (RA00.C / RA00.D)) - LB05;
-        var LN04 = ((LA02 - LB00) * (RA00.C / RA00.D)) + LB00;
-        var LN05 = ((LA01 + LB01) * (RA00.C / RA00.D)) - LB01;
-        var LN06 = ((LA03 + LB06) * (RA00.C / RA00.D)) - LB06;
-
-        var LO00 = (1 / 2) * LE02;
-        var LO01 = ((1 / 2) * (LA00 + LE01)) - LE01;
-        var LO02 = ((1 / 2) * (LA02 + LE02)) - LE02;
-        var LO03 = ((1 / 2) * (LA01 - LE01)) + LE01;
-        var LO04 = (1 / 2) * LA02;
-        var LO05 = ((1 / 2) * (LA01 + LE00)) - LE00;
-        var LO06 = ((1 / 2) * (LA03 + LE03)) - LA03;
-
-        var LP00 = ((1 / 2) * (LC00 - LI02)) + LI02;
-        var LP01 = ((1 / 2) * (LC01 + LI03)) - LI03;
-        var LP02 = ((1 / 2) * (LC02 + LI04)) - LC02;
-        var LP03 = ((1 / 2) * (LC03 + LI05)) - LI05;
-        var LP04 = ((1 / 2) * (LC04 + LI00)) - LI00;
-        var LP05 = ((1 / 2) * (LI01 - LC05)) + LC05;
-        var LP06 = ((1 / 2) * (LA03 + LI06)) - LI06;
-
-        var MA00 = LA00 * (RA00.C / RA00.D);
-        var MA01 = MA00 * (RA01.A / RA01.C);
-        var MA02 = MA00 * (RA01.B / RA01.C);
-        var MA03 = (XB00 * (RA00.B / RA00.D)) - LA03;
-
-        var MB00 = LC04 * (RA00.C / RA00.D);
-        var MB01 = LC05 * (RA00.C / RA00.D);
-        var MB02 = LC00 * (RA00.C / RA00.D);
-        var MB03 = LC01 * (RA00.C / RA00.D);
-        var MB04 = LC02 * (RA00.C / RA00.D);
-        var MB05 = LC03 * (RA00.C / RA00.D);
-
-
-
-
-
-        var LQ00 = ((LB04 - LB00) * (RA00.C / RA00.D)) + LB00;
-        var LQ01 = ((LB01 - LB05) * (RA00.B / RA00.D)) + LB05;
-        var LQ02 = ((LB02 + LB00) * (RA00.B / RA00.D)) - LB00;
-        var LQ03 = ((LB01 - LB03) * (RA00.C / RA00.D)) + LB03;
-        var LQ04 = ((LB04 - LB02) * (RA00.B / RA00.D)) + LB02;
-        var LQ05 = ((LB03 + LB05) * (RA00.C / RA00.D)) - LB05;
-        var LQ06 = LB06 * ((2 * (RA00.C / RA00.D)) - 1);
-
-        var LR00 = ((LC00 - LB02) * (RA00.C / RA00.D)) + LB02;
-        var LR01 = ((LB03 + LC01) * (RA00.C / RA00.D)) - LB03;
-        var LR02 = ((LB04 + LC02) * (RA00.B / RA00.D)) - LC02;
-        var LR03 = ((LC03 - LB05) * (RA00.C / RA00.D)) + LB05;
-        var LR04 = ((LB00 + LC04) * (RA00.C / RA00.D)) - LB00;
-        var LR05 = ((LB01 - LC05) * (RA00.B / RA00.D)) + LC05;
-        var LR06 = ((LB06 + LA03) * (RA00.B / RA00.D)) - LA03;
-
-        var LS00 = LA02 * (RA00.B / RA00.D);
-        var LS01 = ((LA00 + LA01) * (RA00.C / RA00.D)) - LA01;
-        var LS02 = LA02 * ((2 * (RA00.C / RA00.D)) - 1);
-        var LS03 = LA01;
-        var LS04 = LA02 * (RA00.C / RA00.D);
-        var LS05 = ((LA00 + LA01) * (RA00.B / RA00.D)) - LA01;
-
-        var LT00 = ((LB00 + LC00) * (RA00.C / RA00.D)) - LB00;
-        var LT01 = ((LB01 + LC01) * (RA00.C / RA00.D)) - LB01;
-        var LT02 = ((LB02 + LC02) * (RA00.C / RA00.D)) - LB02;
-        var LT03 = ((LB03 + LC03) * (RA00.C / RA00.D)) - LB03;
-        var LT04 = ((LB04 + LC04) * (RA00.C / RA00.D)) - LB04;
-        var LT05 = ((LC05 - LB05) * (RA00.C / RA00.D)) + LB05;
-        var LT06 = ((LB06 - LA03) * (RA00.B / RA00.D)) + LA03;
-
-        var LU00 = ((LA02 + LC00) * (RA00.C / RA00.D)) - LA02;
-        var LU01 = ((LC01 - LA01) * (RA00.C / RA00.D)) + LA01;
-        var LU02 = ((LA02 - LC02) * (RA00.B / RA00.D)) + LC02;
-        var LU03 = ((LA01 + LC03) * (RA00.C / RA00.D)) - LA01;
-        var LU04 = LC04 * (RA00.C / RA00.D);
-        var LU05 = ((LA00 + LC05) * (RA00.B / RA00.D)) - LC05;
-        var LU06 = LA03 * ((2 * (RA00.C / RA00.D)) - 1);
-
-        var LV00 = ((LA02 + LB02) * (RA00.B / RA00.D)) - LB02;
-        var LV01 = ((LB03 - LA01) * (RA00.C / RA00.D)) + LA01;
-        var LV02 = LB04 * (RA00.C / RA00.D);
-        var LV03 = ((LA00 + LB05) * (RA00.B / RA00.D)) - LB05;
-        var LV04 = ((LA02 - LB00) * (RA00.B / RA00.D)) + LB00;
-        var LV05 = ((LA01 + LB01) * (RA00.C / RA00.D)) - LA01;
-        var LV06 = ((LA03 + LB06) * (RA00.C / RA00.D)) - LA03;
-
-        var LW00 = ((LB04 + LC04) * (RA00.C / RA00.D)) - LC04;
-        var LW01 = ((LC05 - LB05) * (RA00.B / RA00.D)) + LB05;
-        var LW02 = ((LB00 + LC00) * (RA00.B / RA00.D)) - LB00;
-        var LW03 = ((LB01 + LC01) * (RA00.C / RA00.D)) - LC01;
-        var LW04 = ((LB02 + LC02) * (RA00.C / RA00.D)) - LC02;
-        var LW05 = ((LB03 + LC03) * (RA00.B / RA00.D)) - LB03;
-
-        var LX00 = (1 / 2) * LK00;
-        var LX01 = (1 / 2) * LK01;
-        var LX02 = (1 / 2) * LK02;
-        var LX03 = (1 / 2) * LK03;
-        var LX04 = (1 / 2) * LK04;
-        var LX05 = (1 / 2) * LK05;
-
-        var LY00 = LC04 * (RA00.B / RA00.D);
-        var LY01 = LC05 * (RA00.B / RA00.D);
-        var LY02 = LC00 * (RA00.B / RA00.D);
-        var LY03 = LC01 * (RA00.B / RA00.D);
-        var LY04 = LC02 * (RA00.B / RA00.D);
-        var LY05 = LC03 * (RA00.B / RA00.D);
-
-        this.reles.A00 = {X: 0,         Y: LA00 * -1,   Z: LA03};
-        this.reles.A01 = {X: LA02,      Y: LA01,        Z: LA03};
-        this.reles.A02 = {X: LA02 * -1, Y: LA01,        Z: LA03};
-        this.reles.B00 = {X: LB00,      Y: LB01 * -1,   Z: LB06 * -1};
-        this.reles.B01 = {X: LB02,      Y: LB03,        Z: LB06 * -1};
-        this.reles.B02 = {X: LB04 * -1, Y: LB05,        Z: LB06 * -1};
-        this.reles.C00 = {X: LC00,      Y: LC01 * -1,   Z: LA03};
-        this.reles.C01 = {X: LC02,      Y: LC03,        Z: LA03};
-        this.reles.C02 = {X: LC04 * -1, Y: LC05 * -1,   Z: LA03};
-        this.reles.D00 = {X: 0,         Y: 0,           Z: LD00 * -1};
-        this.reles.E00 = {X: 0,         Y: LE00 * -1,   Z: LE03 * -1};
-        this.reles.E01 = {X: LE02,      Y: LE01,        Z: LE03 * -1};
-        this.reles.E02 = {X: LE02 * -1, Y: LE01,        Z: LE03 * -1};
-        this.reles.F00 = {X: LF00,      Y: LF01 * -1,   Z: LA03 * -1};
-        this.reles.F01 = {X: LF02 * -1, Y: LF03,        Z: LA03 * -1};
-        this.reles.F02 = {X: LF04 * -1, Y: LF05 * -1,   Z: LA03 * -1};
-        this.reles.G00 = {X: LG00,      Y: LG01 * -1,   Z: LG06 * -1};
-        this.reles.G01 = {X: LG02 * -1, Y: LG03,        Z: LG06 * -1};
-        this.reles.G02 = {X: LG04 * -1, Y: LG05 * -1,   Z: LG06 * -1};
-        this.reles.H00 = {X: LH00,      Y: LH01,        Z: LA03 * -1};
-        this.reles.H01 = {X: LH02 * -1, Y: LH03,        Z: LA03 * -1};
-        this.reles.H02 = {X: LH04 * -1, Y: LH05 * -1,   Z: LA03 * -1};
-        this.reles.I00 = {X: LI00,      Y: LI01 * -1,   Z: LI06 * -1};
-        this.reles.I01 = {X: LI02,      Y: LI03,        Z: LI06 * -1};
-        this.reles.I02 = {X: LI04 * -1, Y: LI05 * -1,   Z: LI06 * -1};
-        this.reles.J00 = {X: LJ00,      Y: LJ01 * -1,   Z: LJ06 * -1};
-        this.reles.J01 = {X: LJ02,      Y: LJ03,        Z: LJ06 * -1};
-        this.reles.J02 = {X: LJ04 * -1, Y: LJ05 * -1,   Z: LJ06 * -1};
-        this.reles.K00 = {X: LK00,      Y: LK01,        Z: LA03 * -1};
-        this.reles.K01 = {X: LK02 * -1, Y: LK03,        Z: LA03 * -1};
-        this.reles.K02 = {X: LK04,      Y: LK05 * -1,   Z: LA03 * -1};
-        this.reles.L00 = {X: LL00,      Y: LL01 * -1,   Z: LA03 * -1};
-        this.reles.L01 = {X: LL02 * -1, Y: LL03,        Z: LA03 * -1};
-        this.reles.L02 = {X: LL04 * -1, Y: LL05 * -1,   Z: LA03 * -1};
-        this.reles.M00 = {X: LM00,      Y: LM01 * -1,   Z: LM06 * -1};
-        this.reles.M01 = {X: LM02 * -1, Y: LM03,        Z: LM06 * -1};
-        this.reles.M02 = {X: LM04 * -1, Y: LM05 * -1,   Z: LM06 * -1};
-        this.reles.N00 = {X: LN00,      Y: LN01 * -1,   Z: LN06 * -1};
-        this.reles.N01 = {X: LN02,      Y: LN03,        Z: LN06 * -1};
-        this.reles.N02 = {X: LN04 * -1, Y: LN05 * -1,   Z: LN06 * -1};
-        this.reles.O00 = {X: LO00,      Y: LO01 * -1,   Z: LO06 * -1};
-        this.reles.O01 = {X: LO02,      Y: LO03,        Z: LO06 * -1};
-        this.reles.O02 = {X: LO04 * -1, Y: LO05,        Z: LO06 * -1};
-        this.reles.P00 = {X: LP00,      Y: LP01 * -1,   Z: LP06};
-        this.reles.P01 = {X: LP02 * -1, Y: LP03,        Z: LP06};
-        this.reles.P02 = {X: LP04 * -1, Y: LP05 * -1,   Z: LP06};
-        this.reles.Q00 = {X: LQ00,      Y: LQ01 * -1,   Z: LQ06};
-        this.reles.Q01 = {X: LQ02,      Y: LQ03,        Z: LQ06};
-        this.reles.Q02 = {X: LQ04 * -1, Y: LQ05 * -1,   Z: LQ06};
-        this.reles.R00 = {X: LR00,      Y: LR01 * -1,   Z: LR06 * -1};
-        this.reles.R01 = {X: LR02 * -1, Y: LR03,        Z: LR06 * -1};
-        this.reles.R02 = {X: LR04 * -1, Y: LR05 * -1,   Z: LR06 * -1};
-        this.reles.MA0 = {X: 0,         Y: MA00 * -1,   Z: MA03 * -1};
-        this.reles.MA1 = {X: MA02,      Y: MA01,        Z: MA03 * -1};
-        this.reles.MA2 = {X: MA02 * -1, Y: MA01,        Z: MA03 * -1};
-        this.reles.MB0 = {X: MB00,      Y: MB01,        Z: MA03};
-        this.reles.MB1 = {X: MB02 * -1, Y: MB03,        Z: MA03};
-        this.reles.MB2 = {X: MB04 * -1, Y: MB05 * -1,   Z: MA03};
-
-
-
-
-
-
-        this.reles.S00 = {X: LS00,      Y: LS01 * -1,   Z: LA03};
-        this.reles.S01 = {X: LS02,      Y: LS03,        Z: LA03};
-        this.reles.S02 = {X: LS04 * -1, Y: LS05 * -1,   Z: LA03};
-        this.reles.S03 = {X: LS00 * -1, Y: LS01 * -1,   Z: LA03};
-        this.reles.S04 = {X: LS04,      Y: LS05 * -1,   Z: LA03};
-        this.reles.S05 = {X: LS02 * -1, Y: LS03,        Z: LA03};
-        this.reles.T00 = {X: LT00,      Y: LT01 * -1,   Z: LT06};
-        this.reles.T01 = {X: LT02,      Y: LT03,        Z: LT06};
-        this.reles.T02 = {X: LT04 * -1, Y: LT05 * -1,   Z: LT06};
-        this.reles.U00 = {X: LU00,      Y: LU01 * -1,   Z: LU06};
-        this.reles.U01 = {X: LU02,      Y: LU03,        Z: LU06};
-        this.reles.U02 = {X: LU04 * -1, Y: LU05,        Z: LU06};
-        this.reles.V00 = {X: LV00,      Y: LV01 * -1,   Z: LV06};
-        this.reles.V01 = {X: LV02,      Y: LV03,        Z: LV06};
-        this.reles.V02 = {X: LV04 * -1, Y: LV05,        Z: LV06};
-        this.reles.W00 = {X: LW00,      Y: LW01 * -1,   Z: LG06};
-        this.reles.W01 = {X: LW02,      Y: LW03,        Z: LG06};
-        this.reles.W02 = {X: LW04 * -1, Y: LW05,        Z: LG06};
-        this.reles.X00 = {X: LX00,      Y: LX01,        Z: LA03};
-        this.reles.X01 = {X: LX02 * -1, Y: LX03,        Z: LA03};
-        this.reles.X02 = {X: LX04,      Y: LX05 * -1,   Z: LA03};
-        this.reles.Y00 = {X: LY00,      Y: LY01,        Z: LE03};
-        this.reles.Y01 = {X: LY02 * -1, Y: LY03,        Z: LE03};
-        this.reles.Y02 = {X: LY04 * -1, Y: LY05 * -1,   Z: LE03};
-
-        var reles_rear = {};
-        for (var i in this.reles) {
-            reles_rear[i + 'R'] = {
-                X: this.reles[i].X * -1,
-                Y: this.reles[i].Y * -1,
-                Z: this.reles[i].Z * -1
-            };
-        }
-        for (var i in reles_rear) {
-            this.reles[i] = reles_rear[i];
-        }
-
-        this.surfaces = {
-            S00A:   [this.reles.D00,    this.reles.E00,     this.reles.G00,     this.reles.F00,     this.reles.E01],
-            S01A:   [this.reles.D00,    this.reles.E01,     this.reles.G01,     this.reles.F01,     this.reles.E02],
-            S02A:   [this.reles.D00,    this.reles.E02,     this.reles.G02,     this.reles.F02,     this.reles.E00],
-
-            S03A:   [this.reles.E01,    this.reles.F00,     this.reles.H00,     this.reles.B01,     this.reles.G01],
-            S04A:   [this.reles.E02,    this.reles.F01,     this.reles.H01,     this.reles.B02,     this.reles.G02],
-            S05A:   [this.reles.E00,    this.reles.F02,     this.reles.H02,     this.reles.B00,     this.reles.G00],
-
-            S06A:   [this.reles.B00,    this.reles.I00,     this.reles.J00,     this.reles.F00,     this.reles.G00],
-            S07A:   [this.reles.B01,    this.reles.I01,     this.reles.J01,     this.reles.F01,     this.reles.G01],
-            S08A:   [this.reles.B02,    this.reles.I02,     this.reles.J02,     this.reles.F02,     this.reles.G02],
-
-            S09A:   [this.reles.C02R,   this.reles.K00,     this.reles.H00,     this.reles.F00,     this.reles.L00],
-            S10A:   [this.reles.C00R,   this.reles.K01,     this.reles.H01,     this.reles.F01,     this.reles.L01],
-            S11A:   [this.reles.C01R,   this.reles.K02,     this.reles.H02,     this.reles.F02,     this.reles.L02],
-
-            S12A:   [this.reles.A02R,   this.reles.M00,     this.reles.L00,     this.reles.F00,     this.reles.J00],
-            S13A:   [this.reles.A00R,   this.reles.M01,     this.reles.L01,     this.reles.F01,     this.reles.J01],
-            S14A:   [this.reles.A01R,   this.reles.M02,     this.reles.L02,     this.reles.F02,     this.reles.J02],
-
-            S15A:   [this.reles.A02R,   this.reles.J00,     this.reles.I00,     this.reles.O00,     this.reles.N00],
-            S16A:   [this.reles.A00R,   this.reles.J01,     this.reles.I01,     this.reles.O01,     this.reles.N01],
-            S17A:   [this.reles.A01R,   this.reles.J02,     this.reles.I02,     this.reles.O02,     this.reles.N02],
-
-            S18A:   [this.reles.B00,    this.reles.I00,     this.reles.O00,     this.reles.K02,     this.reles.H02],
-            S19A:   [this.reles.B01,    this.reles.I01,     this.reles.O01,     this.reles.K00,     this.reles.H00],
-            S20A:   [this.reles.B02,    this.reles.I02,     this.reles.O02,     this.reles.K01,     this.reles.H01],
-
-            S21A:   [this.reles.C00,    this.reles.R00,     this.reles.N00,     this.reles.O00,     this.reles.U00],
-            S22A:   [this.reles.C01,    this.reles.R01,     this.reles.N01,     this.reles.O01,     this.reles.U01],
-            S23A:   [this.reles.C02,    this.reles.R02,     this.reles.N02,     this.reles.O02,     this.reles.U02],
-
-            S24A:   [this.reles.A00,    this.reles.S00,     this.reles.U00,     this.reles.O00,     this.reles.MA0],
-            S25A:   [this.reles.A01,    this.reles.S01,     this.reles.U01,     this.reles.O01,     this.reles.MA1],
-            S26A:   [this.reles.A02,    this.reles.S02,     this.reles.U02,     this.reles.O02,     this.reles.MA2],
-
-            S27A:   [this.reles.A00,    this.reles.MA0,     this.reles.MB2,     this.reles.P02,     this.reles.S03],
-            S28A:   [this.reles.A01,    this.reles.MA1,     this.reles.MB0,     this.reles.P00,     this.reles.S04],
-            S29A:   [this.reles.A02,    this.reles.MA2,     this.reles.MB1,     this.reles.P01,     this.reles.S05],
-
-            S30A:   [this.reles.C00R,   this.reles.MB1,     this.reles.MA2,     this.reles.O02,     this.reles.K01],
-            S31A:   [this.reles.C01R,   this.reles.MB2,     this.reles.MA0,     this.reles.O00,     this.reles.K02],
-            S32A:   [this.reles.C02R,   this.reles.MB0,     this.reles.MA1,     this.reles.O01,     this.reles.K00],
-
-            S33A:   [this.reles.C00R,   this.reles.L01,     this.reles.M01,     this.reles.P01,     this.reles.MB1],
-            S34A:   [this.reles.C01R,   this.reles.L02,     this.reles.M02,     this.reles.P02,     this.reles.MB2],
-            S35A:   [this.reles.C02R,   this.reles.L00,     this.reles.M00,     this.reles.P00,     this.reles.MB0],
-
-            S49A:   [this.reles.A02R,   this.reles.M00,     this.reles.P00,     this.reles.R00,     this.reles.N00],
-            S50A:   [this.reles.A00R,   this.reles.M01,     this.reles.P01,     this.reles.R01,     this.reles.N01],
-            S51A:   [this.reles.A01R,   this.reles.M02,     this.reles.P02,     this.reles.R02,     this.reles.N02],
-
-            S52A:   [this.reles.B02R,   this.reles.V01,     this.reles.S04,     this.reles.P00,     this.reles.Q00],
-            S53A:   [this.reles.B00R,   this.reles.V02,     this.reles.S05,     this.reles.P01,     this.reles.Q01],
-            S54A:   [this.reles.B01R,   this.reles.V00,     this.reles.S03,     this.reles.P02,     this.reles.Q02],
-
-            S55A:   [this.reles.B02R,   this.reles.W00,     this.reles.X02,     this.reles.T00,     this.reles.Q00],
-            S56A:   [this.reles.B00R,   this.reles.W01,     this.reles.X00,     this.reles.T01,     this.reles.Q01],
-            S57A:   [this.reles.B01R,   this.reles.W02,     this.reles.X01,     this.reles.T02,     this.reles.Q02],
-
-            S58A:   [this.reles.C00,    this.reles.R00,     this.reles.P00,     this.reles.Q00,     this.reles.T00],
-            S59A:   [this.reles.C01,    this.reles.R01,     this.reles.P01,     this.reles.Q01,     this.reles.T01],
-            S60A:   [this.reles.C02,    this.reles.R02,     this.reles.P02,     this.reles.Q02,     this.reles.T02],
-
-            S61A:   [this.reles.A00,    this.reles.S00,     this.reles.X02,     this.reles.V00,     this.reles.S03],
-            S62A:   [this.reles.A01,    this.reles.S01,     this.reles.X00,     this.reles.V01,     this.reles.S04],
-            S63A:   [this.reles.A02,    this.reles.S02,     this.reles.X01,     this.reles.V02,     this.reles.S05],
-
-            S64A:   [this.reles.C00,    this.reles.T00,     this.reles.X02,     this.reles.S00,     this.reles.U00],
-            S65A:   [this.reles.C01,    this.reles.T01,     this.reles.X00,     this.reles.S01,     this.reles.U01],
-            S66A:   [this.reles.C02,    this.reles.T02,     this.reles.X01,     this.reles.S02,     this.reles.U02],
-
-            S67A:   [this.reles.B01R,   this.reles.V00,     this.reles.X02,     this.reles.Y02,     this.reles.W02],
-            S68A:   [this.reles.B02R,   this.reles.V01,     this.reles.X00,     this.reles.Y00,     this.reles.W00],
-            S69A:   [this.reles.B00R,   this.reles.V02,     this.reles.X01,     this.reles.Y01,     this.reles.W01],
-
-            S70A:   [this.reles.D00R,   this.reles.Y00,     this.reles.X00,     this.reles.W01,     this.reles.Y01],
-            S71A:   [this.reles.D00R,   this.reles.Y01,     this.reles.X01,     this.reles.W02,     this.reles.Y02],
-            S72A:   [this.reles.D00R,   this.reles.Y02,     this.reles.X02,     this.reles.W00,     this.reles.Y00],
-        };
-
-        this.surfaces2 = {
-            T01A:   [this.reles.D00,    this.reles.B00,     this.reles.A02R,    this.reles.C02R,    this.reles.B01],
-            T02A:   [this.reles.D00,    this.reles.B01,     this.reles.A00R,    this.reles.C00R,    this.reles.B02],
-            T03A:   [this.reles.D00,    this.reles.B02,     this.reles.A01R,    this.reles.C01R,    this.reles.B00],
-            T01R:   [this.reles.D00R,   this.reles.B00R,    this.reles.A02,     this.reles.C02,     this.reles.B01R],
-            T02R:   [this.reles.D00R,   this.reles.B01R,    this.reles.A00,     this.reles.C00,     this.reles.B02R],
-            T03R:   [this.reles.D00R,   this.reles.B02R,    this.reles.A01,     this.reles.C01,     this.reles.B00R],
-
-            T04A:   [this.reles.B00,    this.reles.C01R,    this.reles.A00,     this.reles.C00,     this.reles.A02R],
-            T05A:   [this.reles.B01,    this.reles.C02R,    this.reles.A01,     this.reles.C01,     this.reles.A00R],
-            T06A:   [this.reles.B02,    this.reles.C00R,    this.reles.A02,     this.reles.C02,     this.reles.A01R],
-            T04R:   [this.reles.B00R,   this.reles.C01,     this.reles.A00R,    this.reles.C00R,    this.reles.A02],
-            T05R:   [this.reles.B01R,   this.reles.C02,     this.reles.A01R,    this.reles.C01R,    this.reles.A00],
-            T06R:   [this.reles.B02R,   this.reles.C00,     this.reles.A02R,    this.reles.C02R,    this.reles.A01],
-        };
-    },
-output: function(x, y, z)
-{
-    this.canvas_context.setTransform(1, 0, 0, 1, 0, 0);
-    this.canvas_context.clearRect(0, 0, this.size, this.size);
-    //this._output(this.surfaces2, this.fill_style2,   this.stroke_style2, x, y, z);
-    this._output(this.surfaces,  this.fill_style,    this.stroke_style,  x, y, z);
-
-    //this.lockOn('F02', x, y, z);
-},
-_output: function(surfaces, fill_style, stroke_style, theta_X, theta_Y, theta_Z)
-{
-    var sin_X = Math.sin(theta_X);
-    var cos_X = Math.cos(theta_X);
-    var sin_Y = Math.sin(theta_Y);
-    var cos_Y = Math.cos(theta_Y);
-    var sin_Z = Math.sin(theta_Z);
-    var cos_Z = Math.cos(theta_Z);
-
-    var coordinates =new Array();
-    for (var i in surfaces) {
-        var poses = new Array();
-        var z_index = 0;
-
-        for (var j = 0; j < surfaces[i].length; j ++) {
-            var X0 = surfaces[i][j].X;
-            var Y0 = surfaces[i][j].Y;
-            var Z0 = surfaces[i][j].Z;
-            var X1 = (X0 * cos_X) + (Z0 * sin_X);
-            var Z1 = (Z0 * cos_X) - (X0 * sin_X);
-            var X2 = (X1 * cos_Y) + (Y0 * sin_Y);
-            var Y2 = (Y0 * cos_Y) - (X1 * sin_Y);
-            var Y3 = (Y2 * cos_Z) - (Z1 * sin_Z);
-            var Z3 = (Z1 * cos_Z) + (Y2 * sin_Z);
-            var X = parseFloat(X2);
-            var Y = parseFloat(Y3);
-            var Z = parseFloat(Z3);
-
-            poses.push({X: X, Y: Y, Z: Z});
-            z_index += Z;
-        }
-
-        z_index = z_index / surfaces[i].length;
-        coordinates.push({poses: poses, z_index: z_index});
-    }
-
-    coordinates.sort(function(A, B){return B.z_index - A.z_index;});
-
-    for (var i = 0; i < coordinates.length; i ++) {
-        this.canvas_context.beginPath();
-
-        for (var j = 0; j < coordinates[i].poses.length; j ++) {
-            var pos = coordinates[i].poses[j];
-            if (j == 0) {
-                this.canvas_context.moveTo(this._center + pos.X, this._center + pos.Y);
-            } else {
-                this.canvas_context.lineTo(this._center + pos.X, this._center + pos.Y);
+        for (var i in reles_base) {
+            for (var n = 0; n < 3; n ++) {
+                this.reles[i + n + 'AO'] = {R: reles_base[i].R, X: reles_base[i].X, Y: reles_base[i].Y + (pai * 2 / 3 * n)};
+                this.reles[i + n + 'SO'] = {R: reles_base[i].R, X: reles_base[i].X, Y: reles_base[i].Y + (pai * 2 / 3 * n)};
+                this.reles[i + n + 'AR'] = {R: reles_base[i].R, X: reles_base[i].X, Y: reles_base[i].Y + (pai * 2 / 3 * n)};
+                this.reles[i + n + 'SR'] = {R: reles_base[i].R, X: reles_base[i].X, Y: reles_base[i].Y + (pai * 2 / 3 * n)};
+
+                this.reles[i + n + 'SO'].Y *= -1;
+                this.reles[i + n + 'SR'].Y *= -1;
+                this.reles[i + n + 'SO'].Y += TY_A10 + pai;
+                this.reles[i + n + 'SR'].Y += TY_A10 + pai;
+                this.reles[i + n + 'AR'].X += pai;
+                this.reles[i + n + 'SR'].X += pai;
             }
         }
 
-        this.canvas_context.closePath();
-        this.canvas_context.fillStyle     = fill_style;
-        this.canvas_context.fill();
-        this.canvas_context.strokeStyle   = stroke_style;
-        this.canvas_context.stroke();
+        this.surfaces = {
+            A0_A: ['Z00AR', 'D00AO', 'C00AO', 'F00AO', 'D01AO'],
+            A1_A: ['Z00AR', 'D01AO', 'C01AO', 'F01AO', 'D02AO'],
+            A2_A: ['Z00AR', 'D02AO', 'C02AO', 'F02AO', 'D00AO'],
+            A0_S: ['Z00SO', 'D00SR', 'C00SR', 'F00SR', 'D01SR'],
+            A1_S: ['Z00SO', 'D01SR', 'C01SR', 'F01SR', 'D02SR'],
+            A2_S: ['Z00SO', 'D02SR', 'C02SR', 'F02SR', 'D00SR'],
+            B0_A: ['A00AO', 'H00AO', 'G00SR', 'C00SR', 'G01AR'],
+            B1_A: ['A01AO', 'H01AO', 'G02SR', 'C02SR', 'G02AR'],
+            B2_A: ['A02AO', 'H02AO', 'G01SR', 'C01SR', 'G00AR'],
+            B0_S: ['A00SR', 'H00SR', 'G00AO', 'C00AO', 'G01SO'],
+            B1_S: ['A01SR', 'H01SR', 'G02AO', 'C02AO', 'G02SO'],
+            B2_S: ['A02SR', 'H02SR', 'G01AO', 'C01AO', 'G00SO'],
+            C0_A: ['B00AO', 'G00SR', 'C00SR', 'D00SR', 'F02SR'],
+            C1_A: ['B01AO', 'G02SR', 'C02SR', 'D02SR', 'F01SR'],
+            C2_A: ['B02AO', 'G01SR', 'C01SR', 'D01SR', 'F00SR'],
+            C0_S: ['B00SR', 'G00AO', 'C00AO', 'D00AO', 'F02AO'],
+            C1_S: ['B01SR', 'G02AO', 'C02AO', 'D02AO', 'F01AO'],
+            C2_S: ['B02SR', 'G01AO', 'C01AO', 'D01AO', 'F00AO'],
+            D0_A: ['B00AO', 'E02AO', 'D02AR', 'C02AR', 'F02AR'],
+            D1_A: ['B01AO', 'E00AO', 'D00AR', 'C00AR', 'F00AR'],
+            D2_A: ['B02AO', 'E01AO', 'D01AR', 'C01AR', 'F01AR'],
+            D0_S: ['B00SR', 'E02SR', 'D02SO', 'C02SO', 'F02SO'],
+            D1_S: ['B01SR', 'E00SR', 'D00SO', 'C00SO', 'F00SO'],
+            D2_S: ['B02SR', 'E01SR', 'D01SO', 'C01SO', 'F01SO'],
+            E0_A: ['A00AO', 'G01AR', 'I00AR', 'J00SR', 'E00AR'],
+            E1_A: ['A01AO', 'G02AR', 'I01AR', 'J02SR', 'E01AR'],
+            E2_A: ['A02AO', 'G00AR', 'I02AR', 'J01SR', 'E02AR'],
+            E0_S: ['A00SR', 'G01SO', 'I00SO', 'J00AO', 'E00SO'],
+            E1_S: ['A01SR', 'G02SO', 'I01SO', 'J02AO', 'E01SO'],
+            E2_S: ['A02SR', 'G00SO', 'I02SO', 'J01AO', 'E02SO'],
+            E0_A: ['A00AR', 'I00SR', 'J00AR', 'E00SR', 'D00SO'],
+            E1_A: ['A01AR', 'I02SR', 'J01AR', 'E02SR', 'D02SO'],
+            E2_A: ['A02AR', 'I01SR', 'J02AR', 'E01SR', 'D01SO'],
+            E0_S: ['A00SO', 'I00AO', 'J00SO', 'E00AO', 'D00AR'],
+            E1_S: ['A01SO', 'I02AO', 'J01SO', 'E02AO', 'D02AR'],
+            E2_S: ['A02SO', 'I01AO', 'J02SO', 'E01AO', 'D01AR'],
+            F0_A: ['A00SO', 'I02AR', 'G00AR', 'C00AR', 'D00AR'],
+            F1_A: ['A01SO', 'I01AR', 'G02AR', 'C02AR', 'D02AR'],
+            F2_A: ['A02SO', 'I00AR', 'G01AR', 'C01AR', 'D01AR'],
+            F0_S: ['A00AR', 'I02SO', 'G00SO', 'C00SO', 'D00SO'],
+            F1_S: ['A01AR', 'I01SO', 'G02SO', 'C02SO', 'D02SO'],
+            F2_S: ['A02AR', 'I00SO', 'G01SO', 'C01SO', 'D01SO'],
+            G0_A: ['A00AO', 'G01AR', 'I00AR', 'J01AR', 'E00AR'],
+            G1_A: ['A01AO', 'G02AR', 'I01AR', 'J02AR', 'E01AR'],
+            G2_A: ['A02AO', 'G00AR', 'I02AR', 'J00AR', 'E02AR'],
+            G0_S: ['A00SR', 'G01SO', 'I00SO', 'J01SO', 'E00SO'],
+            G1_S: ['A01SR', 'G02SO', 'I01SO', 'J02SO', 'E01SO'],
+            G2_S: ['A02SR', 'G00SO', 'I02SO', 'J00SO', 'E02SO'],
+            H0_A: ['A00AO', 'H00AO', 'J00AO', 'E00SO', 'E00AR'],
+            H1_A: ['A01AO', 'H01AO', 'J01AO', 'E02SO', 'E01AR'],
+            H2_A: ['A02AO', 'H02AO', 'J02AO', 'E01SO', 'E02AR'],
+            H0_S: ['A00SR', 'H00SR', 'J00SR', 'E00AR', 'E00SO'],
+            H1_S: ['A01SR', 'H01SR', 'J01SR', 'E02AR', 'E01SO'],
+            H2_S: ['A02SR', 'H02SR', 'J02SR', 'E01AR', 'E02SO'],
+            I0_A: ['A00AR', 'I02SO', 'J00SO', 'I00AO', 'I00SR'],
+            I1_A: ['A02AR', 'I00SO', 'J01SO', 'I02AO', 'I01SR'],
+            I2_A: ['A01AR', 'I01SO', 'J02SO', 'I01AO', 'I02SR'],
+            I0_S: ['A00SO', 'I02AR', 'J00AR', 'I00SR', 'I00AO'],
+            I1_S: ['A02SO', 'I00AR', 'J01AR', 'I02SR', 'I01AO'],
+            I2_S: ['A01SO', 'I01AR', 'J02AR', 'I01SR', 'I02AO'],
+            J0_A: ['B02AO', 'E01AO', 'J02SO', 'H02SO', 'G01SR'],
+            J1_A: ['B00AO', 'E02AO', 'J01SO', 'H01SO', 'G00SR'],
+            J2_A: ['B01AO', 'E00AO', 'J00SO', 'H00SO', 'G02SR'],
+            J0_S: ['B02SR', 'E01SR', 'J02AR', 'H02AR', 'G01AO'],
+            J1_S: ['B00SR', 'E02SR', 'J01AR', 'H01AR', 'G00AO'],
+            J2_S: ['B01SR', 'E00SR', 'J00AR', 'H00AR', 'G02AO']
+        };
     }
-}
 };

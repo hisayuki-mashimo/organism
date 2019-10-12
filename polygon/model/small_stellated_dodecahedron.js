@@ -2,160 +2,163 @@
  * 小星型十二面体
  *
  */
-var SmallStellatedDodecahedron = function()
-{
+const Small_Stellated_Dodecahedron_Theta = function () {
 };
 
-
-SmallStellatedDodecahedron.prototype = {
-    // 外部設定値
-    fill_style:     'rgba(120, 240, 255, 0.8)',
-    stroke_style:   'rgb(96, 176, 192)',
-
-
-
-
+Small_Stellated_Dodecahedron_Theta.prototype = {
     /**
      * 初期化
      *
      */
-    configure: function()
-    {
-        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
-
-        var pai         = Math.PI;
-        var theta072    = pai * 2 / 5;
-        var theta036    = pai * 2 / 10;
-        var sin072      = Math.sin(theta072);
-        var cos072      = Math.cos(theta072);
-        var sin036      = Math.sin(theta036);
-        var cos036      = Math.cos(theta036);
+    configure: function () {
+        const { getLengthByPytha } = this.basis.geometry_calculator;
 
         // 五芒星比率
-        var RA00 = {
-            A: (4 * Math.pow(cos036, 2)) - 2,
+        const cos036 = Math.cos(Math.PI / 5);
+        const coefficient = Math.pow(cos036, 2) * 4;
+        const RA00 = {
+            A: coefficient - 2,
             B: 1,
-            C: (4 * Math.pow(cos036, 2)) - 1,
-            D: (4 * Math.pow(cos036, 2))
+            C: coefficient - 1,
+            D: coefficient,
         };
 
-        var LA00 = this.alpha;
-        var LA01 = LA00 * sin072;
-        var LA02 = LA00 * cos072;
-        var LA03 = LA00 * sin036;
-        var LA04 = LA00 * cos036;
+        // 中心点O
+        // 五芒星AFBGCIDIEJ 重心K
+        const AK = 1;
+        // (01) AB // HI
+        // (02) (01)より ∠KAB = ∠KHI
+        // (03) ∠AKB = ∠HKI
+        // (04) (02)(03)より △ABK ∽ △HIK
+        // (05) BC // AI
+        // (06) (01)(05)より 四角形ABCIは平行四辺形
+        // (07) (06)より AB = CI
+        // (08) 五芒星比率より HI = EH * (RA00.A / RA00.C)
+        // (09) (04)(07)(08)より HK = AK * (RA00.A / RA00.C)
+        const HK = AK * (RA00.A / RA00.C);
+        // AK・BEの交点L
+        // (10) AB = AE
+        // (11) (06)(10)より 四角形ABCIは菱形
+        // (12) (11)より ∠ABL = ∠HBL
+        // (13) ∠ALB = ∠HLB = 90°
+        // (14) (12)(13)より △ABL ≡ △HBL
+        // (15) (14)より AL = HL
+        // (16) (09)(15)より AL = (AK + HK) / 2
+        const AL = (AK + HK) / 2;
+        // 五芒星MQBRNSPTEU
+        // OAと∠NMPの2等分線との交点V
+        // (17) ∠OAK = ∠LAV
+        // (18) ∠AVL = ∠AKO = 90°
+        // (19) (17)(18)より △ALV ∽ △AOK
+        // (20) (19)より OK = LV * (AK / AV)
+        // (21) AL = ML
+        // (22) ∠ALV = ∠MLK
+        // (23) ∠AVL = ∠MKL = 90°
+        // (24) (21)(22)(23)より △ALV ≡ △MLK
+        // (25) (24)より LV = LK
 
-        var LB00 = LA00 * (RA00.B / RA00.D);
-        var LB01 = LB00 * sin072;
-        var LB02 = LB00 * cos072;
-        var LB03 = LB00 * sin036;
-        var LB04 = LA00 * cos072;
+        const KL = AK - AL;
+        const AV = getLengthByPytha(AL, KL, null);
+        const OA = AL * (AK / AV);
+        const OK = OA - AV;
+        const OH = getLengthByPytha(null, HK, OK);
 
-        var XA00 = getLengthByPytha((LA00 + LA04), LA00, null);
-        var LA05 = XA00 * (RA00.C / RA00.D) / 2;
+        const LT_A00 = this.alpha;
+        const LT_B00 = this.alpha * (OH / OA);
+        const TX_A00 = Math.asin(AK / OA);
+        const TX_B00 = Math.asin(HK / OH);
+        const TX_C00 = TX_B00 + TX_A00;
+        const TX_O00 = 0;
+        const TY_A00 = 0;
+        const TY_B00 = Math.PI;
 
-        var LC00 = LA00 * (RA00.C / RA00.D);
-        var LC01 = LC00 * sin072;
-        var LC02 = LC00 * cos072;
-        var LC03 = LC00 * sin036;
-        var LC04 = LC00 * cos036;
-        var LC05 = LA05 - ((LA05 * 2) * (RA00.B / RA00.D));
+        var reles_base = {
+            O0: { R: LT_A00, X: TX_O00, Y: TY_A00 },
+            A0: { R: LT_A00, X: TX_A00, Y: TY_A00 },
+            B0: { R: LT_B00, X: TX_B00, Y: TY_B00 },
+            C0: { R: LT_B00, X: TX_C00, Y: TY_A00 },
+        };
 
-        var LD00 = XA00 - LA05;
+        for (var i in reles_base) {
+            var base_R = reles_base[i].R;
+            var base_X = reles_base[i].X;
+            var base_Y = reles_base[i].Y;
 
-        this.reles.A00 = {X: 0,         Y: LA00 * -1,   Z: LA05 * -1};
-        this.reles.A01 = {X: LA01,      Y: LA02 * -1,   Z: LA05 * -1};
-        this.reles.A02 = {X: LA03,      Y: LA04,        Z: LA05 * -1};
-        this.reles.A03 = {X: LA03 * -1, Y: LA04,        Z: LA05 * -1};
-        this.reles.A04 = {X: LA01 * -1, Y: LA02 * -1,   Z: LA05 * -1};
-        this.reles.B00 = {X: 0,         Y: LB00,        Z: LA05 * -1};
-        this.reles.B01 = {X: LB01 * -1, Y: LB02,        Z: LA05 * -1};
-        this.reles.B02 = {X: LB03 * -1, Y: LB04 * -1,   Z: LA05 * -1};
-        this.reles.B03 = {X: LB03,      Y: LB04 * -1,   Z: LA05 * -1};
-        this.reles.B04 = {X: LB01,      Y: LB02,        Z: LA05 * -1};
-        this.reles.C00 = {X: 0,         Y: LC00,        Z: LC05 * -1};
-        this.reles.C01 = {X: LC01 * -1, Y: LC02,        Z: LC05 * -1};
-        this.reles.C02 = {X: LC03 * -1, Y: LC04 * -1,   Z: LC05 * -1};
-        this.reles.C03 = {X: LC03,      Y: LC04 * -1,   Z: LC05 * -1};
-        this.reles.C04 = {X: LC01,      Y: LC02,        Z: LC05 * -1};
-        this.reles.D00 = {X: 0,         Y: 0,           Z: LD00 * -1};
+            for (var n = 0; n < 5; n++) {
+                this.reles[i + n + 'AO'] = { R: base_R };
+                this.reles[i + n + 'SR'] = { R: base_R };
 
-        var reles_rear = {};
-        for (var i in this.reles) {
-            reles_rear[i + 'R'] = {
-                X: this.reles[i].X * -1,
-                Y: this.reles[i].Y * -1,
-                Z: this.reles[i].Z * -1
-            };
-        }
-        for (var i in reles_rear) {
-            this.reles[i] = reles_rear[i];
+                this.reles[i + n + 'AO'].X = base_X;
+                this.reles[i + n + 'AO'].Y = base_Y + ((Math.PI * 2 / 5) * n);
+                this.reles[i + n + 'SR'].X = base_X + Math.PI;
+                this.reles[i + n + 'SR'].Y = base_Y + ((Math.PI * 2 / 5) * n);
+            }
         }
 
         this.surfaces = {
-            S00A:   [this.reles.A00,    this.reles.B02,     this.reles.B03],
-            S01A:   [this.reles.A01,    this.reles.B03,     this.reles.B04],
-            S02A:   [this.reles.A02,    this.reles.B04,     this.reles.B00],
-            S03A:   [this.reles.A03,    this.reles.B00,     this.reles.B01],
-            S04A:   [this.reles.A04,    this.reles.B01,     this.reles.B02],
-            S00R:   [this.reles.A00R,   this.reles.B02R,    this.reles.B03R],
-            S01R:   [this.reles.A01R,   this.reles.B03R,    this.reles.B04R],
-            S02R:   [this.reles.A02R,   this.reles.B04R,    this.reles.B00R],
-            S03R:   [this.reles.A03R,   this.reles.B00R,    this.reles.B01R],
-            S04R:   [this.reles.A04R,   this.reles.B01R,    this.reles.B02R],
+            O00A: ["O00AO", "B00AO", "B01AO"],
+            O01A: ["O00AO", "B01AO", "B02AO"],
+            O02A: ["O00AO", "B02AO", "B03AO"],
+            O03A: ["O00AO", "B03AO", "B04AO"],
+            O04A: ["O00AO", "B04AO", "B00AO"],
+            O00R: ["O00SR", "B00SR", "B01SR"],
+            O01R: ["O00SR", "B01SR", "B02SR"],
+            O02R: ["O00SR", "B02SR", "B03SR"],
+            O03R: ["O00SR", "B03SR", "B04SR"],
+            O04R: ["O00SR", "B04SR", "B00SR"],
 
-            S05A:   [this.reles.B00,    this.reles.B01,     this.reles.D00],
-            S06A:   [this.reles.B01,    this.reles.B02,     this.reles.D00],
-            S07A:   [this.reles.B02,    this.reles.B03,     this.reles.D00],
-            S08A:   [this.reles.B03,    this.reles.B04,     this.reles.D00],
-            S09A:   [this.reles.B04,    this.reles.B00,     this.reles.D00],
-            S05R:   [this.reles.B00R,   this.reles.B01R,    this.reles.D00R],
-            S06R:   [this.reles.B01R,   this.reles.B02R,    this.reles.D00R],
-            S07R:   [this.reles.B02R,   this.reles.B03R,    this.reles.D00R],
-            S08R:   [this.reles.B03R,   this.reles.B04R,    this.reles.D00R],
-            S09R:   [this.reles.B04R,   this.reles.B00R,    this.reles.D00R],
+            A00A: ["A00AO", "B02AO", "B03AO"],
+            A01A: ["A01AO", "B03AO", "B04AO"],
+            A02A: ["A02AO", "B04AO", "B00AO"],
+            A03A: ["A03AO", "B00AO", "B01AO"],
+            A04A: ["A04AO", "B01AO", "B02AO"],
+            A00R: ["A00SR", "B02SR", "B03SR"],
+            A01R: ["A01SR", "B03SR", "B04SR"],
+            A02R: ["A02SR", "B04SR", "B00SR"],
+            A03R: ["A03SR", "B00SR", "B01SR"],
+            A04R: ["A04SR", "B01SR", "B02SR"],
 
-            S10A:   [this.reles.A00,    this.reles.B03,     this.reles.C03],
-            S11A:   [this.reles.A01,    this.reles.B04,     this.reles.C04],
-            S12A:   [this.reles.A02,    this.reles.B00,     this.reles.C00],
-            S13A:   [this.reles.A03,    this.reles.B01,     this.reles.C01],
-            S14A:   [this.reles.A04,    this.reles.B02,     this.reles.C02],
-            S15A:   [this.reles.A00,    this.reles.B02,     this.reles.C02],
-            S16A:   [this.reles.A01,    this.reles.B03,     this.reles.C03],
-            S17A:   [this.reles.A02,    this.reles.B04,     this.reles.C04],
-            S18A:   [this.reles.A03,    this.reles.B00,     this.reles.C00],
-            S19A:   [this.reles.A04,    this.reles.B01,     this.reles.C01],
-            S10R:   [this.reles.A00R,   this.reles.B03R,    this.reles.C03R],
-            S11R:   [this.reles.A01R,   this.reles.B04R,    this.reles.C04R],
-            S12R:   [this.reles.A02R,   this.reles.B00R,    this.reles.C00R],
-            S13R:   [this.reles.A03R,   this.reles.B01R,    this.reles.C01R],
-            S14R:   [this.reles.A04R,   this.reles.B02R,    this.reles.C02R],
-            S15R:   [this.reles.A00R,   this.reles.B02R,    this.reles.C02R],
-            S16R:   [this.reles.A01R,   this.reles.B03R,    this.reles.C03R],
-            S17R:   [this.reles.A02R,   this.reles.B04R,    this.reles.C04R],
-            S18R:   [this.reles.A03R,   this.reles.B00R,    this.reles.C00R],
-            S19R:   [this.reles.A04R,   this.reles.B01R,    this.reles.C01R],
+            B00A: ["A00AO", "C00AO", "C02SR"],
+            B01A: ["A01AO", "C01AO", "C03SR"],
+            B02A: ["A02AO", "C02AO", "C04SR"],
+            B03A: ["A03AO", "C03AO", "C00SR"],
+            B04A: ["A04AO", "C04AO", "C01SR"],
+            B10A: ["A00AO", "C00AO", "C03SR"],
+            B11A: ["A01AO", "C01AO", "C04SR"],
+            B12A: ["A02AO", "C02AO", "C00SR"],
+            B13A: ["A03AO", "C03AO", "C01SR"],
+            B14A: ["A04AO", "C04AO", "C02SR"],
+            B00R: ["A00SR", "C00SR", "C02AO"],
+            B01R: ["A01SR", "C01SR", "C03AO"],
+            B02R: ["A02SR", "C02SR", "C04AO"],
+            B03R: ["A03SR", "C03SR", "C00AO"],
+            B04R: ["A04SR", "C04SR", "C01AO"],
+            B10R: ["A00SR", "C00SR", "C03AO"],
+            B11R: ["A01SR", "C01SR", "C04AO"],
+            B12R: ["A02SR", "C02SR", "C00AO"],
+            B13R: ["A03SR", "C03SR", "C01AO"],
+            B14R: ["A04SR", "C04SR", "C02AO"],
 
-            S20A:   [this.reles.A00,    this.reles.C00R,    this.reles.C02],
-            S21A:   [this.reles.A01,    this.reles.C01R,    this.reles.C03],
-            S22A:   [this.reles.A02,    this.reles.C02R,    this.reles.C04],
-            S23A:   [this.reles.A03,    this.reles.C03R,    this.reles.C00],
-            S24A:   [this.reles.A04,    this.reles.C04R,    this.reles.C01],
-            S25A:   [this.reles.A00,    this.reles.C00R,    this.reles.C03],
-            S26A:   [this.reles.A01,    this.reles.C01R,    this.reles.C04],
-            S27A:   [this.reles.A02,    this.reles.C02R,    this.reles.C00],
-            S28A:   [this.reles.A03,    this.reles.C03R,    this.reles.C01],
-            S29A:   [this.reles.A04,    this.reles.C04R,    this.reles.C02],
-            S20R:   [this.reles.A00R,   this.reles.C00,     this.reles.C02R],
-            S21R:   [this.reles.A01R,   this.reles.C01,     this.reles.C03R],
-            S22R:   [this.reles.A02R,   this.reles.C02,     this.reles.C04R],
-            S23R:   [this.reles.A03R,   this.reles.C03,     this.reles.C00R],
-            S24R:   [this.reles.A04R,   this.reles.C04,     this.reles.C01R],
-            S25R:   [this.reles.A00R,   this.reles.C00,     this.reles.C03R],
-            S26R:   [this.reles.A01R,   this.reles.C01,     this.reles.C04R],
-            S27R:   [this.reles.A02R,   this.reles.C02,     this.reles.C00R],
-            S28R:   [this.reles.A03R,   this.reles.C03,     this.reles.C01R],
-            S29R:   [this.reles.A04R,   this.reles.C04,     this.reles.C02R],
+            C00A: ["A00AO", "B02AO", "C02SR"],
+            C01A: ["A01AO", "B03AO", "C03SR"],
+            C02A: ["A02AO", "B04AO", "C04SR"],
+            C03A: ["A03AO", "B00AO", "C00SR"],
+            C04A: ["A04AO", "B01AO", "C01SR"],
+            C10A: ["A00AO", "B03AO", "C03SR"],
+            C11A: ["A01AO", "B04AO", "C04SR"],
+            C12A: ["A02AO", "B00AO", "C00SR"],
+            C13A: ["A03AO", "B01AO", "C01SR"],
+            C14A: ["A04AO", "B02AO", "C02SR"],
+            C00R: ["A00SR", "B02SR", "C02AO"],
+            C01R: ["A01SR", "B03SR", "C03AO"],
+            C02R: ["A02SR", "B04SR", "C04AO"],
+            C03R: ["A03SR", "B00SR", "C00AO"],
+            C04R: ["A04SR", "B01SR", "C01AO"],
+            C10R: ["A00SR", "B03SR", "C03AO"],
+            C11R: ["A01SR", "B04SR", "C04AO"],
+            C12R: ["A02SR", "B00SR", "C00AO"],
+            C13R: ["A03SR", "B01SR", "C01AO"],
+            C14R: ["A04SR", "B02SR", "C02AO"],
         };
     }
 };
