@@ -2,141 +2,125 @@
  * 5つの正四面体
  *
  */
-var Fifth_Tetrahedron_Theta = function()
-{
-};
+class Fifth_Tetrahedron {
+    configure = () => {
+        const {
+            getLengthByPytha,
+            finalizeRatioByPytha,
+         } = this.basis.geometry_calculator;
 
-
-Fifth_Tetrahedron_Theta.prototype = {
-    // 外部設定値
-    fill_style:     'rgba(160, 160, 224, 0.8)',
-    stroke_style:   'rgba(64, 64, 176, 0.5)',
-
-
-
-
-    /**
-     * 初期化
-     *
-     */
-    configure: function()
-    {
-        var getLengthByPytha     = this.basis.geometry_calculator.getLengthByPytha;
-        var finalizeRatioByPytha = this.basis.geometry_calculator.finalizeRatioByPytha;
-
-        var pai    = Math.PI;
-        var cos036 = Math.cos(pai * 2 / 10);
+        const pai    = Math.PI;
+        const cos036 = Math.cos(pai * 2 / 10);
 
         // 正三角形比率
-        var RA_A00 = {
+        const RA_A00 = {
             A: 1,
             B: Math.pow(3, 1 / 2),
             C: 2
         };
 
         // 五芒星比率
-        var RA_A01 = {
+        const RA_A01 = {
             A: (4 * Math.pow(cos036, 2)) - 2,
             B: 1,
             C: (4 * Math.pow(cos036, 2)) - 1,
             D: (4 * Math.pow(cos036, 2))
         };
 
-        var LX_A00 = this.alpha;
-        var LX_A01 = LX_A00 * (RA_A00.B / RA_A00.C);
-        var LX_A02 = LX_A00 * (RA_A00.A / RA_A00.C);
-        var LX_A03 = LX_A00 + LX_A02;
-        var LX_A04 = getLengthByPytha(LX_A03, LX_A02, null); // Oからの△ABCへの垂線
-        var RA_X00 = {
+        const LX_A00 = 1;
+        const LX_A01 = LX_A00 * (RA_A00.B / RA_A00.C);
+        const LX_A02 = LX_A00 * (RA_A00.A / RA_A00.C);
+        const LX_A03 = LX_A00 + LX_A02;
+        const LX_A04 = getLengthByPytha(LX_A03, LX_A02, null); // Oからの△ABCへの垂線
+        const RA_X00 = {
             A: LX_A04,
             B: LX_A03
         };
-        var LX_A05 = LX_A00 * (RA_X00.B / RA_X00.A);
-        var RA_X01 = finalizeRatioByPytha({
+        const LX_A05 = LX_A00 * (RA_X00.B / RA_X00.A);
+        const RA_X01 = finalizeRatioByPytha({
             A: null,
             B: (RA_A01.D / RA_A01.B) + 1,
             C: (RA_A00.B / RA_A00.A) * (RA_A01.D / RA_A01.C)
         });
-        var LX_A06 = LX_A00 * 2;
-        var LX_A07 = LX_A06 * (RA_X01.B / RA_X01.A);
-        var LX_A08 = LX_A07 * (RA_A01.B / (RA_A01.D + RA_A01.B));
-        var LX_A09 = LX_A08 * (RA_A01.C / RA_A01.D) / 2;
+        const LX_A06 = LX_A00 * 2;
+        const LX_A07 = LX_A06 * (RA_X01.B / RA_X01.A);
+        const LX_A08 = LX_A07 * (RA_A01.B / (RA_A01.D + RA_A01.B));
+        const LX_A09 = LX_A08 * (RA_A01.C / RA_A01.D) / 2;
 
-        var LX_B00 = LX_A06 * (RA_X01.C / RA_X01.A) / 2;
-        var RA_X02 = finalizeRatioByPytha({
+        const LX_B00 = LX_A06 * (RA_X01.C / RA_X01.A) / 2;
+        const RA_X02 = finalizeRatioByPytha({
             A: null,
             B: 2 + (RA_A01.B / RA_A01.C),
             C: 1
         });
-        var LX_B03 = LX_A05 * (RA_X02.C / RA_X02.A);
+        const LX_B03 = LX_A05 * (RA_X02.C / RA_X02.A);
 
-        var LX_C00 = LX_B00 * (RA_A01.C / RA_A01.D);
-        var LX_C01 = LX_C00 * (RA_A00.A / RA_A00.B);
-        var LX_C02 = LX_C01 * (RA_A01.C / RA_A01.D);
-        var LX_C03 = LX_A07 + LX_C02;
-        var LX_C04 = LX_C03 * (RA_A01.C / RA_A01.D);
-        var LX_C05 = LX_C04 - (LX_A07 / 2);
-        var LX_C06 = LX_A05 * 2 / 3;
-        var LX_C07 = LX_C06 / 2;
-        var LX_C08 = getLengthByPytha(null, LX_C05, LX_C07);
+        const LX_C00 = LX_B00 * (RA_A01.C / RA_A01.D);
+        const LX_C01 = LX_C00 * (RA_A00.A / RA_A00.B);
+        const LX_C02 = LX_C01 * (RA_A01.C / RA_A01.D);
+        const LX_C03 = LX_A07 + LX_C02;
+        const LX_C04 = LX_C03 * (RA_A01.C / RA_A01.D);
+        const LX_C05 = LX_C04 - (LX_A07 / 2);
+        const LX_C06 = LX_A05 * 2 / 3;
+        const LX_C07 = LX_C06 / 2;
+        const LX_C08 = getLengthByPytha(null, LX_C05, LX_C07);
 
-        var LX_D00 = getLengthByPytha(LX_A05, LX_A01, null);
-        var LX_D01 = LX_A01 * 2;
-        var LX_D02 = LX_D01 * (RA_A01.A / RA_A01.D) / 2;
-        var LX_D03 = getLengthByPytha(null, LX_D00, LX_D02);
+        const LX_D00 = getLengthByPytha(LX_A05, LX_A01, null);
+        const LX_D01 = LX_A01 * 2;
+        const LX_D02 = LX_D01 * (RA_A01.A / RA_A01.D) / 2;
+        const LX_D03 = getLengthByPytha(null, LX_D00, LX_D02);
 
-        var LX_F00 = LX_B00 - LX_C00;
-        var LX_F01 = LX_F00 * (RA_A01.C / RA_A01.D);
-        var LX_F02 = LX_C00 + LX_F01;
-        var LX_F03 = getLengthByPytha(null, LX_C00, LX_F02);
+        const LX_F00 = LX_B00 - LX_C00;
+        const LX_F01 = LX_F00 * (RA_A01.C / RA_A01.D);
+        const LX_F02 = LX_C00 + LX_F01;
+        const LX_F03 = getLengthByPytha(null, LX_C00, LX_F02);
 
-        var LX_G00 = LX_A04 - LX_A05;
-        var LX_G01 = getLengthByPytha(null, LX_D02, LX_G00);
-        var LX_G02 = getLengthByPytha(null, LX_A02, LX_G01);
-        var LX_G03 = getLengthByPytha(null, LX_A02, LX_D02);
+        const LX_G00 = LX_A04 - LX_A05;
+        const LX_G01 = getLengthByPytha(null, LX_D02, LX_G00);
+        const LX_G02 = getLengthByPytha(null, LX_A02, LX_G01);
+        const LX_G03 = getLengthByPytha(null, LX_A02, LX_D02);
 
-        var LX_H00 = getLengthByPytha(null, LX_G03, LX_G00);
+        const LX_H00 = getLengthByPytha(null, LX_G03, LX_G00);
 
-        var LX_I00 = LX_A07 * (RA_A01.A / RA_A01.D) / 2;
-        var LX_I01 = getLengthByPytha(null, LX_B00, LX_I00);
-        var LX_I02 = LX_G00 * (RA_A01.A / RA_A01.D);
-        var LX_I03 = getLengthByPytha(null, LX_I00, LX_I02);
-        var LX_I04 = getLengthByPytha(null, LX_B00, LX_I03);
+        const LX_I00 = LX_A07 * (RA_A01.A / RA_A01.D) / 2;
+        const LX_I01 = getLengthByPytha(null, LX_B00, LX_I00);
+        const LX_I02 = LX_G00 * (RA_A01.A / RA_A01.D);
+        const LX_I03 = getLengthByPytha(null, LX_I00, LX_I02);
+        const LX_I04 = getLengthByPytha(null, LX_B00, LX_I03);
 
-        var LX_J00 = LX_C00 * (RA_A01.C / RA_A01.D);
+        const LX_J00 = LX_C00 * (RA_A01.C / RA_A01.D);
 
-        var LT_A00 = LX_A05;
-        var LT_C00 = LX_C08;
-        var LT_D00 = LX_D03;
-        var LT_F00 = LX_F03;
-        var LT_G00 = LX_G02;
-        var LT_H00 = LX_H00;
-        var LT_I00 = LX_I04;
+        const LT_A00 = this.alpha;
+        const LT_C00 = this.alpha * LX_C08 / LX_A05;
+        const LT_D00 = this.alpha * LX_D03 / LX_A05;
+        const LT_F00 = this.alpha * LX_F03 / LX_A05;
+        const LT_G00 = this.alpha * LX_G02 / LX_A05;
+        const LT_H00 = this.alpha * LX_H00 / LX_A05;
+        const LT_I00 = this.alpha * LX_I04 / LX_A05;
 
-        var TX_A00 = Math.asin(LX_A00 / LX_A05);
-        var TX_A01 = Math.asin(LX_A00 / LX_A05) + pai;
-        var TX_B00 = Math.asin(LX_B03 / LX_A05) * 2;
-        var TX_C00 = Math.asin(LX_C05 / LX_C08) + pai;
-        var TX_D00 = Math.asin(LX_A01 / LX_A05) - Math.asin(LX_D02 / LX_D03) + pai;
-        var TX_E00 = Math.asin(LX_A01 / LX_A05) + Math.asin(LX_D02 / LX_D03);
-        var TX_F00 = Math.asin(LX_C00 / LX_F03) - Math.asin(LX_C00 / LX_A05) + pai;
-        var TX_G00 = Math.asin(LX_G03 / LX_G02) + pai;
-        var TX_H00 = Math.asin(LX_G03 / LX_H00);
-        var TX_I00 = Math.asin(LX_I01 / LX_I04) + pai;
-        var TX_J00 = Math.asin(LX_C05 / LX_C08) + (Math.asin(LX_J00 / LX_C08) * 2) - pai;
-        var TX_Z00 = 0;
+        const TX_A00 = Math.asin(LX_A00 / LX_A05);
+        const TX_B00 = Math.asin(LX_B03 / LX_A05) * 2;
+        const TX_C00 = Math.asin(LX_C05 / LX_C08) + pai;
+        const TX_D00 = Math.asin(LX_A01 / LX_A05) - Math.asin(LX_D02 / LX_D03) + pai;
+        const TX_E00 = Math.asin(LX_A01 / LX_A05) + Math.asin(LX_D02 / LX_D03);
+        const TX_F00 = Math.asin(LX_C00 / LX_F03) - Math.asin(LX_C00 / LX_A05) + pai;
+        const TX_G00 = Math.asin(LX_G03 / LX_G02) + pai;
+        const TX_H00 = Math.asin(LX_G03 / LX_H00);
+        const TX_I00 = Math.asin(LX_I01 / LX_I04) + pai;
+        const TX_J00 = Math.asin(LX_C05 / LX_C08) + (Math.asin(LX_J00 / LX_C08) * 2) - pai;
+        const TX_Z00 = 0;
 
-        var TY_A00 = 0;
-        var TY_A10 = Math.asin(LX_A09 / LX_A00) * 2;
-        var TY_B00 = Math.asin(LX_B00 / LX_A00);
-        var TY_C00 = TY_B00 + pai;
-        var TY_D00 = TY_A00 + pai;
-        var TY_G00 = Math.asin(LX_D02 / LX_G03) + pai;
-        var TY_H00 = Math.asin(LX_A01 / LX_A00) - Math.asin(LX_D02 / LX_G03);
-        var TY_I00 = Math.asin(LX_A09 / LX_A00) - Math.asin(LX_I00 / LX_I01);
-        var TY_Z00 = 0;
+        const TY_A00 = 0;
+        const TY_A10 = Math.asin(LX_A09 / LX_A00) * 2;
+        const TY_B00 = Math.asin(LX_B00 / LX_A00);
+        const TY_C00 = TY_B00 + pai;
+        const TY_D00 = TY_A00 + pai;
+        const TY_G00 = Math.asin(LX_D02 / LX_G03) + pai;
+        const TY_H00 = Math.asin(LX_A01 / LX_A00) - Math.asin(LX_D02 / LX_G03);
+        const TY_I00 = Math.asin(LX_A09 / LX_A00) - Math.asin(LX_I00 / LX_I01);
+        const TY_Z00 = 0;
 
-        var reles_base = {
+        const reles_base = {
             A0: {R: LT_A00, X: TX_A00, Y: TY_A00},
             B0: {R: LT_A00, X: TX_B00, Y: TY_B00},
             C0: {R: LT_C00, X: TX_C00, Y: TY_C00},
@@ -150,8 +134,8 @@ Fifth_Tetrahedron_Theta.prototype = {
             Z0: {R: LT_A00, X: TX_Z00, Y: TY_Z00}
         };
 
-        for (var i in reles_base) {
-            for (var n = 0; n < 3; n ++) {
+        for (let i in reles_base) {
+            for (let n = 0; n < 3; n ++) {
                 this.reles[i + n + 'AO'] = {R: reles_base[i].R, X: reles_base[i].X, Y: reles_base[i].Y + (pai * 2 / 3 * n)};
                 this.reles[i + n + 'SO'] = {R: reles_base[i].R, X: reles_base[i].X, Y: reles_base[i].Y + (pai * 2 / 3 * n)};
                 this.reles[i + n + 'AR'] = {R: reles_base[i].R, X: reles_base[i].X, Y: reles_base[i].Y + (pai * 2 / 3 * n)};
@@ -235,4 +219,4 @@ Fifth_Tetrahedron_Theta.prototype = {
             J2_S: ['B01SR', 'E00SR', 'J00AR', 'H00AR', 'G02AO']
         };
     }
-};
+}

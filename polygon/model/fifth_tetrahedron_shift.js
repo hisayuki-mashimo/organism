@@ -2,111 +2,101 @@
  * 5つの正四面体
  *
  */
-var Fifth_Tetrahedron_Shift_Theta = function()
-{
-};
-
-
-Fifth_Tetrahedron_Shift_Theta.prototype = {
-    /**
-     * 初期化
-     *
-     */
-    configure: function()
-    {
+class Fifth_Tetrahedron_Shift {
+    configure = () => {
         // 正三角形比率
-        var RA_A00 = {
+        const RA_A00 = {
             A: 1,
             B: Math.pow(3, 1 / 2),
             C: 2
         };
 
         // 五芒星比率
-        var RA_A01 = {
+        const RA_A01 = {
             A: (4 * Math.pow(Math.cos(Math.PI * 2 / 10), 2)) - 2,
             B: 1,
             C: (4 * Math.pow(Math.cos(Math.PI * 2 / 10), 2)) - 1,
             D: (4 * Math.pow(Math.cos(Math.PI * 2 / 10), 2))
         };
 
-        var LX_A00 = this.alpha;
-        var RA_X00 = this.basis.geometry_calculator.finalizeRatioByPytha({
+        const LX_A00 = 1;
+        const RA_X00 = this.basis.geometry_calculator.finalizeRatioByPytha({
             A: null,
             B: (RA_A01.D / RA_A01.B) + 1,
             C: (RA_A00.B / RA_A00.A) * (RA_A01.D / RA_A01.C)
         });
-        var LX_A01 = LX_A00 * 2;
-        var LX_A02 = LX_A01 * (RA_X00.C / RA_X00.A) / 2;
-        var LX_A03 = LX_A02 * (RA_A01.C / RA_A01.D);
-        var LX_A04 = LX_A03 * 2;
-        var LX_A05 = this.basis.geometry_calculator.getLengthByPytha(LX_A04, LX_A02, null);
-        var LX_A06 = LX_A05 * 2;
-        var LX_A07 = LX_A06 * (RA_A01.C / (RA_A01.A + RA_A01.C));
-        var LX_A08 = LX_A02 * (RA_A01.D / RA_A01.C);
-        var LX_A09 = this.basis.geometry_calculator.getLengthByPytha(null, LX_A03, LX_A08);
+        const LX_A01 = LX_A00 * 2;
+        const LX_A02 = LX_A01 * (RA_X00.C / RA_X00.A) / 2;
+        const LX_A03 = LX_A02 * (RA_A01.C / RA_A01.D);
+        const LX_A04 = LX_A03 * 2;
+        const LX_A05 = this.basis.geometry_calculator.getLengthByPytha(LX_A04, LX_A02, null);
+        const LX_A06 = LX_A05 * 2;
+        const LX_A07 = LX_A06 * (RA_A01.C / (RA_A01.A + RA_A01.C));
+        const LX_A08 = LX_A02 * (RA_A01.D / RA_A01.C);
+        const LX_A09 = this.basis.geometry_calculator.getLengthByPytha(null, LX_A03, LX_A08);
 
-        var LX_C00 = this.basis.geometry_calculator.getLengthByPytha(LX_A09, LX_A07, null);
-        var LX_C01 = LX_C00 * 2;
-        var LX_C02 = LX_C01 * (RA_A01.B / RA_A01.D);
-        var LX_C03 = LX_C02 * (RA_A01.B / RA_A01.C);
-        var LX_C04 = LX_C00 - LX_C03;
+        const LX_C00 = this.basis.geometry_calculator.getLengthByPytha(LX_A09, LX_A07, null);
+        const LX_C01 = LX_C00 * 2;
+        const LX_C02 = LX_C01 * (RA_A01.B / RA_A01.D);
+        const LX_C03 = LX_C02 * (RA_A01.B / RA_A01.C);
+        const LX_C04 = LX_C00 - LX_C03;
 
-        var LX_D00 = LX_C02 * (RA_A01.B / RA_A01.D);
-        var RA_X01 = {
+        const LX_D00 = LX_C02 * (RA_A01.B / RA_A01.D);
+        const RA_X01 = {
             A: LX_D00,
             B: LX_C01 - LX_D00,
             C: LX_C01
         };
-        var LX_D01 = LX_C01 * (RA_X01.B / RA_X01.C);
-        var LX_D02 = LX_D01 - LX_C00;
-        var LX_D03 = this.basis.geometry_calculator.getLengthByPytha(LX_A07, LX_A03, null);
-        var LX_D04 = LX_A07 - LX_A05;
-        var LX_D05 = LX_D03 - LX_D04;
-        var LX_D06 = LX_D05 * (RA_X01.A / RA_X01.C);
-        var LX_D07 = LX_D04 + LX_D06;
-        var LX_D08 = this.basis.geometry_calculator.getLengthByPytha(null, LX_D02, LX_D07);
+        const LX_D01 = LX_C01 * (RA_X01.B / RA_X01.C);
+        const LX_D02 = LX_D01 - LX_C00;
+        const LX_D03 = this.basis.geometry_calculator.getLengthByPytha(LX_A07, LX_A03, null);
+        const LX_D04 = LX_A07 - LX_A05;
+        const LX_D05 = LX_D03 - LX_D04;
+        const LX_D06 = LX_D05 * (RA_X01.A / RA_X01.C);
+        const LX_D07 = LX_D04 + LX_D06;
+        const LX_D08 = this.basis.geometry_calculator.getLengthByPytha(null, LX_D02, LX_D07);
 
-        var LX_E00 = LX_A02 * (RA_A01.D / RA_A01.C);
-        var LX_E01 = LX_E00 * (RA_A01.B / RA_A01.D);
-        var LX_E02 = LX_A07 / 2;
-        var LX_E03 = LX_A07 + LX_E02;
-        var LX_E04 = LX_E03 * (RA_A01.C / RA_A01.D);
-        var LX_E05 = LX_E04 - LX_E02;
-        var LX_E06 = this.basis.geometry_calculator.getLengthByPytha(null, LX_E01, LX_E05);
+        const LX_E00 = LX_A02 * (RA_A01.D / RA_A01.C);
+        const LX_E01 = LX_E00 * (RA_A01.B / RA_A01.D);
+        const LX_E02 = LX_A07 / 2;
+        const LX_E03 = LX_A07 + LX_E02;
+        const LX_E04 = LX_E03 * (RA_A01.C / RA_A01.D);
+        const LX_E05 = LX_E04 - LX_E02;
+        const LX_E06 = this.basis.geometry_calculator.getLengthByPytha(null, LX_E01, LX_E05);
 
-        var LX_G00 = LX_A03 * (RA_A01.B / RA_A01.D);
-        var LX_G01 = LX_A07 - LX_D03;
-        var LX_G02 = LX_G01 * (RA_A01.C / RA_A01.D);
-        var LX_G03 = LX_D03 + LX_G02;
-        var LX_G04 = LX_C00 * 2;
-        var LX_G05 = LX_G04 * (RA_A01.C / RA_A01.D);
-        var LX_G06 = LX_G05 - LX_C00;
+        const LX_G00 = LX_A03 * (RA_A01.B / RA_A01.D);
+        const LX_G01 = LX_A07 - LX_D03;
+        const LX_G02 = LX_G01 * (RA_A01.C / RA_A01.D);
+        const LX_G03 = LX_D03 + LX_G02;
+        const LX_G04 = LX_C00 * 2;
+        const LX_G05 = LX_G04 * (RA_A01.C / RA_A01.D);
+        const LX_G06 = LX_G05 - LX_C00;
 
-        var LX_H00 = LX_C01 * (RA_A01.A / RA_A01.D);
-        var LX_H01 = LX_H00 * (RA_A01.C / RA_A01.D);
-        var LX_H02 = LX_H00 / 2;
-        var LX_H03 = LX_H01 - LX_H02;
-        var LX_H04 = this.basis.geometry_calculator.getLengthByPytha(null, LX_A07, LX_H03);
+        const LX_H00 = LX_C01 * (RA_A01.A / RA_A01.D);
+        const LX_H01 = LX_H00 * (RA_A01.C / RA_A01.D);
+        const LX_H02 = LX_H00 / 2;
+        const LX_H03 = LX_H01 - LX_H02;
+        const LX_H04 = this.basis.geometry_calculator.getLengthByPytha(null, LX_A07, LX_H03);
 
-        var LT_A00 = LX_A09;
-        var LT_C00 = LX_C04;
-        var LT_D00 = LX_D08;
-        var LT_H00 = LX_H04;
+        const LT_A00 = this.alpha;
+        const LT_C00 = this.alpha * LX_C04 / LX_A09;
+        const LT_D00 = this.alpha * LX_D08 / LX_A09;
+        const LT_H00 = this.alpha * LX_H04 / LX_A09;
 
-        var TX_A00 = Math.asin(LX_A07 / LX_A09);
-        var TX_B00 = Math.asin(LX_A07 / LX_A09) + (Math.asin(LX_A03 / LX_A09) * 2);
-        var TX_C00 = 0;
-        var TX_D00 = Math.asin(LX_D07 / LX_D08);
-        var TX_E00 = Math.asin(LX_E06 / LX_D08);
-        var TX_F00 = Math.atan(LX_D03 / LX_C00) * -2 + Math.PI;
-        var TX_G00 = Math.acos(LX_G06 / LX_D08);
-        var TX_H00 = Math.asin(LX_H03 / LX_H04) + (Math.PI / 2);
+        const TX_A00 = Math.asin(LX_A07 / LX_A09);
+        const TX_B00 = Math.asin(LX_A07 / LX_A09) + (Math.asin(LX_A03 / LX_A09) * 2);
+        const TX_C00 = 0;
+        const TX_D00 = Math.asin(LX_D07 / LX_D08);
+        const TX_E00 = Math.asin(LX_E06 / LX_D08);
+        const TX_F00 = Math.atan(LX_D03 / LX_C00) * -2 + Math.PI;
+        const TX_G00 = Math.acos(LX_G06 / LX_D08);
+        const TX_H00 = Math.asin(LX_H03 / LX_H04) + (Math.PI / 2);
 
-        var TY_A00 = 0;
-        var TY_E00 = Math.asin(LX_E01 / LX_E06);
-        var TY_G00 = Math.asin(LX_A02 / LX_A07) - Math.atan(LX_G00 / LX_G03)
+        const TY_A00 = 0;
+        const TY_E00 = Math.asin(LX_E01 / LX_E06);
+        const TY_G00 = Math.asin(LX_A02 / LX_A07) - Math.atan(LX_G00 / LX_G03)
 
-        var reles_base = {
+        const reles_base = {
             A0: {R: LT_A00, X: TX_A00, Y: TY_A00},
             B0: {R: LT_A00, X: TX_B00, Y: TY_A00},
             C0: {R: LT_C00, X: TX_C00, Y: TY_A00},
@@ -117,12 +107,12 @@ Fifth_Tetrahedron_Shift_Theta.prototype = {
             H0: {R: LT_H00, X: TX_H00, Y: TY_A00}
         };
 
-        for (var i in reles_base) {
-            var base_R = reles_base[i].R;
-            var base_X = reles_base[i].X;
-            var base_Y = reles_base[i].Y;
+        for (let i in reles_base) {
+            const base_R = reles_base[i].R;
+            const base_X = reles_base[i].X;
+            const base_Y = reles_base[i].Y;
 
-            for (var n = 0; n < 5; n ++) {
+            for (let n = 0; n < 5; n ++) {
                 this.reles[i + n + 'AO'] = {R: base_R};
                 this.reles[i + n + 'AR'] = {R: base_R};
                 this.reles[i + n + 'SO'] = {R: base_R};
@@ -202,4 +192,4 @@ Fifth_Tetrahedron_Shift_Theta.prototype = {
             F4_R: ['B04SR', 'H01SO', 'F01SO', 'G03SR', 'E00AR']
         };
     }
-};
+}

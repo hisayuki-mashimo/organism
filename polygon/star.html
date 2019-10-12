@@ -4,67 +4,72 @@
         <meta http-equiv="Context-Type" context="text/html" charset="utf-8" />
         <title>HTML5試験</title>
     </head>
+    <style type="text/css">
+        div#FR {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        div#FR div {
+            width: 200px;
+            height: 200px;
+        }
+    </style>
     <body>
-        <table style="position:absolute; border-collapse:collapse;">
-            <tr>
-                <td><div id="FR01" style="width:300px; height:300px;"></div></td>
-                <td><div id="FR02" style="width:120px; height:120px;"></div></td>
-                <td><div id="FR03" style="width:120px; height:120px;"></div></td>
-            </tr>
-            <tr>
-                <td><div id="FR04" style="width:120px; height:120px;"></div></td>
-                <td><div id="FR05" style="width:120px; height:120px;"></div></td>
-                <td><div id="FR06" style="width:120px; height:120px;"></div></td>
-            </tr>
-        </table>
+        <div id="FR">
+            <div id="FR01"></div>
+            <div id="FR02"></div>
+            <div id="FR03"></div>
+            <div id="FR04"></div>
+            <div id="FR05"></div>
+            <div id="FR06"></div>
+        </div>
 
         <script type="text/javascript" src="../library/jquery-1.8.0.min.js"></script>
         <script type="text/javascript" src="../library/debug.js"></script>
         <script type="text/javascript" src="library/geometry_calculator.js"></script>
-        <script type="text/javascript" src="model/polyhedron_basis_theta.js"></script>
-        <script type="text/javascript" src="model/fifth_tetrahedron_theta.js"></script>
-        <script type="text/javascript" src="model/fifth_tetrahedron_shift_theta.js"></script>
-        <script type="text/javascript" src="model/stella_octangula_theta.js"></script>
-        <script type="text/javascript" src="model/stella_octangula_shift_theta.js"></script>
-        <script type="text/javascript" src="model/small_stellated_dodecahedron_theta.js"></script>
+        <script type="text/javascript" src="model/polyhedron_basis.js"></script>
+        <script type="text/javascript" src="model/fifth_tetrahedron.js"></script>
+        <script type="text/javascript" src="model/fifth_tetrahedron_shift.js"></script>
+        <script type="text/javascript" src="model/stella_octangula.js"></script>
+        <script type="text/javascript" src="model/stella_octangula_shift.js"></script>
+        <script type="text/javascript" src="model/small_stellated_dodecahedron.js"></script>
+        <script type="text/javascript" src="model/great_stellated_dodecahedron.js"></script>
         <script type="text/javascript">
-            window.onload = function(){
-                var frame_node01 = document.getElementById('FR01');
-                // var frame_node02 = document.getElementById('FR02');
-                // var frame_node03 = document.getElementById('FR03');
-                // var frame_node04 = document.getElementById('FR04');
-                // var frame_node05 = document.getElementById('FR05');
-                // var frame_node06 = document.getElementById('FR06');
-                var params01 = {alpha:150, size: 300, fill_style: 'rgba(255, 255, 255, 0.9)', stroke_style: 'rgba(192, 192, 192, 0.5)'};
+            window.onload = () => {
+                const frame_node01 = document.getElementById('FR01');
+                const frame_node02 = document.getElementById('FR02');
+                const frame_node03 = document.getElementById('FR03');
+                const frame_node04 = document.getElementById('FR04');
+                const frame_node05 = document.getElementById('FR05');
+                const frame_node06 = document.getElementById('FR06');
+                const params01 = {alpha:100, size: 200, fill_style: 'rgba(255, 255, 255, 0.9)', stroke_style: 'rgba(192, 192, 192, 0.5)'};
 
-                var Operater                         = new Polyhedron_Basis_Theta({geometry_calculator: geometry_calculator});
-                // var FifthTetrahedronObject           = Operater.summons('Fifth_Tetrahedron_Theta',            frame_node01, params01);
-                // var FifthTetrahedronShiftObject      = Operater.summons('Fifth_Tetrahedron_Shift_Theta',      frame_node01, params01);
-                // var StellaOctangulaObject            = Operater.summons('Stella_Octangula_Theta',             frame_node02, params01);
-                // var StellaOctangulaShiftObject       = Operater.summons('Stella_Octangula_Shift_Theta',       frame_node02, params01);
-                var SmallStellatedDodecahedronObject = Operater.summons('Small_Stellated_Dodecahedron_Theta', frame_node01, params01);
+                const Operater                         = new Polyhedron_Basis({ geometry_calculator });
+                const SmallStellatedDodecahedron = Operater.summons(new Small_Stellated_Dodecahedron(), frame_node01, params01);
+                const GreatStellatedDodecahedron = Operater.summons(new Great_Stellated_Dodecahedron(), frame_node02, params01);
+                const StellaOctangula            = Operater.summons(new Stella_Octangula(),             frame_node03, params01);
+                // const StellaOctangulaShift       = Operater.summons(new Stella_Octangula_Shift(),       frame_node03, params01);
+                const FifthTetrahedron           = Operater.summons(new Fifth_Tetrahedron(),            frame_node04, params01);
+                // const FifthTetrahedronShift      = Operater.summons(new Fifth_Tetrahedron_Shift(),      frame_node04, params01);
 
-                var animation = null;
+                let animation = null;
 
-                var theta_R = 0;
-                var theta_V = 0;
-                var theta_L = 0;
+                let _R = 0;
+                let _V = 0;
+                let _L = 0;
 
-                var animate = function(){
-                    // FifthTetrahedronObject.setDirection(theta_R, theta_V, theta_L);
-                    //FifthTetrahedronShiftObject.setDirection(theta_R, theta_V, theta_L);
-                    // StellaOctangulaObject.setDirection(theta_R, theta_V, theta_L);
-                    //StellaOctangulaShiftObject.setDirection(theta_R, theta_V, theta_L);
-                    SmallStellatedDodecahedronObject.setDirection(theta_R, theta_V, theta_L);
-                    // FifthTetrahedronObject.output();
-                    //FifthTetrahedronShiftObject.output();
-                    // StellaOctangulaObject.output();
-                    //StellaOctangulaShiftObject.output();
-                    SmallStellatedDodecahedronObject.output();
+                const animate = function(){
+                    SmallStellatedDodecahedron.output(_R, _V, _L);
+                    GreatStellatedDodecahedron.output(_R, _V, _L);
+                    StellaOctangula.output(_R, _V, _L);
+                    // StellaOctangulaShift.output(_R, _V, _L);
+                    FifthTetrahedron.output(_R, _V, _L);
+                    // FifthTetrahedronShift.output(_R, _V, _L);
 
-                    theta_R += 0.015;
-                    theta_V += 0.025;
-                    theta_L += 0.035;
+                    _R += 0.015;
+                    _V += 0.025;
+                    _L += 0.035;
                 };
 
                 document.onkeydown = function(event){

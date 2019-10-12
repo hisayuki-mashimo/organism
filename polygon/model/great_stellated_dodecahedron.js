@@ -2,15 +2,12 @@
  * 大星型十二面体
  *
  */
-const Great_Stellated_Dodecahedron_Theta = function () {
-};
-
-Great_Stellated_Dodecahedron_Theta.prototype = {
+class Great_Stellated_Dodecahedron {
     /**
      * 初期化
      *
      */
-    configure: function () {
+    configure = () => {
         const { getLengthByPytha } = this.basis.geometry_calculator;
 
         // 五芒星比率
@@ -210,4 +207,4 @@ Great_Stellated_Dodecahedron_Theta.prototype = {
             K09R: ["O00SR", "B04SR", "C02SR"],
         };
     }
-};
+}

@@ -2,15 +2,8 @@
  * 小星型十二面体
  *
  */
-const Small_Stellated_Dodecahedron_Theta = function () {
-};
-
-Small_Stellated_Dodecahedron_Theta.prototype = {
-    /**
-     * 初期化
-     *
-     */
-    configure: function () {
+class Small_Stellated_Dodecahedron {
+    configure = () => {
         const { getLengthByPytha } = this.basis.geometry_calculator;
 
         // 五芒星比率
@@ -159,6 +152,6 @@ Small_Stellated_Dodecahedron_Theta.prototype = {
             C12R: ["A02SR", "B00SR", "C00AO"],
             C13R: ["A03SR", "B01SR", "C01AO"],
             C14R: ["A04SR", "B02SR", "C02AO"],
-        };
+        }
     }
-};
+}
