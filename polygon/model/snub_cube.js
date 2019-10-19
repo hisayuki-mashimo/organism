@@ -1,15 +1,8 @@
 /**
  * 変形立方体
  */
-var Snub_Cube_Theta = function () {
-};
-
-Snub_Cube_Theta.prototype = {
-    // 外部設定値
-    fill_style: 'rgba(128, 240, 255, 0.8)',
-    stroke_style: 'rgb(80, 200, 240)',
-
-    configure: function () {
+class Snub_Cube {
+    configure = () => {
         /*
        ┌ Y = A(X + N)
        └ 0 = X
@@ -54,58 +47,58 @@ Snub_Cube_Theta.prototype = {
        → X = 2AAN / (AA + 1)
        → [(2AAN / (AA + 1)) , ((2AAAN / (AA + 1)) - AN)]
         */
-        var LX_A00 = 1;
-        var LX_A01 = Math.pow(Math.pow(1188, 1 / 2) + 38, 1 / 3);
-        var LX_A02 = Math.pow(2, 1 / 3);
-        var LX_A03 = (LX_A01 / (3 * LX_A02)) + (4 * LX_A02 / (3 * LX_A01)) + (1 / 3);
+        const LX_A00 = 1;
+        const LX_A01 = Math.pow(Math.pow(1188, 1 / 2) + 38, 1 / 3);
+        const LX_A02 = Math.pow(2, 1 / 3);
+        const LX_A03 = (LX_A01 / (3 * LX_A02)) + (4 * LX_A02 / (3 * LX_A01)) + (1 / 3);
 
-        var RA_A00 = this.basis.geometry_calculator.finalizeRatioByPytha({
+        const RA_A00 = this.basis.geometry_calculator.finalizeRatioByPytha({
             A: null,
             B: LX_A03,
             C: 1
         });
 
-        var LX_A04 = LX_A03 * (RA_A00.B / RA_A00.A);
-        var LX_A05 = this.basis.geometry_calculator.getLengthByPytha(null, LX_A04, 1);
+        const LX_A04 = LX_A03 * (RA_A00.B / RA_A00.A);
+        const LX_A05 = this.basis.geometry_calculator.getLengthByPytha(null, LX_A04, 1);
 
-        var LX_B00 = 1 / (LX_A03 - 1) * Math.pow(2, 1 / 2);
-        var LX_B01 = 1 / Math.pow(2, 1 / 2);
-        var LX_B03 = this.basis.geometry_calculator.getLengthByPytha(LX_B01 * 2, LX_B01, null);
-        var LX_B04 = LX_B00 - LX_B01;
-        var LX_B05 = this.basis.geometry_calculator.getLengthByPytha(LX_B03, LX_B04, null);
-        var LX_B06 = LX_A04 - LX_B05;
-        var LX_B07 = this.basis.geometry_calculator.getLengthByPytha(null, LX_B00, LX_B06);
+        const LX_B00 = 1 / (LX_A03 - 1) * Math.pow(2, 1 / 2);
+        const LX_B01 = 1 / Math.pow(2, 1 / 2);
+        const LX_B03 = this.basis.geometry_calculator.getLengthByPytha(LX_B01 * 2, LX_B01, null);
+        const LX_B04 = LX_B00 - LX_B01;
+        const LX_B05 = this.basis.geometry_calculator.getLengthByPytha(LX_B03, LX_B04, null);
+        const LX_B06 = LX_A04 - LX_B05;
+        const LX_B07 = this.basis.geometry_calculator.getLengthByPytha(null, LX_B00, LX_B06);
 
-        var LX_C00 = LX_A03 - 1;
-        var LX_C01 = Math.pow(2, 1 / 2);
-        var LX_C02 = this.basis.geometry_calculator.getLengthByPytha(LX_C01, LX_C00, null);
-        var LX_C03 = LX_A04 - LX_C02;
-        var LX_C04 = this.basis.geometry_calculator.getLengthByPytha(null, LX_A03, LX_C03);
+        const LX_C00 = LX_A03 - 1;
+        const LX_C01 = Math.pow(2, 1 / 2);
+        const LX_C02 = this.basis.geometry_calculator.getLengthByPytha(LX_C01, LX_C00, null);
+        const LX_C03 = LX_A04 - LX_C02;
+        const LX_C04 = this.basis.geometry_calculator.getLengthByPytha(null, LX_A03, LX_C03);
 
-        var LT_A00 = this.alpha;
-        var LT_B00 = this.alpha / LX_A05 * LX_B07;
-        var LT_C00 = this.alpha / LX_A05 * LX_C04;
+        const LT_A00 = this.alpha;
+        const LT_B00 = this.alpha / LX_A05 * LX_B07;
+        const LT_C00 = this.alpha / LX_A05 * LX_C04;
 
-        var TX_A00 = Math.asin(1 / LX_A05);
-        var TX_B00 = Math.asin(LX_B00 / LX_B07);
-        var TX_C00 = Math.asin(LX_A03 / LX_C04);
+        const TX_A00 = Math.asin(1 / LX_A05);
+        const TX_B00 = Math.asin(LX_B00 / LX_B07);
+        const TX_C00 = Math.asin(LX_A03 / LX_C04);
 
-        var TY_A00 = 0;
-        var TY_B00 = Math.PI / 4;
-        var TY_R00 = Math.acos(LX_A04 / LX_A03) * 2;
+        const TY_A00 = 0;
+        const TY_B00 = Math.PI / 4;
+        const TY_R00 = Math.acos(LX_A04 / LX_A03) * 2;
 
-        var reles_base = {
+        const reles_base = {
             A0: { R: LT_A00, X: TX_A00, Y: TY_A00 },
             B0: { R: LT_B00, X: TX_B00, Y: TY_B00 },
             C0: { R: LT_C00, X: TX_C00, Y: TY_A00 }
         };
 
-        for (var i in reles_base) {
-            var base_R = reles_base[i].R;
-            var base_X = reles_base[i].X;
-            var base_Y = reles_base[i].Y;
+        for (let i in reles_base) {
+            const base_R = reles_base[i].R;
+            const base_X = reles_base[i].X;
+            const base_Y = reles_base[i].Y;
 
-            for (var n = 0; n < 4; n++) {
+            for (let n = 0; n < 4; n++) {
                 this.reles[i + n + 'AO'] = { R: base_R };
                 this.reles[i + n + 'SR'] = { R: base_R };
 
@@ -157,4 +150,4 @@ Snub_Cube_Theta.prototype = {
             E7_M: ['C03AO', 'B00SR', 'C00SR']
         };
     }
-};
+}

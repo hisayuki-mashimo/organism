@@ -2,41 +2,16 @@
  * 10個の正四面体
  *
  */
-var TenTetrahedron_Theta = function()
-{
-};
+class Ten_Tetrahedron {
+    configure = () => {
+        const { getLengthByPytha } = this.basis.geometry_calculator;
 
-
-TenTetrahedron_Theta.prototype = {
-    // 外部設定値
-    fill_style:     'rgba(224, 128, 176, 0.8)',
-    stroke_style:   'rgba(160, 64, 88, 0.2)',
-    fill_style3:    'rgba(224, 160, 160, 0.8)',
-    stroke_style3:  'rgba(176, 64, 64, 0.5)',
-    fill_style2:    'rgba(120, 255, 160, 0.0)',
-    stroke_style2:  'rgba(96, 192, 128, 0.2)',
-
-
-
-
-    /**
-     * 初期化
-     *
-     */
-    configure: function()
-    {
-        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
-
-        var pai         = Math.PI;
-        var theta072    = pai * 2 / 5;
-        var theta036    = pai * 2 / 10;
-        var sin072      = Math.sin(theta072);
-        var cos072      = Math.cos(theta072);
-        var sin036      = Math.sin(theta036);
-        var cos036      = Math.cos(theta036);
+        const pai         = Math.PI;
+        const theta036    = pai * 2 / 10;
+        const cos036      = Math.cos(theta036);
 
         // 五芒星比率
-        var RA00 = {
+        const RA00 = {
             A: (4 * Math.pow(cos036, 2)) - 2,
             B: 1,
             C: (4 * Math.pow(cos036, 2)) - 1,
@@ -44,192 +19,184 @@ TenTetrahedron_Theta.prototype = {
         };
 
         // 正三角形比率
-        var RA01 = {
+        const RA01 = {
             A: 1,
             B: Math.pow(3, 1 / 2),
             C: 2
         };
 
-        var LA0Y = this.alpha;
-        var LA1Y = LA0Y * (RA01.A / RA01.C);
-        var LA1X = LA0Y * (RA01.B / RA01.C);
+        const LA0Y = this.alpha;
+        const LA1Y = LA0Y * (RA01.A / RA01.C);
+        const LA1X = LA0Y * (RA01.B / RA01.C);
 
-        var XA00 = LA0Y * (RA00.A / RA00.D) / 2;
-        var XA01 = LA0Y * (RA00.C / RA00.D);
-        var XA02 = getLengthByPytha(null, LA1X, XA00);
-        var RX00 = {
+        const XA00 = LA0Y * (RA00.A / RA00.D) / 2;
+        const XA01 = LA0Y * (RA00.C / RA00.D);
+        const XA02 = getLengthByPytha(null, LA1X, XA00);
+        const RX00 = {
             A: XA00,
             B: LA1X,
             C: XA02
         };
-        var XA03 = XA01 * (RX00.A / RX00.C) * 2;
-        var XA04 = XA02 - XA03;
-        var RX01 = {
+        const XA03 = XA01 * (RX00.A / RX00.C) * 2;
+        const XA04 = XA02 - XA03;
+        const RX01 = {
             A: XA03,
             B: XA04,
             C: XA02
         };
-        var LB0X = (RX01.B / RX01.C) * (LA1X * (RA00.B / RA00.D));
-        var LB0Y = (RX01.B / RX01.C) * (LA1Y * (1 + (RA00.C / RA00.D)));
-        var LB1X = (RX01.B / RX01.C) * (LA1X * (RA00.C / RA00.D));
-        var LB1Y = (RX01.B / RX01.C) * (LA1Y * (1 + (RA00.B / RA00.D)));
-        var LB2X = (RX01.B / RX01.C) * LA1X;
-        var LB2Y = (RX01.B / RX01.C) * XA00;
+        const LB0X = (RX01.B / RX01.C) * (LA1X * (RA00.B / RA00.D));
+        const LB0Y = (RX01.B / RX01.C) * (LA1Y * (1 + (RA00.C / RA00.D)));
+        const LB1X = (RX01.B / RX01.C) * (LA1X * (RA00.C / RA00.D));
+        const LB1Y = (RX01.B / RX01.C) * (LA1Y * (1 + (RA00.B / RA00.D)));
+        const LB2X = (RX01.B / RX01.C) * LA1X;
+        const LB2Y = (RX01.B / RX01.C) * XA00;
 
-        var LC0X = LB2X;
-        var LC0Y = LB2Y + XA01;
-        var LC1X = (XA01 * (RA01.B / RA01.C)) - LB0X;
-        var LC1Y = (XA01 * (RA01.A / RA01.C)) + LB0Y;
-        var LC2X = LB1X + (XA01 * (RA01.B / RA01.C));
-        var LC2Y = LB1Y - (XA01 * (RA01.A / RA01.C));
+        const LC0X = LB2X;
+        const LC0Y = LB2Y + XA01;
+        const LC1X = (XA01 * (RA01.B / RA01.C)) - LB0X;
+        const LC1Y = (XA01 * (RA01.A / RA01.C)) + LB0Y;
+        const LC2X = LB1X + (XA01 * (RA01.B / RA01.C));
+        const LC2Y = LB1Y - (XA01 * (RA01.A / RA01.C));
 
-        var RX02 = {
+        const RX02 = {
             A: 1,
             B: 2 * Math.pow(2, 1 / 2),
             C: 3
         };
-        var XB00 = LA1Y * (RX02.B / RX02.A);
-        var LA0Z = XB00 / 4;
-        var LD0Z = XB00 * 3 / 4;
-        var LB0Z = LA0Z + ((XB00 / 2) * (RA00.C / RA00.D));
+        const XB00 = LA1Y * (RX02.B / RX02.A);
+        const LA0Z = XB00 / 4;
+        const LD0Z = XB00 * 3 / 4;
+        const LB0Z = LA0Z + ((XB00 / 2) * (RA00.C / RA00.D));
 
-        var LF00 = (1 / 2) * (LA1X * (RA00.C / RA00.D));
-        var LF01 = (1 / 2) * (((LA0Y + LA1Y) * (RA00.B / RA00.D)) - LA1Y);
-        var LF02 = (1 / 2) * (LA1X * ((2 * (RA00.C / RA00.D)) - 1));
-        var LF03 = (1 / 2) * LA1Y;
-        var LF04 = (1 / 2) * (LA1X * (RA00.B / RA00.D));
-        var LF05 = (1 / 2) * (((LA0Y + LA1Y) * (RA00.C / RA00.D)) - LA1Y);
+        const LF00 = (1 / 2) * (LA1X * (RA00.C / RA00.D));
+        const LF01 = (1 / 2) * (((LA0Y + LA1Y) * (RA00.B / RA00.D)) - LA1Y);
+        const LF02 = (1 / 2) * (LA1X * ((2 * (RA00.C / RA00.D)) - 1));
+        const LF03 = (1 / 2) * LA1Y;
+        const LF04 = (1 / 2) * (LA1X * (RA00.B / RA00.D));
+        const LF05 = (1 / 2) * (((LA0Y + LA1Y) * (RA00.C / RA00.D)) - LA1Y);
 
-        var LG00 = LB0X * (RA00.C / RA00.D);
-        var LG01 = ((LB0Y + LA0Y) * (RA00.C / RA00.D)) - LA0Y;
-        var LG02 = ((LB1X + LA1X) * (RA00.B / RA00.D)) - LB1X;
-        var LG03 = ((LB1Y + LA1Y) * (RA00.C / RA00.D)) - LA1Y;
-        var LG04 = ((LB2X + LA1X) * (RA00.C / RA00.D)) - LA1X;
-        var LG05 = ((LB2Y + LA1Y) * (RA00.B / RA00.D)) - LB2Y;
-        var LG06 = ((LB0Z - LA0Z) * (RA00.C / RA00.D)) + LA0Z;
+        const LE00 = LA0Y * (RA00.B / RA00.D);
+        const LE01 = LE00 * (RA01.A / RA01.C);
+        const LE02 = LE00 * (RA01.B / RA01.C);
+        const LE0Z = (XB00 * (RA00.C / RA00.D)) - LA0Z;
+        const LO00 = (1 / 2) * LE02;
+        const LO01 = ((1 / 2) * (LA0Y + LE01)) - LE01;
+        const LO02 = ((1 / 2) * (LA1X + LE02)) - LE02;
+        const LO03 = ((1 / 2) * (LA1Y - LE01)) + LE01;
+        const LO04 = (1 / 2) * LA1X;
+        const LO05 = ((1 / 2) * (LA1Y + LE00)) - LE00;
+        const LO06 = ((1 / 2) * (LA0Z + LE0Z)) - LA0Z;
 
-        var LE00 = LA0Y * (RA00.B / RA00.D);
-        var LE01 = LE00 * (RA01.A / RA01.C);
-        var LE02 = LE00 * (RA01.B / RA01.C);
-        var LE0Z = (XB00 * (RA00.C / RA00.D)) - LA0Z;
-        var LO00 = (1 / 2) * LE02;
-        var LO01 = ((1 / 2) * (LA0Y + LE01)) - LE01;
-        var LO02 = ((1 / 2) * (LA1X + LE02)) - LE02;
-        var LO03 = ((1 / 2) * (LA1Y - LE01)) + LE01;
-        var LO04 = (1 / 2) * LA1X;
-        var LO05 = ((1 / 2) * (LA1Y + LE00)) - LE00;
-        var LO06 = ((1 / 2) * (LA0Z + LE0Z)) - LA0Z;
-
-        var XC00 = (XA04 / 2) * (RA00.B / RA00.C);
-        var RX03 = {
+        const XC00 = (XA04 / 2) * (RA00.B / RA00.C);
+        const RX03 = {
             A: XA04,
             B: (XA04 + XC00) * 2,
             C: XA04 + ((XA04 + XC00) * 2)
         };
-        var MC0Y = LA0Y * (RX03.A / RX03.C);
-        var MC1X = MC0Y * (RA01.B / RA01.C);
-        var MC1Y = MC0Y * (RA01.A / RA01.C);
-        var MC3X = LC0X * (RX03.A / RX03.C);
-        var MC3Y = LC0Y * (RX03.A / RX03.C);
-        var MC4X = LC1X * (RX03.A / RX03.C);
-        var MC4Y = LC1Y * (RX03.A / RX03.C);
-        var MC5X = LC2X * (RX03.A / RX03.C);
-        var MC5Y = LC2Y * (RX03.A / RX03.C);
-        var MC0Z = ((LA0Z + LD0Z) * (RX03.B / RX03.C)) - LA0Z;
+        const MC0Y = LA0Y * (RX03.A / RX03.C);
+        const MC1X = MC0Y * (RA01.B / RA01.C);
+        const MC1Y = MC0Y * (RA01.A / RA01.C);
+        const MC3X = LC0X * (RX03.A / RX03.C);
+        const MC3Y = LC0Y * (RX03.A / RX03.C);
+        const MC4X = LC1X * (RX03.A / RX03.C);
+        const MC4Y = LC1Y * (RX03.A / RX03.C);
+        const MC5X = LC2X * (RX03.A / RX03.C);
+        const MC5Y = LC2Y * (RX03.A / RX03.C);
+        const MC0Z = ((LA0Z + LD0Z) * (RX03.B / RX03.C)) - LA0Z;
 
-        var MD0X = ((LA1X + LB2X) * (RX03.B / RX03.C)) - LB2X;
-        var MD0Y = ((LA1Y + LB2Y) * (RX03.B / RX03.C)) - LB2Y;
-        var MD1X = LB0X * (RX03.A / RX03.C);
-        var MD1Y = ((LA0Y + LB0Y) * (RX03.B / RX03.C)) - LB0Y;
-        var MD2X = ((LA1X + LB1X) * (RX03.B / RX03.C)) - LB1X;
-        var MD2Y = ((LA1Y + LB1Y) * (RX03.B / RX03.C)) - LB1Y;
-        var MD3X = ((LB1X + LC1X) * (RX03.B / RX03.C)) - LB1X;
-        var MD3Y = ((LB1Y + LC1Y) * (RX03.B / RX03.C)) - LB1Y;
-        var MD4X = ((LB2X + LC2X) * (RX03.B / RX03.C)) - LB2X;
-        var MD4Y = ((LC2Y - LB2Y) * (RX03.B / RX03.C)) + LB2Y;
-        var MD5X = ((LB0X + LC0X) * (RX03.B / RX03.C)) - LB0X;
-        var MD5Y = ((LB0Y + LC0Y) * (RX03.B / RX03.C)) - LB0Y;
-        var MD0Z = ((LA0Z - LB0Z) * (RX03.B / RX03.C)) + LB0Z;
+        const MD0X = ((LA1X + LB2X) * (RX03.B / RX03.C)) - LB2X;
+        const MD0Y = ((LA1Y + LB2Y) * (RX03.B / RX03.C)) - LB2Y;
+        const MD1X = LB0X * (RX03.A / RX03.C);
+        const MD1Y = ((LA0Y + LB0Y) * (RX03.B / RX03.C)) - LB0Y;
+        const MD2X = ((LA1X + LB1X) * (RX03.B / RX03.C)) - LB1X;
+        const MD2Y = ((LA1Y + LB1Y) * (RX03.B / RX03.C)) - LB1Y;
+        const MD3X = ((LB1X + LC1X) * (RX03.B / RX03.C)) - LB1X;
+        const MD3Y = ((LB1Y + LC1Y) * (RX03.B / RX03.C)) - LB1Y;
+        const MD4X = ((LB2X + LC2X) * (RX03.B / RX03.C)) - LB2X;
+        const MD4Y = ((LC2Y - LB2Y) * (RX03.B / RX03.C)) + LB2Y;
+        const MD5X = ((LB0X + LC0X) * (RX03.B / RX03.C)) - LB0X;
+        const MD5Y = ((LB0Y + LC0Y) * (RX03.B / RX03.C)) - LB0Y;
+        const MD0Z = ((LA0Z - LB0Z) * (RX03.B / RX03.C)) + LB0Z;
 
-        var ME0X = LA1X * (RX03.B / RX03.C);
-        var ME0Y = ((LA0Y + LA1Y) * (RX03.B / RX03.C)) - LA0Y;
-        var ME1X = LA1X * (RX03.A / RX03.C);
-        var ME1Y = ((LA0Y + LA1Y) * (RX03.B / RX03.C)) - LA1Y;
-        var ME2X = LA1X * ((2 * (RX03.B / RX03.C)) - 1);
-        var ME2Y = LA1Y;
-        var ME6X = ((LC1X + LC2X) * (RX03.A / RX03.C)) - LC1X;
-        var ME6Y = ((LC1Y + LC2Y) * (RX03.B / RX03.C)) - LC2Y;
-        var ME7X = ((LC0X + LC2X) * (RX03.B / RX03.C)) - LC0X;
-        var ME7Y = ((LC0Y - LC2Y) * (RX03.A / RX03.C)) + LC2Y;
-        var ME8X = ((LC0X - LC1X) * (RX03.B / RX03.C)) + LC1X;
-        var ME8Y = ((LC0Y + LC1Y) * (RX03.B / RX03.C)) - LC1Y;
-        var ME0Z = LA0Z;
+        const ME0X = LA1X * (RX03.B / RX03.C);
+        const ME0Y = ((LA0Y + LA1Y) * (RX03.B / RX03.C)) - LA0Y;
+        const ME1X = LA1X * (RX03.A / RX03.C);
+        const ME1Y = ((LA0Y + LA1Y) * (RX03.B / RX03.C)) - LA1Y;
+        const ME2X = LA1X * ((2 * (RX03.B / RX03.C)) - 1);
+        const ME2Y = LA1Y;
+        const ME6X = ((LC1X + LC2X) * (RX03.A / RX03.C)) - LC1X;
+        const ME6Y = ((LC1Y + LC2Y) * (RX03.B / RX03.C)) - LC2Y;
+        const ME7X = ((LC0X + LC2X) * (RX03.B / RX03.C)) - LC0X;
+        const ME7Y = ((LC0Y - LC2Y) * (RX03.A / RX03.C)) + LC2Y;
+        const ME8X = ((LC0X - LC1X) * (RX03.B / RX03.C)) + LC1X;
+        const ME8Y = ((LC0Y + LC1Y) * (RX03.B / RX03.C)) - LC1Y;
+        const ME0Z = LA0Z;
 
-        var MF0Y = LA0Y * (RX03.B / RX03.C);
-        var MF1X = MF0Y * (RA01.B / RA01.C);
-        var MF1Y = MF0Y * (RA01.A / RA01.C);
-        var MF3X = LC0X * (RX03.B / RX03.C);
-        var MF3Y = LC0Y * (RX03.B / RX03.C);
-        var MF4X = LC1X * (RX03.B / RX03.C);
-        var MF4Y = LC1Y * (RX03.B / RX03.C);
-        var MF5X = LC2X * (RX03.B / RX03.C);
-        var MF5Y = LC2Y * (RX03.B / RX03.C);
-        var MF0Z = ((LA0Z + LD0Z) * (RX03.A / RX03.C)) - LA0Z;
+        const MF0Y = LA0Y * (RX03.B / RX03.C);
+        const MF1X = MF0Y * (RA01.B / RA01.C);
+        const MF1Y = MF0Y * (RA01.A / RA01.C);
+        const MF3X = LC0X * (RX03.B / RX03.C);
+        const MF3Y = LC0Y * (RX03.B / RX03.C);
+        const MF4X = LC1X * (RX03.B / RX03.C);
+        const MF4Y = LC1Y * (RX03.B / RX03.C);
+        const MF5X = LC2X * (RX03.B / RX03.C);
+        const MF5Y = LC2Y * (RX03.B / RX03.C);
+        const MF0Z = ((LA0Z + LD0Z) * (RX03.A / RX03.C)) - LA0Z;
 
-        var MG0Z = LA0Z * ((2 * (RX03.B / RX03.C)) - 1);
+        const MG0Z = LA0Z * ((2 * (RX03.B / RX03.C)) - 1);
 
-        var RX04 = {
+        const RX04 = {
             A: LB0X,
             B: LA1X - LB0X,
             C: LA1X
         };
-        var XD00 = MC0Y * (RX04.B / RX04.C);
-        var XD01 = LA0Y * (RA00.B / RA00.D);
-        var XD02 = ((LA0Y - XD01) * (RX04.B / RX04.C)) + XD01;
-        var XD03 = XD02 - XD00;
-        var RX05 = {
+        const XD00 = MC0Y * (RX04.B / RX04.C);
+        const XD01 = LA0Y * (RA00.B / RA00.D);
+        const XD02 = ((LA0Y - XD01) * (RX04.B / RX04.C)) + XD01;
+        const XD03 = XD02 - XD00;
+        const RX05 = {
             A: XD03,
             B: (MC0Y + XD03) * 2 - XD03,
             C: (MC0Y + XD03) * 2
         };
-        var NA0X = LB0X * ((2 * (RX05.B / RX05.C)) - 1);
-        var NA0Y = LB0Y * ((2 * (RX05.B / RX05.C)) - 1);
-        var NA1X = LB1X * ((2 * (RX05.B / RX05.C)) - 1);
-        var NA1Y = LB1Y * ((2 * (RX05.B / RX05.C)) - 1);
-        var NA2X = LB2X * ((2 * (RX05.B / RX05.C)) - 1);
-        var NA2Y = LB2Y * ((2 * (RX05.B / RX05.C)) - 1);
-        var NA0Z = ((LB0Z - MG0Z) * (RX05.B / RX05.C)) + MG0Z;
+        const NA0X = LB0X * ((2 * (RX05.B / RX05.C)) - 1);
+        const NA0Y = LB0Y * ((2 * (RX05.B / RX05.C)) - 1);
+        const NA1X = LB1X * ((2 * (RX05.B / RX05.C)) - 1);
+        const NA1Y = LB1Y * ((2 * (RX05.B / RX05.C)) - 1);
+        const NA2X = LB2X * ((2 * (RX05.B / RX05.C)) - 1);
+        const NA2Y = LB2Y * ((2 * (RX05.B / RX05.C)) - 1);
+        const NA0Z = ((LB0Z - MG0Z) * (RX05.B / RX05.C)) + MG0Z;
 
-        var NB0X = ((LA1X + ME0X) * (RX05.B / RX05.C)) - ME0X;
-        var NB0Y = ((LA1Y - ME0Y) * (RX05.B / RX05.C)) + ME0Y;
-        var NB1X = ME2X * (RX05.A / RX05.C);
-        var NB1Y = ((LA0Y + ME2Y) * (RX05.B / RX05.C)) - ME2Y;
-        var NB2X = ((LA1X + ME1X) * (RX05.B / RX05.C)) - ME1X;
-        var NB2Y = ((LA1Y + ME1Y) * (RX05.B / RX05.C)) - ME1Y;
-        var NB0Z = ((LA0Z - ME0Z) * (RX05.B / RX05.C)) + ME0Z;
+        const NB0X = ((LA1X + ME0X) * (RX05.B / RX05.C)) - ME0X;
+        const NB0Y = ((LA1Y - ME0Y) * (RX05.B / RX05.C)) + ME0Y;
+        const NB1X = ME2X * (RX05.A / RX05.C);
+        const NB1Y = ((LA0Y + ME2Y) * (RX05.B / RX05.C)) - ME2Y;
+        const NB2X = ((LA1X + ME1X) * (RX05.B / RX05.C)) - ME1X;
+        const NB2Y = ((LA1Y + ME1Y) * (RX05.B / RX05.C)) - ME1Y;
+        const NB0Z = ((LA0Z - ME0Z) * (RX05.B / RX05.C)) + ME0Z;
 
-        var NC0X = 0;//((LC1X + ME7X) * (RX05.B / RX05.C)) - ME7X;
-        var NC0Y = ((LC1Y + ME7Y) * (RX05.B / RX05.C)) - ME7Y;
-        var NC1X = ((LC2X + ME8X) * (RX05.B / RX05.C)) - ME8X;
-        var NC1Y = ((ME8Y - LC2Y) * (RX05.A / RX05.C)) + LC2Y;
-        var NC2X = ((LC0X + ME6X) * (RX05.B / RX05.C)) - ME6X;
-        var NC2Y = ((LC0Y + ME6Y) * (RX05.B / RX05.C)) - ME6Y;
+        const NC0X = 0;//((LC1X + ME7X) * (RX05.B / RX05.C)) - ME7X;
+        const NC0Y = ((LC1Y + ME7Y) * (RX05.B / RX05.C)) - ME7Y;
+        const NC1X = ((LC2X + ME8X) * (RX05.B / RX05.C)) - ME8X;
+        const NC1Y = ((ME8Y - LC2Y) * (RX05.A / RX05.C)) + LC2Y;
+        const NC2X = ((LC0X + ME6X) * (RX05.B / RX05.C)) - ME6X;
+        const NC2Y = ((LC0Y + ME6Y) * (RX05.B / RX05.C)) - ME6Y;
 
-        var ND0X = LA1X * (RX05.B / RX05.C);
-        var ND0Y = ((LA1Y + MF0Y) * (RX05.B / RX05.C)) - MF0Y;
-        var ND1X = MF1X * (RX05.A / RX05.C);
-        var ND1Y = ((LA0Y + MF1Y) * (RX05.B / RX05.C)) - MF1Y;
-        var ND2X = ((LA1X + MF1X) * (RX05.B / RX05.C)) - MF1X;
-        var ND2Y = ((LA1Y - MF1Y) * (RX05.B / RX05.C)) + MF1Y;
-        var ND0Z = ((LA0Z + MF0Z) * (RX05.B / RX05.C)) - MF0Z;
+        const ND0X = LA1X * (RX05.B / RX05.C);
+        const ND0Y = ((LA1Y + MF0Y) * (RX05.B / RX05.C)) - MF0Y;
+        const ND1X = MF1X * (RX05.A / RX05.C);
+        const ND1Y = ((LA0Y + MF1Y) * (RX05.B / RX05.C)) - MF1Y;
+        const ND2X = ((LA1X + MF1X) * (RX05.B / RX05.C)) - MF1X;
+        const ND2Y = ((LA1Y - MF1Y) * (RX05.B / RX05.C)) + MF1Y;
+        const ND0Z = ((LA0Z + MF0Z) * (RX05.B / RX05.C)) - MF0Z;
 
-        var NE0X = ((LC0X - MC4X) * (RX05.B / RX05.C)) + MC4X;
-        var NE0Y = ((LC0Y + MC4Y) * (RX05.B / RX05.C)) - MC4Y;
-        var NE1X = ((LC1X + MC5X) * (RX05.B / RX05.C)) - MC5X;
-        var NE1Y = ((LC1Y + MC5Y) * (RX05.B / RX05.C)) - MC5Y;
-        var NE2X = ((LC2X + MC3X) * (RX05.B / RX05.C)) - MC3X;
-        var NE2Y = ((LC2Y - MC3Y) * (RX05.B / RX05.C)) + MC3Y;
-        var NE0Z = ((MC0Z + LA0Z) * (RX05.A / RX05.C)) - LA0Z;
+        const NE0X = ((LC0X - MC4X) * (RX05.B / RX05.C)) + MC4X;
+        const NE0Y = ((LC0Y + MC4Y) * (RX05.B / RX05.C)) - MC4Y;
+        const NE1X = ((LC1X + MC5X) * (RX05.B / RX05.C)) - MC5X;
+        const NE1Y = ((LC1Y + MC5Y) * (RX05.B / RX05.C)) - MC5Y;
+        const NE2X = ((LC2X + MC3X) * (RX05.B / RX05.C)) - MC3X;
+        const NE2Y = ((LC2Y - MC3Y) * (RX05.B / RX05.C)) + MC3Y;
+        const NE0Z = ((MC0Z + LA0Z) * (RX05.A / RX05.C)) - LA0Z;
 
         this.reles.SA00 = {X: 0,            Y: LA0Y * -1,   Z: LA0Z};
         this.reles.SA01 = {X: LA1X,         Y: LA1Y,        Z: LA0Z};
@@ -293,15 +260,15 @@ TenTetrahedron_Theta.prototype = {
         this.reles.CE01 = {X: NE1X,         Y: NE1Y,        Z: NE0Z * -1};
         this.reles.CE02 = {X: NE2X * -1,    Y: NE2Y * -1,   Z: NE0Z * -1};
 
-        var reles_rear = {};
-        for (var i in this.reles) {
+        const reles_rear = {};
+        for (let i in this.reles) {
             reles_rear[i + 'R'] = {
                 X: this.reles[i].X * -1,
                 Y: this.reles[i].Y * -1,
                 Z: this.reles[i].Z * -1
             };
         }
-        for (var i in reles_rear) {
+        for (let i in reles_rear) {
             this.reles[i] = reles_rear[i];
         }
 
@@ -503,92 +470,5 @@ TenTetrahedron_Theta.prototype = {
             C58R:   [this.reles.SA00,   this.reles.TF00,    this.reles.CE01R],
             C59R:   [this.reles.SA01,   this.reles.TF01,    this.reles.CE02R],
         };
-
-        this.surfaces3 = {
-        };
-
-        this.surfaces2 = {
-            T01A:   [this.reles.SD00,   this.reles.SB00,    this.reles.SA02R,   this.reles.SC02R,   this.reles.SB01],
-            T02A:   [this.reles.SD00,   this.reles.SB01,    this.reles.SA00R,   this.reles.SC00R,   this.reles.SB02],
-            T03A:   [this.reles.SD00,   this.reles.SB02,    this.reles.SA01R,   this.reles.SC01R,   this.reles.SB00],
-            T01R:   [this.reles.SD00R,  this.reles.SB00R,   this.reles.SA02,    this.reles.SC02,    this.reles.SB01R],
-            T02R:   [this.reles.SD00R,  this.reles.SB01R,   this.reles.SA00,    this.reles.SC00,    this.reles.SB02R],
-            T03R:   [this.reles.SD00R,  this.reles.SB02R,   this.reles.SA01,    this.reles.SC01,    this.reles.SB00R],
-
-            T04A:   [this.reles.SB00,   this.reles.SC01R,   this.reles.SA00,    this.reles.SC00,    this.reles.SA02R],
-            T05A:   [this.reles.SB01,   this.reles.SC02R,   this.reles.SA01,    this.reles.SC01,    this.reles.SA00R],
-            T06A:   [this.reles.SB02,   this.reles.SC00R,   this.reles.SA02,    this.reles.SC02,    this.reles.SA01R],
-            T04R:   [this.reles.SB00R,  this.reles.SC01,    this.reles.SA00R,   this.reles.SC00R,   this.reles.SA02],
-            T05R:   [this.reles.SB01R,  this.reles.SC02,    this.reles.SA01R,   this.reles.SC01R,   this.reles.SA00],
-            T06R:   [this.reles.SB02R,  this.reles.SC00,    this.reles.SA02R,   this.reles.SC02R,   this.reles.SA01],
-        };
-    },
-/*output: function(x, y, z)
-{
-    this.canvas_context.setTransform(1, 0, 0, 1, 0, 0);
-    this.canvas_context.clearRect(0, 0, this.size, this.size);
-    //this._output(this.surfaces2, this.fill_style2,   this.stroke_style2, x, y, z);
-    //this._output(this.surfaces3, this.fill_style3,   this.stroke_style3, x, y, z);
-    this._output(this.surfaces,  this.fill_style,    this.stroke_style,  x, y, z);
-
-    this.lockOn('SF00', x, y, z);
-},*/
-
-_output: function(surfaces, fill_style, stroke_style, theta_X, theta_Y, theta_Z)
-{
-    var sin_X = Math.sin(theta_X);
-    var cos_X = Math.cos(theta_X);
-    var sin_Y = Math.sin(theta_Y);
-    var cos_Y = Math.cos(theta_Y);
-    var sin_Z = Math.sin(theta_Z);
-    var cos_Z = Math.cos(theta_Z);
-
-    var coordinates =new Array();
-    for (var i in surfaces) {
-        var poses = new Array();
-        var z_index = 0;
-
-        for (var j = 0; j < surfaces[i].length; j ++) {
-            var X0 = surfaces[i][j].X;
-            var Y0 = surfaces[i][j].Y;
-            var Z0 = surfaces[i][j].Z;
-            var X1 = (X0 * cos_X) + (Z0 * sin_X);
-            var Z1 = (Z0 * cos_X) - (X0 * sin_X);
-            var X2 = (X1 * cos_Y) + (Y0 * sin_Y);
-            var Y2 = (Y0 * cos_Y) - (X1 * sin_Y);
-            var Y3 = (Y2 * cos_Z) - (Z1 * sin_Z);
-            var Z3 = (Z1 * cos_Z) + (Y2 * sin_Z);
-            var X = parseFloat(X2);
-            var Y = parseFloat(Y3);
-            var Z = parseFloat(Z3);
-
-            poses.push({X: X, Y: Y, Z: Z});
-            z_index += Z;
-        }
-
-        z_index = z_index / surfaces[i].length;
-        coordinates.push({poses: poses, z_index: z_index});
-    }
-
-    coordinates.sort(function(A, B){return B.z_index - A.z_index;});
-
-    for (var i = 0; i < coordinates.length; i ++) {
-        this.canvas_context.beginPath();
-
-        for (var j = 0; j < coordinates[i].poses.length; j ++) {
-            var pos = coordinates[i].poses[j];
-            if (j == 0) {
-                this.canvas_context.moveTo(this._center + pos.X, this._center + pos.Y);
-            } else {
-                this.canvas_context.lineTo(this._center + pos.X, this._center + pos.Y);
-            }
-        }
-
-        this.canvas_context.closePath();
-        this.canvas_context.fillStyle     = fill_style;
-        this.canvas_context.fill();
-        this.canvas_context.strokeStyle   = stroke_style;
-        this.canvas_context.stroke();
     }
 }
-};

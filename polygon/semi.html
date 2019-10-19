@@ -4,10 +4,12 @@
         <meta http-equiv="Context-Type" context="text/html" charset="utf-8" />
         <title>HTML5試験</title>
         <style type="text/css">
-            #FR {
+            div#FR {
                 display: flex;
+                justify-content: space-between;
+                flex-wrap: wrap;
             }
-            #FR01, #FR02, #FR03 {
+            div#FR div {
                 width: 200px;
                 height: 200px;
             }
@@ -23,42 +25,39 @@
         <script type="text/javascript" src="../library/jquery-1.8.0.min.js"></script>
         <script type="text/javascript" src="../library/debug.js"></script>
         <script type="text/javascript" src="library/geometry_calculator.js"></script>
-        <script type="text/javascript" src="model/polyhedron_basis_theta.js"></script>
-        <script type="text/javascript" src="model/snub_cube_theta.js"></script>
-        <script type="text/javascript" src="model/icosidodecahedron_theta.js"></script>
-        <script type="text/javascript" src="model/rhombicuboctahedron_theta.js"></script>
+        <script type="text/javascript" src="model/polyhedron_basis.js"></script>
+        <script type="text/javascript" src="model/snub_cube.js"></script>
+        <script type="text/javascript" src="model/icosidodecahedron.js"></script>
+        <script type="text/javascript" src="model/rhombicuboctahedron.js"></script>
         <script type="text/javascript">
-            window.onload = function () {
-                var frame_node01 = document.getElementById('FR01');
-                var frame_node02 = document.getElementById('FR02');
-                var frame_node03 = document.getElementById('FR03');
-                var params01 = { alpha: 50, size: 200, fill_style: 'rgba(255, 255, 255, 0.2)', stroke_style: 'rgba(224, 224, 224, 0.2)' };
+            window.onload = () => {
+                const frame_node01 = document.getElementById('FR01');
+                const frame_node02 = document.getElementById('FR02');
+                const frame_node03 = document.getElementById('FR03');
+                const params01 = { alpha: 100, size: 200, fill_style: 'rgba(255, 255, 255, 0.8)', stroke_style: 'rgba(224, 224, 224, 0.4)' };
 
-                var Operater = new Polyhedron_Basis_Theta({ geometry_calculator: geometry_calculator });
-                var ModelObject01 = Operater.summons('Snub_Cube_Theta', frame_node01, params01);
-                var ModelObject02 = Operater.summons('Icosidodecahedron_Theta', frame_node02, params01);
-                var ModelObject03 = Operater.summons('Rhombicuboctahedron_Theta', frame_node03, params01);
+                const Operater = new Polyhedron_Basis({ geometry_calculator: geometry_calculator });
+                const Embody01 = Operater.summons(new Snub_Cube(), frame_node01, params01);
+                const Embody02 = Operater.summons(new Icosidodecahedron(), frame_node02, params01);
+                const Embody03 = Operater.summons(new Rhombicuboctahedron(), frame_node03, params01);
 
-                var animation = null;
+                let animation = null;
 
-                var theta_R = 0;
-                var theta_V = 0;
-                var theta_L = 0;
+                let _R = 0;
+                let _V = 0;
+                let _L = 0;
 
-                var animate = function () {
-                    ModelObject01.setDirection(theta_R, theta_V, theta_L);
-                    ModelObject02.setDirection(theta_R, theta_V, theta_L);
-                    ModelObject03.setDirection(theta_R, theta_V, theta_L);
-                    ModelObject01.output();
-                    ModelObject02.output();
-                    ModelObject03.output();
+                const animate = () => {
+                    Embody01.output(_R, _V, _L);
+                    Embody02.output(_R, _V, _L);
+                    Embody03.output(_R, _V, _L);
 
-                    theta_R += 0.015;
-                    theta_V += 0.025;
-                    theta_L += 0.035;
+                    _R += 0.015;
+                    _V += 0.025;
+                    _L += 0.035;
                 };
 
-                document.onkeydown = function (event) {
+                document.onkeydown = (event) => {
                     switch (event.keyCode) {
                         case 13:
                             if (animation) {

@@ -1,11 +1,8 @@
 /**
  * 斜方立方八面体
  */
-const Rhombicuboctahedron_Theta = function () {
-};
-
-Rhombicuboctahedron_Theta.prototype = {
-    configure: function () {
+class Rhombicuboctahedron {
+    configure = () => {
         const { getLengthByPytha } = this.basis.geometry_calculator;
 
         // 四角形ABCD 重心O
@@ -31,25 +28,24 @@ Rhombicuboctahedron_Theta.prototype = {
         const LT_A00 = this.alpha;
 
         const TX_A00 = Math.asin(OA / ZA);
-        // var TX_B00 = Math.PI / 2 - OA;
         const TX_B00 = Math.asin(_A / _B);
 
         const TY_A00 = 0;
         const TY_B00 = Math.asin(AE / _A);
         const TY_B01 = Math.asin(AE / _A) * -1;
 
-        var reles_base = {
+        const reles_base = {
             A0: { R: LT_A00, X: TX_A00, Y: TY_A00 },
             B0: { R: LT_A00, X: TX_B00, Y: TY_B00 },
             B1: { R: LT_A00, X: TX_B00, Y: TY_B01 },
         };
 
-        for (var i in reles_base) {
-            var base_R = reles_base[i].R;
-            var base_X = reles_base[i].X;
-            var base_Y = reles_base[i].Y;
+        for (let i in reles_base) {
+            const base_R = reles_base[i].R;
+            const base_X = reles_base[i].X;
+            const base_Y = reles_base[i].Y;
 
-            for (var n = 0; n < 4; n++) {
+            for (let n = 0; n < 4; n++) {
                 this.reles[i + n + 'AO'] = { R: base_R };
                 this.reles[i + n + 'SR'] = { R: base_R };
 
@@ -89,4 +85,4 @@ Rhombicuboctahedron_Theta.prototype = {
             C7_B: ['B02AO', 'B13AO', 'B11SR', 'B00SR'],
         };
     }
-};
+}

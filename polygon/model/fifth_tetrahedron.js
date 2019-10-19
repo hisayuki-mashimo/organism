@@ -27,22 +27,24 @@ class Fifth_Tetrahedron {
             D: (4 * Math.pow(cos036, 2))
         };
 
-        const LX_A00 = 1;
-        const LX_A01 = LX_A00 * (RA_A00.B / RA_A00.C);
-        const LX_A02 = LX_A00 * (RA_A00.A / RA_A00.C);
-        const LX_A03 = LX_A00 + LX_A02;
+        // △ABC・重心D
+        // 直線AD・BCの中点E
+        const AD = 1;
+        const LX_A01 = AD * (RA_A00.B / RA_A00.C);
+        const LX_A02 = AD * (RA_A00.A / RA_A00.C);
+        const LX_A03 = AD + LX_A02;
         const LX_A04 = getLengthByPytha(LX_A03, LX_A02, null); // Oからの△ABCへの垂線
         const RA_X00 = {
             A: LX_A04,
             B: LX_A03
         };
-        const LX_A05 = LX_A00 * (RA_X00.B / RA_X00.A);
+        const LX_A05 = AD * (RA_X00.B / RA_X00.A);
         const RA_X01 = finalizeRatioByPytha({
             A: null,
             B: (RA_A01.D / RA_A01.B) + 1,
             C: (RA_A00.B / RA_A00.A) * (RA_A01.D / RA_A01.C)
         });
-        const LX_A06 = LX_A00 * 2;
+        const LX_A06 = AD * 2;
         const LX_A07 = LX_A06 * (RA_X01.B / RA_X01.A);
         const LX_A08 = LX_A07 * (RA_A01.B / (RA_A01.D + RA_A01.B));
         const LX_A09 = LX_A08 * (RA_A01.C / RA_A01.D) / 2;
@@ -98,7 +100,7 @@ class Fifth_Tetrahedron {
         const LT_H00 = this.alpha * LX_H00 / LX_A05;
         const LT_I00 = this.alpha * LX_I04 / LX_A05;
 
-        const TX_A00 = Math.asin(LX_A00 / LX_A05);
+        const TX_A00 = Math.asin(AD / LX_A05);
         const TX_B00 = Math.asin(LX_B03 / LX_A05) * 2;
         const TX_C00 = Math.asin(LX_C05 / LX_C08) + pai;
         const TX_D00 = Math.asin(LX_A01 / LX_A05) - Math.asin(LX_D02 / LX_D03) + pai;
@@ -111,13 +113,13 @@ class Fifth_Tetrahedron {
         const TX_Z00 = 0;
 
         const TY_A00 = 0;
-        const TY_A10 = Math.asin(LX_A09 / LX_A00) * 2;
-        const TY_B00 = Math.asin(LX_B00 / LX_A00);
+        const TY_A10 = Math.asin(LX_A09 / AD) * 2;
+        const TY_B00 = Math.asin(LX_B00 / AD);
         const TY_C00 = TY_B00 + pai;
         const TY_D00 = TY_A00 + pai;
         const TY_G00 = Math.asin(LX_D02 / LX_G03) + pai;
-        const TY_H00 = Math.asin(LX_A01 / LX_A00) - Math.asin(LX_D02 / LX_G03);
-        const TY_I00 = Math.asin(LX_A09 / LX_A00) - Math.asin(LX_I00 / LX_I01);
+        const TY_H00 = Math.asin(LX_A01 / AD) - Math.asin(LX_D02 / LX_G03);
+        const TY_I00 = Math.asin(LX_A09 / AD) - Math.asin(LX_I00 / LX_I01);
         const TY_Z00 = 0;
 
         const reles_base = {

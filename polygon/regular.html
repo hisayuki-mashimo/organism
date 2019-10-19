@@ -22,20 +22,22 @@
             <div id="FR03"></div>
             <div id="FR04"></div>
             <div id="FR05"></div>
-            <div id="FR06"></div>
         </div>
 
         <script type="text/javascript" src="../library/jquery-1.8.0.min.js"></script>
         <script type="text/javascript" src="../library/debug.js"></script>
         <script type="text/javascript" src="library/geometry_calculator.js"></script>
         <script type="text/javascript" src="model/polyhedron_basis.js"></script>
-        <script type="text/javascript" src="model/small_stellated_dodecahedron.js"></script>
-        <script type="text/javascript" src="model/great_stellated_dodecahedron.js"></script>
-        <script type="text/javascript" src="model/stella_octangula.js"></script>
-        <script type="text/javascript" src="model/stella_octangula_shift.js"></script>
-        <script type="text/javascript" src="model/fifth_tetrahedron.js"></script>
-        <script type="text/javascript" src="model/fifth_tetrahedron_shift.js"></script>
-        <script type="text/javascript" src="model/ten_tetrahedron.js"></script>
+        <script type="text/javascript" src="model/tetrahedron.js"></script>
+        <script type="text/javascript" src="model/tetrahedron_shift.js"></script>
+        <script type="text/javascript" src="model/hexahedron.js"></script>
+        <script type="text/javascript" src="model/hexahedron_shift.js"></script>
+        <script type="text/javascript" src="model/octahedron.js"></script>
+        <script type="text/javascript" src="model/octahedron_shift.js"></script>
+        <script type="text/javascript" src="model/dodecahedron.js"></script>
+        <script type="text/javascript" src="model/dodecahedron_shift.js"></script>
+        <script type="text/javascript" src="model/icosahedron.js"></script>
+        <script type="text/javascript" src="model/icosahedron_shift.js"></script>
         <script type="text/javascript">
             window.onload = () => {
                 const frame_node01 = document.getElementById('FR01');
@@ -47,13 +49,16 @@
                 const params01 = { alpha: 100, size: 200, fill_style: 'rgba(255, 255, 255, 0.8)', stroke_style: 'rgba(224, 224, 224, 0.4)' };
 
                 const Operater = new Polyhedron_Basis({ geometry_calculator });
-                const Embody01 = Operater.summons(new Small_Stellated_Dodecahedron(), frame_node01, params01);
-                const Embody02 = Operater.summons(new Great_Stellated_Dodecahedron(), frame_node02, params01);
-                const Embody03 = Operater.summons(new Stella_Octangula(), frame_node03, params01);
-                const Embody04 = Operater.summons(new Fifth_Tetrahedron(), frame_node04, params01);
-                const Embody05 = Operater.summons(new Ten_Tetrahedron(), frame_node05, params01);
-                // const Embody03 = Operater.summons(new Stella_Octangula_Shift(), frame_node03, params01);
-                // const Embody04 = Operater.summons(new Fifth_Tetrahedron_Shift(), frame_node04, params01);
+                const Embody01 = Operater.summons(new Tetrahedron(), frame_node01, params01);
+                const Embody02 = Operater.summons(new Hexahedron(), frame_node02, params01);
+                const Embody03 = Operater.summons(new Octahedron(), frame_node03, params01);
+                const Embody04 = Operater.summons(new Dodecahedron(), frame_node04, params01);
+                const Embody05 = Operater.summons(new Icosahedron(), frame_node05, params01);
+                // const Embody01 = Operater.summons(new Tetrahedron_Shift(), frame_node01, params01);
+                // const Embody02 = Operater.summons(new Hexahedron_Shift(), frame_node02, params01);
+                // const Embody03 = Operater.summons(new Octahedron_Shift(), frame_node03, params01);
+                // const Embody04 = Operater.summons(new Dodecahedron_Shift(), frame_node04, params01);
+                // const Embody05 = Operater.summons(new Icosahedron_Shift(), frame_node05, params01);
 
                 let animation = null;
 
@@ -66,7 +71,7 @@
                     Embody02.output(_R, _V, _L);
                     Embody03.output(_R, _V, _L);
                     Embody04.output(_R, _V, _L);
-                    // Embody05.output(_R, _V, _L);
+                    Embody05.output(_R, _V, _L);
 
                     _R += 0.015;
                     _V += 0.025;

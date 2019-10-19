@@ -2,58 +2,41 @@
  * 正八面体
  *
  */
-var Octahedron_Theta = function()
-{
-};
+class Octahedron{
+    configure = () => {
+        const { getLengthByPytha } = this.basis.geometry_calculator;
 
-
-Octahedron_Theta.prototype = {
-    // 外部設定値
-    fill_style:     'rgba(255, 192, 208, 0.5)',
-    stroke_style:   'rgba(240, 128, 132, 0.5)',
-
-
-
-
-    /**
-     * 初期化
-     *
-     */
-    configure: function()
-    {
-        var getLengthByPytha = this.basis.geometry_calculator.getLengthByPytha;
-
-        var pai = Math.PI;
+        const pai = Math.PI;
 
         // 正三角形比率
-        var RA_A00 = {
+        const RA_A00 = {
             A: 1,
             B: Math.pow(3, 1 / 2),
             C: 2
         };
 
-        var LX_A00 = this.alpha;
-        var LX_A01 = LX_A00 * (RA_A00.B / RA_A00.C);
-        var LX_A02 = LX_A00 * (RA_A00.A / RA_A00.C);
-        var LX_A03 = LX_A00 + LX_A02;
-        var LX_A04 = getLengthByPytha(LX_A03, LX_A01, null);
+        const LX_A00 = 1;
+        const LX_A01 = LX_A00 * (RA_A00.B / RA_A00.C);
+        const LX_A02 = LX_A00 * (RA_A00.A / RA_A00.C);
+        const LX_A03 = LX_A00 + LX_A02;
+        const LX_A04 = getLengthByPytha(LX_A03, LX_A01, null);
 
-        var LT_A00 = LX_A04;
+        const LT_A00 = this.alpha;
 
-        var TX_A00 = Math.asin(LX_A00 / LX_A04);
+        const TX_A00 = Math.asin(LX_A00 / LX_A04);
 
-        var TY_A00 = 0;
+        const TY_A00 = 0;
 
-        var reles_base = {
+        const reles_base = {
             A0: {R: LT_A00, X: TX_A00, Y: TY_A00}
         };
 
-        for (var i in reles_base) {
-            var base_R = reles_base[i].R;
-            var base_X = reles_base[i].X;
-            var base_Y = reles_base[i].Y;
+        for (let i in reles_base) {
+            const base_R = reles_base[i].R;
+            const base_X = reles_base[i].X;
+            const base_Y = reles_base[i].Y;
 
-            for (var n = 0; n < 3; n ++) {
+            for (let n = 0; n < 3; n ++) {
                 this.reles[i + n + 'AO'] = {R: base_R};
                 this.reles[i + n + 'SR'] = {R: base_R};
 
@@ -75,4 +58,4 @@ Octahedron_Theta.prototype = {
             B2_R: ['A02SR', 'A02AO', 'A00SR']
         };
     }
-};
+}

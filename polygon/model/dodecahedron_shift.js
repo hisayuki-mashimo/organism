@@ -1,62 +1,51 @@
 /**
  * 正十二面体
- *
  */
-var Dodecahedron_Shift_Theta = function()
-{
-};
-
-
-Dodecahedron_Shift_Theta.prototype = {
-    /**
-     * 初期化
-     *
-     */
-    configure: function()
-    {
+class Dodecahedron_Shift {
+    configure = () => {
         // 五芒星比率
-        var RA_A01 = {
+        const RA_A01 = {
             A: (4 * Math.pow(Math.cos(Math.PI * 2 / 10), 2)) - 2,
             B: 1,
             C: (4 * Math.pow(Math.cos(Math.PI * 2 / 10), 2)) - 1,
             D: (4 * Math.pow(Math.cos(Math.PI * 2 / 10), 2))
         };
 
-        var LX_A00 = this.alpha;
-        var LX_A01 = LX_A00 * (RA_A01.A / RA_A01.C);
-        var LX_A02 = LX_A00 + LX_A01;
-        var LX_A03 = LX_A02 / 2;
-        var LX_A04 = LX_A03 * (RA_A01.B / RA_A01.C);
-        var LX_A05 = LX_A01 + LX_A04;
-        var LX_A06 = this.basis.geometry_calculator.getLengthByPytha(LX_A00, LX_A05, null);
-        var LX_A07 = LX_A06 * (RA_A01.C / RA_A01.B);
-        var LX_A08 = LX_A07 * (RA_A01.D / RA_A01.C);
-        var LX_A09 = this.basis.geometry_calculator.getLengthByPytha(LX_A08, LX_A05, null);
-        var LX_A10 = this.basis.geometry_calculator.getLengthByPytha(null, LX_A00, LX_A09);
+        const LX_A00 = 1;
+        const LX_A01 = LX_A00 * (RA_A01.A / RA_A01.C);
+        const LX_A02 = LX_A00 + LX_A01;
+        const LX_A03 = LX_A02 / 2;
+        const LX_A04 = LX_A03 * (RA_A01.B / RA_A01.C);
+        const LX_A05 = LX_A01 + LX_A04;
+        const LX_A06 = this.basis.geometry_calculator.getLengthByPytha(LX_A00, LX_A05, null);
+        const LX_A07 = LX_A06 * (RA_A01.C / RA_A01.B);
+        const LX_A08 = LX_A07 * (RA_A01.D / RA_A01.C);
+        const LX_A09 = this.basis.geometry_calculator.getLengthByPytha(LX_A08, LX_A05, null);
+        const LX_A10 = this.basis.geometry_calculator.getLengthByPytha(null, LX_A00, LX_A09);
 
-        var LT_A00 = LX_A10;
+        const LT_A00 = this.alpha;
 
-        var TX_A00 = Math.asin(LX_A06 / LX_A10) * 2;
-        var TX_B00 = Math.asin(LX_A06 / LX_A10) + (Math.PI / 2);
-        var TX_Z00 = 0;
+        const TX_A00 = Math.asin(LX_A06 / LX_A10) * 2;
+        const TX_B00 = Math.asin(LX_A06 / LX_A10) + (Math.PI / 2);
+        const TX_Z00 = 0;
 
-        var TY_A00 = 0;
-        var TY_B00 = Math.asin(LX_A06 / LX_A10);
-        var TY_B10 = Math.asin(LX_A06 / LX_A10) * -1;
+        const TY_A00 = 0;
+        const TY_B00 = Math.asin(LX_A06 / LX_A10);
+        const TY_B10 = Math.asin(LX_A06 / LX_A10) * -1;
 
-        var reles_base = {
+        const reles_base = {
             A0: {R: LT_A00, X: TX_A00, Y: TY_A00},
             B0: {R: LT_A00, X: TX_B00, Y: TY_B00},
             B1: {R: LT_A00, X: TX_B00, Y: TY_B10},
             Z0: {R: LT_A00, X: TX_Z00, Y: TY_A00}
         };
 
-        for (var i in reles_base) {
-            var base_R = reles_base[i].R;
-            var base_X = reles_base[i].X;
-            var base_Y = reles_base[i].Y;
+        for (let i in reles_base) {
+            const base_R = reles_base[i].R;
+            const base_X = reles_base[i].X;
+            const base_Y = reles_base[i].Y;
 
-            for (var n = 0; n < 3; n ++) {
+            for (let n = 0; n < 3; n ++) {
                 this.reles[i + n + 'AO'] = {R: base_R};
                 this.reles[i + n + 'SR'] = {R: base_R};
 
@@ -82,4 +71,4 @@ Dodecahedron_Shift_Theta.prototype = {
             B2_R: ['A02SR', 'B02AO', 'B02SR', 'B12SR', 'B10AO']
         };
     }
-};
+}
