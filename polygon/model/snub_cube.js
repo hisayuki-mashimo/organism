@@ -47,7 +47,6 @@ class Snub_Cube {
        → X = 2AAN / (AA + 1)
        → [(2AAN / (AA + 1)) , ((2AAAN / (AA + 1)) - AN)]
         */
-        const LX_A00 = 1;
         const LX_A01 = Math.pow(Math.pow(1188, 1 / 2) + 38, 1 / 3);
         const LX_A02 = Math.pow(2, 1 / 3);
         const LX_A03 = (LX_A01 / (3 * LX_A02)) + (4 * LX_A02 / (3 * LX_A01)) + (1 / 3);

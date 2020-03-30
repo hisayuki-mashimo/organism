@@ -42,7 +42,7 @@
         <script type="text/javascript" src="model/fifth_tetrahedron_shift.js"></script>
         <script type="text/javascript" src="model/ten_tetrahedron.js"></script>
         <script type="text/javascript">
-            const object_radius = 50;
+            const object_radius = 150;
             const params01 = { alpha: object_radius, size: object_radius * 2, fill_style: 'rgba(255, 255, 255, 0)', stroke_style: 'rgba(224, 224, 224, 0.2)' };
 
             let animation = null;
@@ -63,28 +63,34 @@
 
                 const Operater = new Polyhedron_Basis({ geometry_calculator });
                 const Embodies = [
-                    new Small_Stellated_Dodecahedron(),
+                    // new Small_Stellated_Dodecahedron(),
                     // new Small_Stellated_Dodecahedron_Shift(),
-                    new Great_Stellated_Dodecahedron(),
+                    // new Great_Stellated_Dodecahedron(),
                     // new Great_Stellated_Dodecahedron_Shift(),
-                    new Great_Dodecahedron(),
-                    new Great_Dodecahedron_Shift(),
-                    new Great_Icosahedron(),
-                    new Great_Icosahedron_Shift(),
-                    new Stella_Octangula(),
-                    // new Fifth_Tetrahedron(),
+                    // new Great_Dodecahedron(),
+                    // new Great_Dodecahedron_Shift(),
+                    // new Great_Icosahedron(),
+                    // new Great_Icosahedron_Shift(),
+                    // new Stella_Octangula(),
+                    new Fifth_Tetrahedron(),
+                    new Fifth_Tetrahedron(),
                     // new Ten_Tetrahedron(),
                     // new Stella_Octangula_Shift(),
                     // new Fifth_Tetrahedron_Shift(),
                 ].map((Embody, index) => Operater.summons(Embody, frame_nodes[index], params01));
 
                 const animate = function(){
-                    Embodies.forEach((Embody) => {
-                        Embody.output(_R, _V, _L);
+                    Embodies.forEach((Embody, index) => {
+                        if (index) {
+                            Embody.output(_R, _V + Math.PI / 2, _L + Math.PI / 2);
+                            // Embody.output(_R, _V, _L + Math.PI / 2);
+                        } else {
+                            Embody.output(_R, _V, _L);
+                        }
                     });
 
-                    _R += 0.015;
-                    _V += 0.025;
+                    // _R += 0.015;
+                    // _V += 0.025;
                     _L += 0.035;
                 };
 

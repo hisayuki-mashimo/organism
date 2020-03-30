@@ -207,7 +207,7 @@ class Polyhedron_Basis {
 
             embody.canvas_context.closePath();
             // embody.canvas_context.fillStyle = embody.fill_style;
-            embody.canvas_context.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            embody.canvas_context.fillStyle = 'rgba(255, 255, 255, 0.7)';
             embody.canvas_context.fill();
             // embody.canvas_context.strokeStyle = embody.stroke_style;
             embody.canvas_context.strokeStyle = 'rgba(224, 224, 224, 0.3)';
@@ -218,7 +218,8 @@ class Polyhedron_Basis {
             embody.canvas_context.beginPath();
 
             const surface_code = embody.moment_surfaces[i].code;
-            if (!surface_code.match(/^D_/)) continue;
+            const debug_code = surface_code.match(/^D_(([^_]+)_.*)?/);
+            if (!debug_code) continue;
             const surface = embody.surfaces[surface_code];
 
             for (let j = 0; j < surface.length; j++) {
@@ -233,7 +234,12 @@ class Polyhedron_Basis {
             embody.canvas_context.closePath();
             // embody.canvas_context.fillStyle = 'rgba(255, 224, 224, 0.2)';
             // embody.canvas_context.fill();
-            embody.canvas_context.strokeStyle = 'rgba(255, 224, 224, 0.5)';
+            embody.canvas_context.strokeStyle =
+                debug_code[2] &&
+                    embody.debug_stroke_style &&
+                    embody.debug_stroke_style[debug_code[2]]
+                    ? embody.debug_stroke_style[debug_code[2]]
+                    : embody.stroke_style;
             embody.canvas_context.stroke();
         }
     }
