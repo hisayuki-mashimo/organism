@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Context-Type" context="text/html" charset="utf-8" />
+        <title>HTML5試験</title>
+    </head>
+    <style type="text/css">
+        div.FR {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        div.FRX {
+            display: relative;
+            width: 600px;
+            height: 600px;
+        }
+        div.FRX div {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+        }
+    </style>
+    <body>
+        <div class="FR">
+            <div class="FRX">
+                <div id="FR01"></div>
+                <div id="FR02"></div>
+            </div>
+            <div class="FRX">
+                <div id="FR03"></div>
+                <div id="FR04"></div>
+            </div>
+        </div>
+
+        <script type="text/javascript" src="../library/jquery-1.8.0.min.js"></script>
+        <script type="text/javascript" src="../library/debug.js"></script>
+        <script type="text/javascript" src="library/geometry_calculator.js"></script>
+        <script type="text/javascript" src="model/polyhedron_basis.js"></script>
+        <script type="text/javascript" src="model/fifth_tetrahedron.js"></script>
+        <script type="text/javascript" src="model/dodecahedron_shift.js"></script>
+        <script type="text/javascript">
+            window.onload = () => {
+                const frame_node01 = document.getElementById('FR01');
+                const frame_node02 = document.getElementById('FR02');
+                const frame_node03 = document.getElementById('FR03');
+                const frame_node04 = document.getElementById('FR04');
+                const params01 = { alpha: 300, size: 600, fill_style: 'rgba(255, 255, 255, 0.8)', stroke_style: 'rgba(224, 224, 224, 0.4)' };
+                const params02 = { alpha: 300, size: 600, fill_style: 'rgba(255, 255, 255, 0.0)', stroke_style: 'rgba(255, 200, 200, 0.4)' };
+
+                const Operater = new Polyhedron_Basis({ geometry_calculator });
+                const Embody01 = Operater.summons(new Fifth_Tetrahedron(), frame_node01, params01);
+                const Embody02 = Operater.summons(new Dodecahedron_Shift(), frame_node02, params02);
+                const Embody03 = Operater.summons(new Fifth_Tetrahedron(), frame_node03, params01);
+                const Embody04 = Operater.summons(new Dodecahedron_Shift(), frame_node04, params02);
+
+                let animation = null;
+
+                let _R = 0;
+                let _V = 0;
+                let _L = 0;
+
+                const animate = function(){
+                    Embody01.output(_R, _V, _L);
+                    Embody02.output(_R + 0.658, _V, _L);
+                    Embody03.output(_R, _V + Math.PI / 2, _L + Math.PI / 2);
+                    Embody04.output(_R + 0.658, _V + Math.PI / 2, _L + Math.PI / 2);
+
+                    _R += 0.015;
+                    _V += 0.025;
+                    _L += 0.035;
+                };
+
+                document.onkeydown = function(event){
+                    switch (event.keyCode) {
+                        case 13:
+                            if (animation) {
+                                clearInterval(animation);
+                                animation = null;
+                            } else {
+                                animation = setInterval(animate, 50);
+                            }
+                            break;
+                    }
+                };
+
+                animate();
+            };
+        </script>
+    </body>
+</html>
