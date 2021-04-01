@@ -1,0 +1,319 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+    </style>
+  </head>
+  <body>
+    <form name="sconfig">
+    </form>
+    <canvas id="maze">
+    </canvas>
+    <script>
+      class Maze {
+        V = 40;
+        H = 40;
+        start = { V: 0, H: 0};
+        goal = { V: 39, H: 39 };
+
+        roadW = 9;
+        fulcrumW = 1;
+
+        directions = {
+          T: 1,
+          R: 2,
+          B: 4,
+          L: 8,
+        };
+
+        coordinates = {};
+        restCoordinates = [];
+        phase = 0;
+        phaseCoordinates = [];
+        presentCoordinate = null;
+        direction = '';
+        makeResult = {};
+
+        make = () => {
+          let isSucceed = false;
+
+          Array(5).fill(null).forEach((_, tryCount) => {
+            try {
+              if (!isSucceed) {
+                this.shiftCandidate();
+                isSucceed = true;
+              }
+            } catch (_e) {
+            }
+          });
+          if (!isSucceed) {
+            this.pickCoordinate();
+            this.shiftCandidate();
+          }
+        };
+
+        route = [];
+        solveResult = {};
+
+        solve = () => {
+          if (!this.route.length) {
+            this.route = [{
+              coordinate: this.getCoordinateCode(this.start.V, this.start.H),
+              triedDirections: 0,
+              fromDirection: null,
+            }];
+          }
+          const routePart = this.route[this.route.length - 1];
+          const positions = this.getCoordinatePositions(routePart.coordinate);
+          const nextDirection = ['L', 'T', 'R', 'B'].find((direction) => {
+            if (routePart.triedDirections & this.directions[direction]) return null;
+            if (!(this.coordinates[routePart.coordinate].relations & this.directions[direction])) return null;
+
+            return true;
+          }, null);
+
+          if (nextDirection) {
+            const nextRoutePart = {
+              coordinate: this.getCoordinateCode(positions.V, positions.H, nextDirection),
+              fromDirection: nextDirection,
+              triedDirections: this.directions[this.getRelativeDirection(nextDirection, 'B')],
+            };
+            routePart.triedDirections += this.directions[nextDirection];
+            this.route.push(nextRoutePart);
+            this.solveResult = {
+              from: positions,
+              to: this.getCoordinatePositions(nextRoutePart.coordinate),
+              vector: 'front',
+              isEnd: nextRoutePart.coordinate === this.getCoordinateCode(this.goal.V, this.goal.H),
+            };
+          } else {
+            this.route.splice(this.route.length - 1);
+            const prevRoutePart = this.route[this.route.length - 1];
+            this.solveResult = {
+              from: this.getCoordinatePositions(routePart.coordinate),
+              to: this.getCoordinatePositions(prevRoutePart.coordinate),
+              vector: 'back',
+              isEnd: false,
+            };
+          }
+        };
+
+        configure = (params) => {
+          if (params.V) this.V = parseInt(params.V);
+          if (params.H) this.H = parseInt(params.H);
+          if (params.start) this.start = params.start;
+          if (params.goal) this.goal = params.goal;
+          if (params.roadW) this.roadW = params.roadW;
+          if (params.fulcrumW) this.fulcrumW = params.fulcrumW;
+
+          this.coordinates = {};
+          this.restCoordinates = [];
+
+          Array(this.V).fill(null).forEach((_v, v) => {
+            Array(this.H).fill(null).forEach((_h, h) => {
+              const coordinate = this.getCoordinateCode(v, h);
+              const positions = this.getCoordinatePositions(coordinate);
+              this.coordinates[`${v}.${h}`] = {
+                relations: 0,
+                enableRelations: Object.keys(this.directions).reduce((res, direction) =>
+                res + (this.getCoordinateCode(positions.V, positions.H, direction) ? this.directions[direction] : 0), 0),
+              };
+              this.restCoordinates.push(coordinate);
+            });
+          });
+
+          this.phaseCoordinates = this.restCoordinates.splice(
+            Math.floor(Math.random() * this.restCoordinates.length),
+            1,
+          );
+          this.presentCoordinate = this.phaseCoordinates[0];
+        };
+
+        pickCoordinate = () => {
+          this.presentCoordinate = this.phaseCoordinates[Math.floor(Math.random() * this.phaseCoordinates.length)];
+          this.phase = 0;
+        };
+
+        getCoordinateCode = (baseV, baseH, direction = null, length = 1) => {
+          const [v, h] = (() => {
+            switch (direction) {
+              case 'T':
+                return [baseV - length, baseH];
+              case 'R':
+                return [baseV, baseH + length];
+              case 'B':
+                return [baseV + length, baseH];
+              case 'L':
+                return [baseV, baseH - length];
+              default:
+                return [baseV, baseH];
+            }
+          })();
+
+          return v >= 0 && v < this.V && h >= 0 && h < this.H && `${v}.${h}`;
+        };
+
+        getCoordinatePositions = (coordinate) => {
+          const positions = `${coordinate}`.match(/([0-9]+)/g);
+
+          return { V: parseInt(positions[0]), H: parseInt(positions[1]) };
+        };
+
+        getRelativeDirection = (direction, relativeDirection) => {
+          const directionCodes = ['T', 'R', 'B', 'L'];
+          const relativeIndex = directionCodes.indexOf(direction) + directionCodes.indexOf(relativeDirection);
+
+          return directionCodes[relativeIndex % directionCodes.length];
+        };
+
+        shiftCandidate = () => {
+          const positions = this.getCoordinatePositions(this.presentCoordinate);
+          let direction = null;
+          let shiftedCoordinate = null;
+
+          if (this.phase === 0) {
+            const enableShiftParams = Object.keys(this.directions).reduce((res, directionCandidate) => {
+              const enableShiftCoordinate = this.getCoordinateCode(positions.V, positions.H, directionCandidate);
+              if (! enableShiftCoordinate) return res;
+              if (this.coordinates[enableShiftCoordinate].relations > 0) return res;
+
+              return [...res, { direction: directionCandidate, coordinate: enableShiftCoordinate }];
+            }, []);
+
+            if (!enableShiftParams.length) throw 'disable';
+
+            const shiftedParamIndex = Math.floor(Math.random() * enableShiftParams.length);
+            shiftedCoordinate = enableShiftParams[shiftedParamIndex].coordinate;
+            direction = enableShiftParams[shiftedParamIndex].direction;
+          } else {
+            direction = [
+              this.getRelativeDirection(this.prevDirection, 'T'),
+              this.getRelativeDirection(this.prevDirection, 'T'),
+              this.getRelativeDirection(this.prevDirection, 'R'),
+              this.getRelativeDirection(this.prevDirection, 'L'),
+            ][Math.floor(Math.random() * 4)];
+            const shiftCandidatePositions = this.getCoordinatePositions(this.presentCoordinate);
+            shiftedCoordinate = this.getCoordinateCode(shiftCandidatePositions.V, shiftCandidatePositions.H, direction);
+            if (!shiftedCoordinate) throw 'disable';
+            if (this.coordinates[shiftedCoordinate].relations > 0) throw 'disable';
+          }
+
+          this.coordinates[this.presentCoordinate].relations += this.directions[direction];
+          this.coordinates[shiftedCoordinate].relations += this.directions[this.getRelativeDirection(direction, 'B')];
+
+          const shiftPositions = this.getCoordinatePositions(shiftedCoordinate);
+
+          this.makeResult = { from: positions, to: shiftPositions };
+
+          this.restCoordinates.splice(this.restCoordinates.indexOf(shiftedCoordinate), 1);
+
+          Object.keys(this.directions).forEach((nextDirection) => {
+            const nextCoordinate = this.getCoordinateCode(shiftPositions.V, shiftPositions.H, nextDirection);
+            if (nextCoordinate && this.coordinates[nextCoordinate].relations > 0) {
+              this.coordinates[shiftedCoordinate].enableRelations -= this.directions[nextDirection];
+              this.coordinates[nextCoordinate].enableRelations -= this.directions[this.getRelativeDirection(nextDirection, 'B')];
+              if (this.coordinates[nextCoordinate].enableRelations === 0) {
+                this.phaseCoordinates.splice(this.phaseCoordinates.indexOf(nextCoordinate), 1);
+              }
+            }
+          });
+          if (this.coordinates[shiftedCoordinate].enableRelations > 0) {
+            this.phaseCoordinates.push(shiftedCoordinate);
+          }
+
+          this.presentCoordinate = shiftedCoordinate;
+          this.makeResult.isEnd = !this.restCoordinates.length;
+          this.prevDirection = direction;
+          this.phase ++;
+        };
+      }
+
+      const L = 80;
+      const maze = new Maze();
+      maze.configure({
+        V: L,
+        H: L,
+        start: { V: 0, H: 0 },
+        goal: { V: L - 1, H: L - 1 },
+        roadW: 4,
+        fulcrumW: 1,
+      });
+      const canvasNode = document.getElementById('maze');
+      const canvasContext = canvasNode.getContext('2d');
+      canvasNode.setAttribute('width', maze.H * (maze.roadW + maze.fulcrumW) + maze.fulcrumW);
+      canvasNode.setAttribute('height', maze.V * (maze.roadW + maze.fulcrumW) + maze.fulcrumW);
+      canvasContext.fillStyle = '#000000ff';
+      canvasContext.setTransform(1, 0, 0, 1, 0, 0);
+      canvasContext.fillRect(0, 0, maze.H * (maze.roadW + maze.fulcrumW) + maze.fulcrumW, maze.V * (maze.roadW + maze.fulcrumW) + maze.fulcrumW);
+      canvasContext.fillStyle = '#ffffffff';
+      canvasContext.setTransform(1, 0, 0, 1, 0, 0);
+      const startPositiobns = maze.getCoordinatePositions(maze.presentCoordinate);
+      const X = maze.fulcrumW + (maze.roadW + maze.fulcrumW) * startPositiobns.H;
+      const Y = maze.fulcrumW + (maze.roadW + maze.fulcrumW) * startPositiobns.V;
+      canvasContext.fillRect(X, Y, maze.roadW, maze.roadW);
+
+      const executeMake = () => {
+        maze.make();
+
+        canvasContext.setTransform(1, 0, 0, 1, 0, 0);
+        const X1 = maze.fulcrumW + (maze.roadW + maze.fulcrumW) * Math.min(maze.makeResult.from.H, maze.makeResult.to.H);
+        const Y1 = maze.fulcrumW + (maze.roadW + maze.fulcrumW) * Math.min(maze.makeResult.from.V, maze.makeResult.to.V);
+        const X2 = (maze.roadW + maze.fulcrumW) * (Math.max(maze.makeResult.from.H, maze.makeResult.to.H) + 1);
+        const Y2 = (maze.roadW + maze.fulcrumW) * (Math.max(maze.makeResult.from.V, maze.makeResult.to.V) + 1);
+        canvasContext.fillRect(X1, Y1, X2 - X1, Y2 - Y1);
+
+        if (maze.makeResult.isEnd) {
+          executeSolve();
+        } else {
+          setTimeout(executeMake, 5);
+        }
+      };
+
+      const executeSolve = () => {
+        maze.solve();
+
+        canvasContext.setTransform(1, 0, 0, 1, 0, 0);
+        if (maze.solveResult.vector === 'front') {
+          canvasContext.fillStyle = '#aa88ccff';
+          const X01 = maze.fulcrumW + (maze.roadW + maze.fulcrumW) * Math.min(maze.solveResult.from.H, maze.solveResult.to.H);
+          const Y01 = maze.fulcrumW + (maze.roadW + maze.fulcrumW) * Math.min(maze.solveResult.from.V, maze.solveResult.to.V);
+          const X02 = (maze.roadW + maze.fulcrumW) * (Math.max(maze.solveResult.from.H, maze.solveResult.to.H) + 1);
+          const Y02 = (maze.roadW + maze.fulcrumW) * (Math.max(maze.solveResult.from.V, maze.solveResult.to.V) + 1);
+          canvasContext.fillRect(X01, Y01, X02 - X01, Y02 - Y01);
+        } else {
+          canvasContext.fillStyle = '#ffffff';
+          const X11 = maze.solveResult.from.H > maze.solveResult.to.H
+            ? (maze.roadW + maze.fulcrumW) * maze.solveResult.from.H
+            : (maze.roadW + maze.fulcrumW) * maze.solveResult.from.H + maze.fulcrumW;
+          const X12 = maze.solveResult.from.H > maze.solveResult.to.H
+            ? (maze.roadW + maze.fulcrumW) * (maze.solveResult.from.H + 1)
+            : maze.solveResult.from.H < maze.solveResult.to.H
+            ? (maze.roadW + maze.fulcrumW) * (maze.solveResult.from.H + 1) + maze.fulcrumW
+            : (maze.roadW + maze.fulcrumW) * (maze.solveResult.from.H + 1);
+          const Y11 = maze.solveResult.from.V > maze.solveResult.to.V
+            ? (maze.roadW + maze.fulcrumW) * maze.solveResult.from.V
+            : (maze.roadW + maze.fulcrumW) * maze.solveResult.from.V + maze.fulcrumW;
+          const Y12 = maze.solveResult.from.V > maze.solveResult.to.V
+            ? (maze.roadW + maze.fulcrumW) * (maze.solveResult.from.V + 1)
+            : maze.solveResult.from.V < maze.solveResult.to.V
+            ? (maze.roadW + maze.fulcrumW) * (maze.solveResult.from.V + 1) + maze.fulcrumW
+            : (maze.roadW + maze.fulcrumW) * (maze.solveResult.from.V + 1);
+          canvasContext.fillRect(X11, Y11, X12 - X11, Y12 - Y11);
+        }
+
+        if (!maze.solveResult.isEnd) {
+          setTimeout(executeSolve, 5);
+        }
+      };
+
+      const csl = (...args) => {
+        args.forEach((arg, i) => {
+          args[i] = JSON.parse(JSON.stringify(arg));
+        });
+        console.log(...args);
+      };
+
+      executeMake();
+    </script>
+  </body>
+</html>
