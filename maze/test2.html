@@ -1,0 +1,445 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+    </style>
+  </head>
+  <body>
+    <form name="sconfig">
+    </form>
+    <canvas id="maze">
+    </canvas>
+    <script>
+      class Maze {
+        V = 40;
+        H = 40;
+        start = { V: 0, H: 0};
+        goal = { V: 39, H: 39 };
+
+        roadW = 9;
+        fulcrumW = 1;
+
+        directions = {
+          T: 1,
+          R: 2,
+          B: 4,
+          L: 8,
+        };
+
+        fulcrums = {};
+        restFulcrums = [];
+        phase = 0;
+        groupFulcrums = { 0: [] };
+        groupRelations = { 0: 0 };
+        presentFulcrum = null;
+        direction = '';
+        makeResult = {};
+
+        configure(params) {
+          if (params.V) this.V = parseInt(params.V);
+          if (params.H) this.H = parseInt(params.H);
+          if (params.start) this.start = params.start;
+          if (params.goal) this.goal = params.goal;
+          if (params.roadW) this.roadW = params.roadW;
+          if (params.fulcrumW) this.fulcrumW = params.fulcrumW;
+
+          this.fulcrums = {};
+          this.restFulcrums = [];
+          this.presentFulcrum = new MazeFulcrum(this, 0, 0);
+
+          Array(this.V + 1).fill(null).forEach((_v, v) => {
+            Array(this.H + 1).fill(null).forEach((_h, h) => {
+              const fulcrum = this.getFulcrum(v, h);
+              const group = v === 0 || h === 0 || v === this.V || h === this.H ? 0 : v * this.V + h;
+              this.fulcrums[fulcrum.getCode()] = {
+                group,
+                relations:
+                  (((v === 0 || v === this.V) && h > 0) ? this.directions.L : 0) +
+                  (((v === 0 || v === this.V) && h < this.H) ? this.directions.R : 0) +
+                  (((h === 0 || h === this.H) && v > 0) ? this.directions.T : 0) +
+                  (((h === 0 || h === this.H) && v < this.H) ? this.directions.B : 0),
+                enableRelations:
+                  ((v > 0 && v < this.V && h > 0) ? this.directions.L : 0) +
+                  ((v > 0 && v < this.V && h < this.H) ? this.directions.R : 0) +
+                  ((h > 0 && h < this.H && v > 0) ? this.directions.T : 0) +
+                  ((h > 0 && h < this.H && v < this.V) ? this.directions.B : 0),
+              };
+              if ((v > 0 && v < this.V) || (h > 0 && h < this.H)) {
+                this.restFulcrums.push(fulcrum.getCode());
+                if (group === 0) {
+                  this.groupFulcrums[group].push(fulcrum.getCode());
+                } else {
+                  this.groupFulcrums[group] = [fulcrum.getCode()];
+                  this.groupRelations[group] = group;
+                }
+              }
+            });
+          });
+
+          this.pickFulcrum();
+        }
+
+        make() {
+          let isSucceed = false;
+
+          Array(5).fill(null).forEach((_, tryCount) => {
+            try {
+              if (!isSucceed) {
+                this.shiftCandidate();
+                isSucceed = true;
+              }
+            } catch (_e) {
+            }
+          });
+          if (!isSucceed) {
+            this.pickFulcrum();
+            this.shiftCandidate();
+          }
+        }
+
+        route = [];
+        solveResult = {};
+
+        solve() {
+          if (!this.route.length) {
+            this.route = [{
+              V: this.start.V,
+              H: this.start.H,
+              triedDirections: 0,
+              fromDirection: null,
+            }];
+          }
+          const routePart = this.route[this.route.length - 1];
+          const routeRoad = this.getRoad(routePart.V, routePart.H);
+          const fromDirection = routePart.fromDirection || this.directions.T;
+          const nextRoutePart = ['L', 'T', 'R', 'B'].reduce((res, directionCode) => {
+            if (res) return res;
+            const direction = this.getRelativeDirection(fromDirection, directionCode);
+            if (routePart.triedDirections & direction) return res;
+            if (!routeRoad.enableShift(direction)) return res;
+            const nextRode = routeRoad.shift(direction);
+
+            return {
+              V: nextRode.v,
+              H: nextRode.h,
+              fromDirection: direction,
+              triedDirections: this.getRelativeDirection(direction, 'B'),
+            };
+          }, null);
+
+          if (nextRoutePart) {
+            routePart.triedDirections += nextRoutePart.fromDirection;
+            this.route.push(nextRoutePart);
+            this.solveResult = {
+              from: { V: routePart.V, H: routePart.H },
+              to: { V: nextRoutePart.V, H: nextRoutePart.H },
+              vector: 'front',
+              isEnd: nextRoutePart.V === this.goal.V && nextRoutePart.H === this.goal.H,
+            };
+          } else {
+            this.route.splice(this.route.length - 1);
+            const prevRoutePart = this.route[this.route.length - 1];
+            this.solveResult = {
+              from: { V: routePart.V, H: routePart.H },
+              to: { V: prevRoutePart.V, H: prevRoutePart.H },
+              vector: 'back',
+              isEnd: false,
+            };
+          }
+        }
+
+        pickFulcrum() {
+          const fulcrumCode = this.restFulcrums[Math.floor(Math.random() * this.restFulcrums.length)];
+          const { V, H } = this.getFulcrumPositions(fulcrumCode);
+          this.presentFulcrum.v = V;
+          this.presentFulcrum.h = H;
+          this.direction = this.directions[Object.keys(this.directions)[Math.floor(Math.random() * 4)]];
+          this.phase = 0;
+        }
+
+        shiftCandidate() {
+          let direction = null;
+          let shiftedFulcrum = null;
+
+          if (this.phase === 0) {
+            const enableShiftParams = Object.keys(this.directions).reduce((res, directionCode) => {
+              const enableShiftFulcrum = this.presentFulcrum.shift(this.directions[directionCode]);
+
+              if (enableShiftFulcrum && this.presentFulcrum.getGroup() !== enableShiftFulcrum.getGroup()) {
+                res.push({ direction: this.directions[directionCode], fulcrum: enableShiftFulcrum });
+              }
+
+              return res;
+            }, []);
+
+            if (!enableShiftParams.length) throw 'disable';
+
+            const shiftedParamIndex = Math.floor(Math.random() * enableShiftParams.length);
+            shiftedFulcrum = enableShiftParams[shiftedParamIndex].fulcrum;
+            direction = enableShiftParams[shiftedParamIndex].direction;
+          } else {
+            direction = [
+              this.getRelativeDirection(this.direction, 'T'),
+              this.getRelativeDirection(this.direction, 'T'),
+              this.getRelativeDirection(this.direction, 'R'),
+              this.getRelativeDirection(this.direction, 'L'),
+            ][Math.floor(Math.random() * 4)];
+            shiftedFulcrum = this.presentFulcrum.shift(direction);
+            if (!shiftedFulcrum) throw 'disable';
+            if (this.presentFulcrum.getGroup() === shiftedFulcrum.getGroup()) throw 'disable';
+          }
+
+          this.fulcrums[this.presentFulcrum.getCode()].relations += direction;
+          this.fulcrums[shiftedFulcrum.getCode()].relations += this.getRelativeDirection(direction, 'B');
+
+          this.makeResult = {
+            from: { V: this.presentFulcrum.v, H: this.presentFulcrum.h },
+            to: { V: shiftedFulcrum.v, H: shiftedFulcrum.h },
+          };
+
+          const masterGroup = Math.min(this.presentFulcrum.getGroup(), shiftedFulcrum.getGroup());
+          const slaveGroup = Math.max(this.presentFulcrum.getGroup(),shiftedFulcrum.getGroup());
+          Object.keys(this.groupRelations).forEach((g) => {
+            if (this.groupRelations[g] === slaveGroup) {
+              this.groupRelations[g] = masterGroup;
+            }
+          });
+
+          const { [masterGroup]: master, [slaveGroup]: slave, ...groupFulcrums } = this.groupFulcrums;
+          groupFulcrums[masterGroup] = [];
+          master.concat(slave).forEach((fulcrumCode) => {
+            const fulcrumPositions = this.getFulcrumPositions(fulcrumCode);
+            const fulcrum = this.getFulcrum(fulcrumPositions.V, fulcrumPositions.H);
+            Object.keys(this.directions).forEach((nextDirectionCode) => {
+              if (!(this.fulcrums[fulcrumCode].enableRelations & this.directions[nextDirectionCode])) return;
+              const nextFulcrum = fulcrum.shift(this.directions[nextDirectionCode]);
+              if (nextFulcrum && nextFulcrum.getGroup() === fulcrum.getGroup()) {
+                this.fulcrums[fulcrumCode].enableRelations -= this.directions[nextDirectionCode];
+                this.fulcrums[nextFulcrum.getCode()].enableRelations -= this.getRelativeDirection(this.directions[nextDirectionCode], 'B');
+              }
+            });
+            if (this.fulcrums[fulcrumCode].enableRelations > 0) {
+              groupFulcrums[masterGroup].push(fulcrumCode);
+            } else {
+              this.restFulcrums.splice(this.restFulcrums.indexOf(fulcrumCode), 1);
+            }
+          });
+          this.groupFulcrums = groupFulcrums;
+          this.presentFulcrum.v = shiftedFulcrum.v;
+          this.presentFulcrum.h = shiftedFulcrum.h;
+          this.makeResult.isEnd = Object.keys(this.groupFulcrums).length === 1;
+          this.direction = direction;
+          this.phase ++;
+        }
+
+        getFulcrum(v, h) {
+          return new MazeFulcrum(this, v, h);
+        }
+
+        getRoad(v, h) {
+          return new MazeRoad(this, v, h);
+        }
+
+        getFulcrumPositions(code) {
+          const positions = `${code}`.match(/([0-9]+)/g);
+
+          return { V: parseInt(positions[0]), H: parseInt(positions[1]) };
+        }
+
+        getRelativeDirection(direction, relativeDirectionCode) {
+          const directionCodes = ['T', 'R', 'B', 'L'];
+          const directionCode = Object.keys(this.directions).find((c) => this.directions[c] === direction);
+          const relativeIndex = directionCodes.indexOf(directionCode) + directionCodes.indexOf(relativeDirectionCode);
+
+          return this.directions[directionCodes[relativeIndex % directionCodes.length]];
+        }
+      }
+
+      class MazeFulcrum {
+        maze = null;
+        v = 0;
+        h = 0;
+
+        constructor(maze, v, h) {
+          this.maze = maze;
+          this.v = v;
+          this.h = h;
+        }
+
+        getCode() {
+          return `${this.v}.${this.h}`;
+        }
+
+        getGroup() {
+          return this.maze.groupRelations[this.maze.fulcrums[this.getCode()].group];
+        }
+
+        shift(direction) {
+          const [v, h] = (() => {
+            switch (direction) {
+              case this.maze.directions.T:
+                return [this.v - 1, this.h];
+              case this.maze.directions.R:
+                return [this.v, this.h + 1];
+              case this.maze.directions.B:
+                return [this.v + 1, this.h];
+              case this.maze.directions.L:
+                return [this.v, this.h - 1];
+              default:
+                return [this.v, this.h];
+            }
+          })();
+
+          return v >= 0 && v <= this.maze.V && h >= 0 && h <= this.maze.H
+            && new MazeFulcrum(this.maze, v, h);
+        }
+      }
+
+      class MazeRoad {
+        maze = null;
+        v = 0;
+        h = 0;
+
+        constructor(maze, v, h) {
+          this.maze = maze;
+          this.v = v;
+          this.h = h;
+        }
+
+        enableShift(direction) {
+          const fulcrum = (() => {
+            switch (direction) {
+              case this.maze.directions.T:
+              case this.maze.directions.L:
+                return this.maze.getFulcrum(this.v, this.h);
+              case this.maze.directions.R:
+              case this.maze.directions.B:
+                return this.maze.getFulcrum(this.v + 1, this.h + 1);
+              default:
+            }
+          })();
+
+          const fulcrumRelations = this.maze.fulcrums[fulcrum.getCode()].relations;
+
+          switch (direction) {
+            case this.maze.directions.T:
+              return !(fulcrumRelations & this.maze.directions.R);
+            case this.maze.directions.R:
+              return !(fulcrumRelations & this.maze.directions.T);
+            case this.maze.directions.B:
+              return !(fulcrumRelations & this.maze.directions.L);
+            case this.maze.directions.L:
+              return !(fulcrumRelations & this.maze.directions.B);
+            default:
+          }
+        }
+
+        shift(direction) {
+          const [v, h] = (() => {
+            switch (direction) {
+              case this.maze.directions.T:
+                return [this.v - 1, this.h];
+              case this.maze.directions.R:
+                return [this.v, this.h + 1];
+              case this.maze.directions.B:
+                return [this.v + 1, this.h];
+              case this.maze.directions.L:
+                return [this.v, this.h - 1];
+              default:
+                return [this.v, this.h];
+            }
+          })();
+
+          return v >= 0 && v <= this.maze.V && h >= 0 && h <= this.maze.H
+            && new MazeRoad(this.maze, v, h);
+        }
+      }
+
+      const L = 40;
+      const maze = new Maze();
+      maze.configure({
+        V: L,
+        H: L,
+        start: { V: 0, H: 0 },
+        goal: { V: L - 1, H: L - 1 },
+        roadW: 9,
+        fulcrumW: 1,
+      });
+      const canvasNode = document.getElementById('maze');
+      const canvasContext = canvasNode.getContext('2d');
+      canvasNode.setAttribute('width', maze.H * (maze.roadW + maze.fulcrumW) + maze.fulcrumW);
+      canvasNode.setAttribute('height', maze.V * (maze.roadW + maze.fulcrumW) + maze.fulcrumW);
+      canvasContext.fillStyle = '#000000';
+      canvasContext.strokeStyle = '#000000';
+      canvasContext.lineWidth = maze.fulcrumW;
+      canvasContext.setTransform(1, 0, 0, 1, 0, 0);
+      canvasContext.fillRect(0, 0, (maze.fulcrumW + maze.roadW) * maze.H + maze.fulcrumW, maze.fulcrumW);
+      canvasContext.fillRect(0, 0, maze.fulcrumW, (maze.fulcrumW + maze.roadW) * maze.V + maze.fulcrumW);
+      canvasContext.fillRect((maze.fulcrumW + maze.roadW) * maze.H, 0, (maze.fulcrumW + maze.roadW) * maze.H + maze.fulcrumW, (maze.fulcrumW + maze.roadW) * maze.V + maze.fulcrumW);
+      canvasContext.fillRect(0, (maze.fulcrumW + maze.roadW) * maze.V, (maze.fulcrumW + maze.roadW) * maze.H + maze.fulcrumW, (maze.fulcrumW + maze.roadW) * maze.V + maze.fulcrumW);
+
+      const executeMake = () => {
+        maze.make();
+
+        canvasContext.setTransform(1, 0, 0, 1, 0, 0);
+        const X1 = (maze.roadW + maze.fulcrumW) * Math.min(maze.makeResult.from.H, maze.makeResult.to.H);
+        const Y1 = (maze.roadW + maze.fulcrumW) * Math.min(maze.makeResult.from.V, maze.makeResult.to.V);
+        const X2 = (maze.roadW + maze.fulcrumW) * Math.max(maze.makeResult.from.H, maze.makeResult.to.H) + maze.fulcrumW;
+        const Y2 = (maze.roadW + maze.fulcrumW) * Math.max(maze.makeResult.from.V, maze.makeResult.to.V) + maze.fulcrumW;
+        canvasContext.fillRect(X1, Y1, X2 - X1, Y2 - Y1);
+
+        if (maze.makeResult.isEnd) {
+          executeSolve();
+        } else {
+          setTimeout(executeMake, 5);
+        }
+      };
+
+      const executeSolve = () => {
+        maze.solve();
+
+        canvasContext.setTransform(1, 0, 0, 1, 0, 0);
+        if (maze.solveResult.vector === 'front') {
+          canvasContext.fillStyle = '#aa88ccff';
+          const X01 = maze.fulcrumW + (maze.roadW + maze.fulcrumW) * Math.min(maze.solveResult.from.H, maze.solveResult.to.H);
+          const Y01 = maze.fulcrumW + (maze.roadW + maze.fulcrumW) * Math.min(maze.solveResult.from.V, maze.solveResult.to.V);
+          const X02 = (maze.roadW + maze.fulcrumW) * (Math.max(maze.solveResult.from.H, maze.solveResult.to.H) + 1);
+          const Y02 = (maze.roadW + maze.fulcrumW) * (Math.max(maze.solveResult.from.V, maze.solveResult.to.V) + 1);
+          canvasContext.fillRect(X01, Y01, X02 - X01, Y02 - Y01);
+        } else {
+          canvasContext.fillStyle = '#ffffff';
+          const X11 = maze.solveResult.from.H > maze.solveResult.to.H
+            ? (maze.roadW + maze.fulcrumW) * maze.solveResult.from.H
+            : (maze.roadW + maze.fulcrumW) * maze.solveResult.from.H + maze.fulcrumW;
+          const X12 = maze.solveResult.from.H > maze.solveResult.to.H
+            ? (maze.roadW + maze.fulcrumW) * (maze.solveResult.from.H + 1)
+            : maze.solveResult.from.H < maze.solveResult.to.H
+            ? (maze.roadW + maze.fulcrumW) * (maze.solveResult.from.H + 1) + maze.fulcrumW
+            : (maze.roadW + maze.fulcrumW) * (maze.solveResult.from.H + 1);
+          const Y11 = maze.solveResult.from.V > maze.solveResult.to.V
+            ? (maze.roadW + maze.fulcrumW) * maze.solveResult.from.V
+            : (maze.roadW + maze.fulcrumW) * maze.solveResult.from.V + maze.fulcrumW;
+          const Y12 = maze.solveResult.from.V > maze.solveResult.to.V
+            ? (maze.roadW + maze.fulcrumW) * (maze.solveResult.from.V + 1)
+            : maze.solveResult.from.V < maze.solveResult.to.V
+            ? (maze.roadW + maze.fulcrumW) * (maze.solveResult.from.V + 1) + maze.fulcrumW
+            : (maze.roadW + maze.fulcrumW) * (maze.solveResult.from.V + 1);
+          canvasContext.fillRect(X11, Y11, X12 - X11, Y12 - Y11);
+        }
+
+        if (!maze.solveResult.isEnd) {
+          setTimeout(executeSolve, 5);
+        }
+      };
+
+      const csl = (...args) => {
+        args.forEach((arg, i) => {
+          args[i] = JSON.parse(JSON.stringify(arg));
+        });
+        console.log(...args);
+      };
+
+      executeMake();
+    </script>
+  </body>
+</html>
