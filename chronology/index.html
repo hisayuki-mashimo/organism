@@ -1,0 +1,383 @@
+<html>
+    <head>
+        <style>
+            body {
+                margin: 0;
+                padding: 20px;
+            }
+            #header {
+                position: fixed;
+                z-index: 2;
+                top: 20px;
+                left: 20px;
+            }
+            #table {
+                position: relative;
+                z-index: 1;
+                margin-top: 40px;
+                padding: 0;
+            }
+            #operate {
+                margin: 0;
+                padding: 0;
+                height: 20px;
+            }
+            #meter-wrapper {
+                position: relative;
+                height: 20px;
+            }
+            #year-meters {
+                position: absolute;
+                z-index: 1;
+                height: 20px;
+                line-height: 20px;
+                background-color: rgba(255, 255, 255, 0.75);
+            }
+            .year-meter {
+                position: absolute;
+                font-size: 10px;
+                white-space: nowrap;
+            }
+            .year-meter.normal {
+                color: rgba(128, 128, 128, 0.5);
+            }
+            .year-meter.special {
+                color: rgba(255, 64, 64, 0.5);
+            }
+            #border-meter {
+                position: absolute;
+                display: inline-block;
+                z-index: 2;
+                font-size: 10px;
+                white-space: nowrap;
+                color: #ff0000;
+                background-color: rgba(255, 255, 255, 0.8);
+            }
+            #periods {
+                position: absolute;
+                display: flex;
+                z-index: 2;
+                margin: 0;
+                list-style: none;
+                pointer-events: none;
+                padding-inline-start: 0;
+            }
+            .period-bar {
+                box-sizing: border-box;
+                width: 40px;
+                pointer-events: none;
+            }
+            .period-bar.normal {
+                border-left: solid 1px rgba(128, 128, 128, 0.2);
+            }
+            .period-bar.special {
+                border-left: solid 1px rgba(255, 64, 64, 0.2);
+            }
+            #elements-wrapper {
+                position: absolute;
+                display: flex;
+                flex-direction: column;
+                margin: 0;
+                z-index: 1;
+                list-style: none;
+                padding-inline-start: 0;
+            }
+            .element {
+                position: relative;
+                height: 20px;
+                line-height: 20px;
+                overflow: visible;
+                margin-bottom: 2px;
+                user-select: none;
+            }
+            .tie {
+                position: absolute;
+                display: flex;
+                z-index: 2;
+                background-color: #8888ff;
+                height: 20px;
+            }
+            .tie-pre {
+                background-color: #88ccaa;
+            }
+            .tie-base {
+                background-color: #8888ff;
+            }
+            .tie-post {
+                background-color: #ee8888;
+            }
+            .tie-under,
+            .tie-over {
+                position: absolute;
+                height: 20px;
+                line-height: 20px;
+                font-size: 10px;
+                top: 0;
+                left: 10px;
+                white-space: nowrap;
+                pointer-events: none;
+            }
+            .tie-under {
+                z-index: 1;
+                color: #8888ff;
+            }
+            .tie-over {
+                z-index: 3;
+                overflow: hidden;
+                color: #ffffff;
+            }
+            .topic {
+                position: absolute;
+                display: none;
+                margin: -25px 0;
+                height: 15px;
+                line-height: 15px;
+                padding: 0 5px;
+                background-color: #f0f0f0;
+                border: solid 1px #888888;
+                color: #444444;
+                font-size: 10px;
+                box-sizing: border-box;
+                white-space: nowrap;
+                z-index: 4;
+            }
+            .topic:before {
+                content: "";
+                position: absolute;
+                display: inline-block;
+                bottom: -15px;
+                left: 0;
+                margin-left: 1px;
+                border: solid 5px transparent;
+                border-top: solid 10px #f0f0f0;
+                z-index: 6;
+            }
+            .topic:after {
+                content: "";
+                position: absolute;
+                /*
+                (底辺:5, 高さ:10の直角三角形)に対する幅1の枠線
+                (斜辺)L = √(25 + 100) ≒ 11.180339887498948
+                (直角から斜辺への垂線)S = 10 * 5 / L ≒ 4.47213595499958
+                (枠線を加えた底辺)B = 5 * (1 + S) / S ≒ 6.118033988749894
+                (枠線を加えた高さ)T = 10 * (1 + S) / S ≒ 12.23606797749979
+                */
+                bottom: -18px;
+                left: 0;
+                margin-left: 0;
+                border: solid 6px transparent;
+                border-top: solid 12px #888888;
+                z-index: 5;
+            }
+            .element.intime:hover .topic {
+                display: inline-block;
+            }
+            #border {
+                position: absolute;
+                border-left: solid 1px #ff0000;
+                z-index: 3;
+                pointer-events: none;
+            }
+            #border-meter {
+                height: 20px;
+                line-height: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="header">
+            <form id="operate" name="operate">
+                <select name="order">
+                    <option value="">▼順序</option>
+                    <option value="base">登録順</option>
+                    <option value="fromA">生年順</option>
+                    <option value="toB">没年順</option>
+                </select>
+            </form>
+            <div id="meters-wrapper">
+                <div id="year-meters">
+                </div>
+            </div>
+            <div id="border-meter">
+            </div>
+        </div>
+        <div id="table">
+            <ul id="periods">
+            </ul>
+            <ul id="elements-wrapper">
+                <li id="劉宏[霊帝]:156:189" class="element"></li>
+                <li id="劉協[献帝]:181:234" class="element"></li>
+                <li id="張譲:135:189" class="element"></li>
+                <li id="王允:137:192" class="element"></li>
+                <li id="袁術:155:199" class="element"></li>
+                <li id="袁紹:146-155:202" class="element"></li>
+                <li id="劉表:142:208" class="element"></li>
+                <li id="曹操[武帝]:155:220" class="element"></li>
+                <li id="曹丕[文帝]:187:226" class="element"></li>
+                <li id="曹植:192:232" class="element"></li>
+                <li id="甄氏[文昭皇后]:183:221" class="element"></li>
+                <li id="郭氏[文徳皇后]:184:235" class="element"></li>
+                <li id="曹叡[明帝]:202-206:239" class="element"></li>
+                <li id="程昱:141:220" class="element"></li>
+                <li id="賈詡:147:223" class="element"></li>
+                <li id="荀攸:157:214" class="element"></li>
+                <li id="荀彧:163:212" class="element"></li>
+                <li id="郭嘉:170:207" class="element"></li>
+                <li id="司馬懿:179:251" class="element"></li>
+                <li id="司馬師:208:255" class="element"></li>
+                <li id="司馬昭:211:265" class="element"></li>
+                <li id="司馬倫:240:301" class="element"></li>
+                <li id="司馬炎[武帝]:236:290" class="element"></li>
+                <li id="鍾会:225:264" class="element"></li>
+                <li id="張遼:165-169:222" class="element"></li>
+                <li id="何晏:190-199:249" class="element"></li>
+                <li id="劉備[昭烈帝]:161:223" class="element"></li>
+                <li id="劉禅[孝懐帝]:207:271" class="element"></li>
+                <li id="諸葛亮:181:234" class="element"></li>
+                <li id="姜維:202:264" class="element"></li>
+                <li id="孫堅:155-156:191-192" class="element"></li>
+                <li id="孫策:175:200" class="element"></li>
+                <li id="孫権[大帝]:182:252" class="element"></li>
+                <li id="孫亮[廃帝]:243:260" class="element"></li>
+                <li id="孫休[景帝]:235:264" class="element"></li>
+                <li id="孫晧[末帝]:243:284" class="element"></li>
+                <li id="魯粛:172:217" class="element"></li>
+                <li id="周瑜:175:210" class="element"></li>
+                <li id="陸遜:183:245" class="element"></li>
+                <li id="陸抗:226:274" class="element"></li>
+                <li id="陳寿:233:297" class="element"></li>
+            </ul>
+            <div id="border"></div>
+        </div>
+    </body>
+    <script>
+        const yearMin = 100;
+        const yearMax = 300;
+        const yearWidth = 4;
+        const table = document.getElementById("table");
+        const yearMeters = document.getElementById("year-meters");
+        const periods = document.getElementById("periods");
+        const border = document.getElementById("border");
+        const borderMeter = document.getElementById("border-meter");
+        const elements = document.getElementsByClassName("element");
+        const elementParams = [];
+        Array(Math.floor((yearMax - yearMin) / 10) + 1).fill().forEach((_, period) => {
+            const periodBar = document.createElement("li");
+            periodBar.className = `period-bar ${period % 5 ? "normal" : "special"}`;
+            periods.appendChild(periodBar);
+            const yearMeter = document.createElement("div");
+            yearMeter.className = `year-meter ${period % 5 ? "normal" : "special"}`;
+            yearMeter.style.marginLeft = `${period * 40}px`;
+            yearMeter.appendChild(document.createTextNode(`${yearMin + (period * 10)}年`));
+            yearMeters.appendChild(yearMeter);
+        });
+        Array.from(elements).forEach((element, index) => {
+            const [name, from, to] = element.getAttribute("id").split(":");
+            const [fromA, fromB] = from.split("-");
+            const [toA, toB] = to.split("-");
+            const fromText = fromB ? `${fromA}:${fromB}` : fromA;
+            const toText = toB ? `${toA}:${toB}` : toA;
+            const text = `${name} (${fromText}年～${toText}年)`;
+            const tieWidth = Math.max((parseInt(toB || toA) - parseInt(fromA)) * yearWidth - 10, 0);
+            const tie = document.createElement("div");
+            tie.className = "tie";
+            const tieUnder = document.createElement("div");
+            tieUnder.appendChild(document.createTextNode(text));
+            tieUnder.className = "tie-under";
+            const tieOver = document.createElement("div");
+            tieOver.appendChild(document.createTextNode(text));
+            tieOver.className = "tie-over";
+            tieOver.style.width = `${tieWidth}px`;
+            if (fromB) {
+               const tiePre = document.createElement("div");
+               tiePre.className = "tie-pre";
+               tiePre.style.width = `${(parseInt(fromB) - parseInt(fromA)) * yearWidth}px`;
+               tie.appendChild(tiePre);
+            }
+            const tieBase = document.createElement("div");
+            tieBase.className = "tie-base";
+            tieBase.style.width = `${(parseInt(toA) - parseInt(fromB || fromA)) * yearWidth}px`;
+            tie.appendChild(tieBase);
+            if (toB) {
+               const tiePost = document.createElement("div");
+               tiePost.className = "tie-post";
+               tiePost.style.width = `${(parseInt(toB) - parseInt(toA)) * yearWidth}px`;
+               tie.appendChild(tiePost);
+            }
+            const topic = document.createElement("div");
+            topic.className = "topic";
+            element.style.marginLeft = `${(parseInt(fromA) - 100) * yearWidth}px`;
+            element.appendChild(tie);
+            element.appendChild(tieUnder);
+            element.appendChild(tieOver);
+            element.appendChild(topic);
+            elementParams.push({
+                element,
+                topic,
+                name,
+                baseOrder: index,
+                fromA: parseInt(fromA),
+                fromB: fromB ? parseInt(fromB) : null,
+                toA: parseInt(toA),
+                toB: toB ? parseInt(toB) : null,
+            });
+        });
+        let borderSwitch = false;
+        const setYear = (event) => {
+            const yearLength = event.clientX - table.getBoundingClientRect().left;
+            const year = 100 + (Math.round(yearLength / 4));
+            border.style.marginLeft = `${yearLength}px`;
+            borderMeter.style.marginLeft = `${yearLength}px`;
+            borderMeter.textContent = `${year}年`;
+            
+            elementParams.forEach((elementParam, i) => {
+                const { fromA, fromB, toA, toB, element, topic } = elementParam;
+                const intime = year >= fromA && year <= (toB || toA);
+                if (i === 0) {
+                    console.log(event.clientX, element.style.marginLeft);
+                }
+                element.className = `element${intime ? " intime" : ""}`;
+                if (intime) {
+                    topic.style.left = `${(year - fromA) * yearWidth + 5}px`;
+                    topic.textContent = `${fromB ? `${year - fromB}～` : ""}${year - fromA}歳`;
+                }
+            });
+        };
+        yearMeters.style.width = `${(yearMax - yearMin) * yearWidth}px`;
+        periods.style.height = `${elementParams.length * 22}px`;
+        border.style.height = `${elementParams.length * 22}px`;
+        table.style.width = `${(yearMax - yearMin) * yearWidth}px`;
+        table.style.height = `${elementParams.length * 22}px`;
+        table.addEventListener("mousedown", (event) => {
+            borderSwitch = true;
+            setYear(event);
+        });
+        document.addEventListener("mouseup", (event) => {
+            borderSwitch = false;
+        });
+        document.addEventListener("mousemove", (event) => {
+            if (!borderSwitch) return;
+            setYear(event);
+        });
+        document.operate.order.onchange = (event) => {
+            console.log(event.target);
+            const { selectedIndex } = event.target.options;
+            const optionElement = event.target.options[selectedIndex];
+            const optionValue = optionElement.getAttribute("value");
+            elementParams.sort((param1, param2) => {
+                switch (optionValue) {
+                    case "base":
+                        return param1.baseOrder - param2.baseOrder;
+                    case "fromA":
+                        return param1.fromA - param2.fromA;
+                    case "toB":
+                        return (param1.toB || param1.toA) - (param2.toB || param2.toA);
+                }
+            });
+            elementParams.forEach((elementParam, index) => {
+                console.log(elementParam.name);
+                elementParam.element.style.order = index + 1;
+            });
+        };
+    </script>
+</html>
