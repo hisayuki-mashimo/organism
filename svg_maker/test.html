@@ -1,5 +1,6 @@
 <html>
   <head>
+    <meta charset="utf-8" />
     <script>
       // // 以下の形式で定義してください。
       // // 座標定義
@@ -17,11 +18,13 @@
       //   // ...
       // };
     </script>
-    <script src="sample-座布団.js"></script>
+    <script src="sample-階段.js"></script>
     <style>
       body {
         margin: 0;
         padding: 0;
+        overscroll-behavior-x: none;
+        overscroll-behavior-y: none;
       }
       #contents {
         display: grid;
@@ -530,18 +533,14 @@
       };
 
       const startAnimation = () => {
-        if (animation) {
-          clearInterval(animation);
-        }
+        if (animation) clearInterval(animation);
 
         animationSwitch = true;
         animation = setInterval(animate, 50);
       };
 
       const stopAnimation = () => {
-        if (animation) {
-          clearInterval(animation);
-        }
+        if (animation) clearInterval(animation);
 
         animationSwitch = false;
         animationStartSwitch = false;
@@ -589,9 +588,7 @@
         meterHandle.style.left = `${Math.floor(meterWidth * percentage)}px`;
         inputF.value = Math.floor(displaySize * focalLengthPercentage);
 
-        if (!animationSwitch) {
-          output();
-        }
+        if (!animationSwitch) output();
       };
 
       const debug = () => {
@@ -637,48 +634,58 @@
         link.click();
       };
 
-      display.onmousedown = (event) => {
+      const getClientPosition = (event) => ({
+        X: event.clientX !== undefined ? event.clientX : event.changedTouches[0].clientX,
+        Y: event.clientY !== undefined ? event.clientY : event.changedTouches[0].clientY,
+      });
+
+      const displayOnpointerdown = (event) => {
+        if (moveSwitch === true || focalLengthSwitch === true) return;
+
         stopAnimation();
 
+        const { X, Y } = getClientPosition(event);
+
         moveSwitch = true;
-        latestMoveX = event.clientX;
-        latestMoveY = event.clientY;
-        latestBaseX = event.clientX;
-        latestBaseY = event.clientY;
+        latestMoveX = X;
+        latestMoveY = Y;
+        latestBaseX = X;
+        latestBaseY = Y;
 
         const displayRect = display.getBoundingClientRect();
-        const relativeDiffX = Math.abs(event.clientX - displayRect.left - displayRadius);
-        const relativeDiffY = Math.abs(event.clientY - displayRect.top - displayRadius);
+        const relativeDiffX = Math.abs(X - displayRect.left - displayRadius);
+        const relativeDiffY = Math.abs(Y - displayRect.top - displayRadius);
         const relativeDiffRadius = getLengthByPytha(null, relativeDiffX, relativeDiffY);
         moveType = relativeDiffRadius <= vectorSlideRadius ? "vector" : "rotate";
       };
 
-      document.onmousemove = (event) => {
+      const documentMousemove = (event) => {
+        const { X, Y } = getClientPosition(event);
+
         if (moveSwitch === true) {
           animationStartSwitch = true;
           clearTimeout(animationTimeout);
           animationTimeout = setTimeout(() => {
-            moveStopCheck(event.clientX, event.clientY);
+            moveStopCheck(X, Y);
           }, 100);
-          latestMoveX = event.clientX;
-          latestMoveY = event.clientY;
+          latestMoveX = X;
+          latestMoveY = Y;
           animate();
         } else if (focalLengthSwitch === true) {
-          setFocalLength(event.clientX);
+          setFocalLength(X);
         } 
       };
 
-      document.onmouseup = (event) => {
+      document.onpointerup = (event) => {
         if (moveSwitch === true) {
           moveSwitch = false;
 
-          latestMoveX = event.clientX;
-          latestMoveY = event.clientY;
-        }
-        if (animationStartSwitch) {
-          startAnimation();
+          const { X, Y } = getClientPosition(event);
+          latestMoveX = X;
+          latestMoveY = Y;
         }
 
+        if (animationStartSwitch) startAnimation();
         setFocalLengthSwitch(false);
       };
 
@@ -692,9 +699,20 @@
         }
       };
 
-      meter.onmousedown = (event) => {
-        setFocalLengthSwitch(true, event.clientX);
+      meter.onpointerdown = (event) => {
+        setFocalLengthSwitch(true, getClientPosition(event).X);
       };
+
+      if (typeof display.ontouchstart === 'object') {
+        display.ontouchstart = displayOnpointerdown;
+      } else {
+        display.onpointerdown = displayOnpointerdown;
+      }
+      if (typeof document.ontouchmove === 'object') {
+        document.ontouchmove = documentMousemove;
+      } else {
+        document.onmousemove = documentMousemove;
+      }
 
       inputR.onfocus = stopAnimation;
       inputV.onfocus = stopAnimation;
