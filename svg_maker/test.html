@@ -32,6 +32,7 @@
         grid-template-rows: auto auto;
       }
       #form {
+        display: block;
         grid-column: 1 / 3;
         grid-row: 1;
         display: flex;
@@ -99,7 +100,7 @@
   </head>
   <body>
     <div id="contents">
-      <div id="form">
+      <form id="form">
         <ul>
           <li>
             <p>画面サイズ</p>
@@ -134,7 +135,7 @@
             </p>
           </li>
         </ul>
-      </div>
+      </form>
       <div id="display-wrapper">
         <canvas id="auxiliary-line">
         </canvas>
@@ -193,6 +194,7 @@
       const inputF = document.getElementById("focalLength");
       const meter = document.getElementById("focal-length-meter");
       const meterHandle = document.getElementById("focal-length-meter-handle");
+      const form = document.getElementById("form");
 
       const positions = Object.keys(coordinates).reduce((res, code) => {
         const relPos = coordinates[code];
@@ -562,6 +564,21 @@
         displayContext.fillStyle = `rgba(${fillStyle[0]}, ${fillStyle[1]}, ${fillStyle[2]}, ${fillStyle[3]})`;
       };
 
+      const getMeterParams = () => {
+        const meterRect = meter.getBoundingClientRect();
+        const meterHandleRect = meterHandle.getBoundingClientRect();
+
+        return {
+          left: meterRect.left + meterHandleRect.width / 2,
+          right: meterRect.left + meterRect.width - meterHandleRect.width / 2,
+        };
+      };
+
+      const setMeterPosition = (percentage) => {
+        const { left, right } = getMeterParams();
+        meterHandle.style.left = `${Math.floor((right - left) * percentage)}px`;
+      };
+
       const setFocalLengthSwitch = (operate, clientX) => {
         focalLengthSwitch = operate;
         if (operate === false) return;
@@ -576,16 +593,12 @@
       };
 
       const setFocalLength = (clientX) => {
-        const meterRect = meter.getBoundingClientRect();
-        const meterHandleRect = meterHandle.getBoundingClientRect();
-        const meterLeft = meterRect.left + meterHandleRect.width / 2;
-        const meterRight = meterRect.left + meterRect.width - meterHandleRect.width / 2;
-        const meterWidth = meterRight - meterLeft;
-        let percentage = (clientX - meterHandleDiffX - meterLeft) / meterWidth;
+        const { left, right } = getMeterParams();
+        let percentage = (clientX - meterHandleDiffX - left) / (right - left);
         if (percentage < 0) percentage = 0;
         if (percentage > 1) percentage = 1;
+        setMeterPosition(percentage);
         focalLengthPercentage = 1 / 2 + 2 * percentage;
-        meterHandle.style.left = `${Math.floor(meterWidth * percentage)}px`;
         inputF.value = Math.floor(displaySize * focalLengthPercentage);
 
         if (!animationSwitch) output();
@@ -595,6 +608,10 @@
         rotateTheta = parseFloat(inputR.value || 0) / 180 * Math.PI;
         vectorTheta = parseFloat(inputV.value || 0) / 180 * Math.PI;
         lengthTheta = parseFloat(inputL.value || 0) / 180 * Math.PI;
+        focalLengthPercentage = Math.ceil(parseInt(inputF.value) / displaySize * 1000) / 1000;
+
+        const percentage = (parseInt(inputF.value) - displaySize / 2) / (displaySize * 2);
+        setMeterPosition(percentage);
 
         stopAnimation();
         output();
@@ -691,8 +708,10 @@
 
       document.onkeydown = (event) => {
         if (event.code !== "Enter") return;
-
-        if (animationSwitch === false) {
+        if (document.activeElement.tagName === "INPUT") {
+          event.preventDefault();
+          debug();
+        } else if (animationSwitch === false) {
           startAnimation();
         } else {
           stopAnimation();
@@ -718,9 +737,11 @@
       inputV.onfocus = stopAnimation;
       inputL.onfocus = stopAnimation;
       inputF.value = Math.floor(displaySize * focalLengthPercentage);
+      form.onsubmit = () => false;
 
       resize();
       outputAuxiliaryLine();
+      setMeterPosition(focalLengthPercentage / 2 - (1 / 4));
       output();
     </script>
   </body>
