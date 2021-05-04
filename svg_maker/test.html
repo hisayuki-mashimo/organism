@@ -17,8 +17,22 @@
       //   // 面キー名B: [ 座標キー名1, 座標キー名4 ], // 2点で線を構成
       //   // ...
       // };
+      // // 面の色指定(省略可)
+      // const colors = {
+      //   // 面キー名(前方一致): #1122aaff, // 16進数定義(透過度は省略可)
+      //   // 面キー名(前方一致): [255, 128, 0, 0.5], // RGBA定義(透過度は省略可)
+      //   // ...
+      //   // default: #ffffffff, // 基本値(省略可)
+      // };
+      // // 線の色指定(省略可)
+      // const strokeColors = {
+      //   // 面キー名(前方一致): #1122aaff, // 16進数定義(透過度は省略可)
+      //   // 面キー名(前方一致): [255, 128, 0, 0.5], // RGBA定義(透過度は省略可)
+      //   // ...
+      //   // default: #ffffffff, // 基本値(省略可)
+      // };
     </script>
-    <script src="sample-階段.js"></script>
+    <script src="sample-大砲.js"></script><!-- ←サンプルです。使用する際は消してください。 -->
     <style>
       body {
         margin: 0;
@@ -207,6 +221,57 @@
         }
 
         return { ...res, [code]: { R: l2, X, Y }};
+      }, {});
+
+      let _fillStyles = { default: fillStyle };
+      let _strokeStyles =  { default: strokeStyle };
+      try {
+        _fillStyles = { ..._fillStyles, ...colors };
+      } catch(_) {
+      }
+      try {
+        _strokeStyles = { ..._strokeStyles, ...strokeColors };
+      } catch(_) {
+      }
+
+      const [fillStyles, strokeStyles] = [_fillStyles, _strokeStyles].map(
+        (styleParams) => Object.keys(styleParams).reduce((res, colorCode) => {
+          const styleParam = styleParams[colorCode];
+
+          if (typeof styleParam === "string") {
+            const matches = styleParam.match(/^(#[0-9a-f]{6})([0-9a-f]{2})?$/);
+            res[colorCode] = {
+              color: matches ? matches[0] : "#ffffff",
+              colorBase: matches ? matches[1] : "#ffffff",
+              opacity: matches && matches[2] ? Math.floor(parseInt(matches[2]) * 10 / 255) / 10 : 1,
+            };
+          } else {
+            const  opacity = styleParam[3] || 1;
+            styleParam[0] = `00${parseInt(styleParam[0]).toString(16)}`.substr(-2);
+            styleParam[1] = `00${parseInt(styleParam[1]).toString(16)}`.substr(-2);
+            styleParam[2] = `00${parseInt(styleParam[2]).toString(16)}`.substr(-2);
+            styleParam[3] = `00${Math.floor(parseFloat(styleParam[3] || 1) * 255).toString(16)}`.substr(-2);
+            res[colorCode] = {
+              color: `#${styleParam[0]}${styleParam[1]}${styleParam[2]}${styleParam[3]}`,
+              colorBase: `#${styleParam[0]}${styleParam[1]}${styleParam[2]}`,
+              opacity,
+            };
+          }
+          return res;
+        }, {})
+      );
+
+      const styles = Object.keys(surfaces).reduce((res, code) => {
+        const fillCode = Object.keys(fillStyles).reduce((res, c) => code.match(new RegExp(`^${escape(c)}`)) && c.length > res.length ? c : res, "");
+        const strokeCode = Object.keys(strokeStyles).reduce((res, c) => code.match(new RegExp(`^${escape(c)}`)) && c.length > res.length ? c : res, "");
+
+        return {
+          ...res,
+          [code]: {
+            fill: fillStyles[fillCode || "default"],
+            stroke: strokeStyles[strokeCode || "default"],
+          },
+        };
       }, {});
 
       const getLengthByPytha = (hypotenuse, cathetus1, cathetus2) => {
@@ -411,6 +476,8 @@
           });
 
           displayContext.closePath();
+          displayContext.fillStyle = styles[momentSurface.code].fill.color;
+          displayContext.strokeStyle = styles[momentSurface.code].stroke.color;
           displayContext.fill();
           displayContext.stroke();
         });
@@ -560,8 +627,6 @@
         auxiliaryLine.setAttribute("width", displaySize);
         auxiliaryLine.setAttribute("height", displaySize);
         inputD.value = displaySize;
-        displayContext.strokeStyle = `rgba(${strokeStyle[0]}, ${strokeStyle[1]}, ${strokeStyle[2]}, ${strokeStyle[3]})`;
-        displayContext.fillStyle = `rgba(${fillStyle[0]}, ${fillStyle[1]}, ${fillStyle[2]}, ${fillStyle[3]})`;
       };
 
       const getMeterParams = () => {
@@ -621,15 +686,12 @@
       const download = () => {
         stopAnimation();
 
-        const fillStyleText = `#${fillStyle[0].toString(16)}${fillStyle[1].toString(16)}${fillStyle[2].toString(16)}`;
-        const strokeStyleText = `#${strokeStyle[0].toString(16)}${strokeStyle[1].toString(16)}${strokeStyle[2].toString(16)}`;
         const svg =
           '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' +
           `<svg x="0px" y="0px" width="${displaySize}px" height="${displaySize}px">\n` +
-          '<g inkscape:label="レイヤー 1" inkscape:groupmode="layer" id="layer1">\n' +
           momentSurfaces.reduce((res, surface) => (
             res +
-            `<path style="fill:${fillStyleText};fill-opacity:${fillStyle[3]};stroke:${strokeStyleText};stroke-width:1px;stroke-opacity:${strokeStyle[3]}" d="M ` +
+            `<path style="fill:${styles[surface.code].fill.colorBase};fill-opacity:${styles[surface.code].fill.opacity};stroke:${styles[surface.code].stroke.colorBase};stroke-width:1px;stroke-opacity:${styles[surface.code].stroke.opacity}" d="M ` +
             surfaces[surface.code].reduce((path, posCode, j) => (
               path +
               `${displayRadius + Math.round(momentPoses[posCode].X * 1000) / 1000} ` +
@@ -639,11 +701,11 @@
             `" />\n`
           ), '') +
           '<text xml:space="preserve" style="font-size:15px;line-height:1;font-family:\'UD Digi Kyokasho NP-R\';fill:#000000;fill-opacity:1;stroke:none" x="0" y="16">' +
-          `<tspan sodipodi:role="line" x="0" y="16">F: ${Math.floor(displaySize * focalLengthPercentage)}</tspan>` +
-          `<tspan sodipodi:role="line" x="0" y="32">R: ${rotateTheta * 180 / Math.PI}</tspan>` +
-          `<tspan sodipodi:role="line" x="0" y="48">V: ${vectorTheta * 180 / Math.PI}</tspan>` +
-          `<tspan sodipodi:role="line" x="0" y="64">L: ${lengthTheta * 180 / Math.PI}</tspan>` +
-          '</text></g>\n</svg>';
+          `<tspan x="0" y="16">F: ${Math.floor(displaySize * focalLengthPercentage)}</tspan>` +
+          `<tspan x="0" y="32">R: ${rotateTheta * 180 / Math.PI}</tspan>` +
+          `<tspan x="0" y="48">V: ${vectorTheta * 180 / Math.PI}</tspan>` +
+          `<tspan x="0" y="64">L: ${lengthTheta * 180 / Math.PI}</tspan>` +
+          '</text>\n</svg>';
         const blob = new Blob([svg], { type: 'text/plan' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);

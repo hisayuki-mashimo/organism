@@ -131,3 +131,14 @@ Wsurfaces.forEach((s) => {
 
 surfaces['DDO'] = ['DFDOL', 'DBDOL', 'DBDOR', 'DFDOR'];
 surfaces['DDI'] = ['DFDIL', 'DBDIL', 'DBDIR', 'DFDIR'];
+
+const colors = {
+  H: '#888888',
+  W: '#bb8866',
+  D: '#bb8866',
+  S: '#bb8866',
+};
+
+const strokeColors = {
+  default: '#000000',  
+};

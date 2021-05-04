@@ -49,3 +49,12 @@ surfaces.H5 = ['H5', 'H6', 'h6', 'h5'];
 surfaces.H6 = ['H6', 'H7', 'h7', 'h6'];
 surfaces.H7 = ['H7', 'H8', 'h8', 'h7'];
 surfaces.H8 = ['H8', 'H5', 'h5', 'h8'];
+
+const colors = {
+  default: '#886644',
+  H: '#aa8866',
+  T: '#aa8866',
+};
+const strokeColors = {
+  default: '#000000',
+};

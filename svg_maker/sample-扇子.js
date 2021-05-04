@@ -1,45 +1,11 @@
-// const WI = 30;
-// const WO = 10;
-// const H = 500;
-// const WD = 15;
-// const WU = 20;
-// const coordinates = {
-//   LF1D: { X: WI /  2 + WO, Y: H / -2, Z: WD },
-//   RF1D: { X: WI / -2 - WO, Y: H / -2, Z: WD },
-//   LB1D: { X: WI /  2 + WO, Y: H / -2, Z: WD * -1 },
-//   RB1D: { X: WI / -2 - WO, Y: H / -2, Z: WD * -1 },
-//   LF2D: { X: WI /  2,      Y: H / -2, Z: WD },
-//   RF2D: { X: WI / -2,      Y: H / -2, Z: WD },
-//   LB2D: { X: WI /  2,      Y: H / -2, Z: WD * -1 },
-//   RB2D: { X: WI / -2,      Y: H / -2, Z: WD * -1 },
-//   LF1U: { X: WI /  2 + WO, Y: H /  2, Z: WU },
-//   RF1U: { X: WI / -2 - WO, Y: H /  2, Z: WU },
-//   LB1U: { X: WI /  2 + WO, Y: H /  2, Z: WU * -1 },
-//   RB1U: { X: WI / -2 - WO, Y: H /  2, Z: WU * -1 },
-//   LF2U: { X: WI /  2,      Y: H /  2, Z: WU },
-//   RF2U: { X: WI / -2,      Y: H /  2, Z: WU },
-//   LB2U: { X: WI /  2,      Y: H /  2, Z: WU * -1 },
-//   RB2U: { X: WI / -2,      Y: H /  2, Z: WU * -1 },
-//   LF2M: { X: WI /  2,      Y: 0,      Z: WU },
-//   LB2M: { X: WI /  2,      Y: 0,      Z: WU * -1 },
-//   RF2M: { X: WI / -2,      Y: 0,      Z: WU },
-//   RB2M: { X: WI / -2,      Y: 0,      Z: WU * -1 },
-// };
-// const surfaces = {
-//   L1: ['LF1D', 'LB1D', 'LB1U', 'LF1U'],
-//   L2: ['LF2D', 'LB2D', 'LB2U', 'LF2U'],
-//   R1: ['RF1D', 'RB1D', 'RB1U', 'RF1U'],
-//   R2: ['RF2D', 'RB2D', 'RB2U', 'RF2U'],
-//   M2: ['LF2M', 'LB2M', 'RB2M', 'RF2M'],
-// };
-
 const R1 = 150;
 const R2 = 150;
 const WB = 6.5;
 const W1 = 8;
 const W2 = 16;
-const L = 30;
-const A = 1;
+const L  = 30;
+const LE = 0;
+const A  = 1;
 
 const coordinatesE = [
   { X:  4, Y:  R1 },
@@ -82,19 +48,20 @@ const calculateTheta = (X1, Y1, X2, Y2) => {
 };
 
 Array(L).fill(null).forEach((_, i) => {
+  const T1 = T * (i > LE ? i - LE : 0);
   const ZB = A * L / 2 - A * i;
-  const X1A = Math.sin(T * i) * R1;
-  const Y1A = Math.cos(T * i) * R1;
-  const X1B = Math.sin(T * i + T1A) * R1;
-  const Y1B = Math.cos(T * i + T1A) * R1;
-  const X2A = Math.sin(T * i) * (R1 + R2);
-  const Y2A = Math.cos(T * i) * (R1 + R2);
-  const X2B = Math.sin(T * i + T2A) * (R1 + R2);
-  const Y2B = Math.cos(T * i + T2A) * (R1 + R2);
-  const Z1A = ZB - (i === 0 || i === L - 1 ? 0 : A1 / 2);
-  const Z1B = ZB + (i === 0 || i === L - 1 ? 0 : A1 / 2);
-  const Z2A = ZB - (i === 0 || i === L - 1 ? 0 : A1 / 2);
-  const Z2B = ZB + (i === 0 || i === L - 1 ? 0 : A1 / 2);
+  const X1A = Math.sin(T1) * R1;
+  const Y1A = Math.cos(T1) * R1;
+  const X1B = Math.sin(T1 + T1A) * R1;
+  const Y1B = Math.cos(T1 + T1A) * R1;
+  const X2A = Math.sin(T1) * (R1 + R2);
+  const Y2A = Math.cos(T1) * (R1 + R2);
+  const X2B = Math.sin(T1 + T2A) * (R1 + R2);
+  const Y2B = Math.cos(T1 + T2A) * (R1 + R2);
+  const Z1A = ZB - (i <= LE || i === L - 1 ? 0 : A1 / 2);
+  const Z1B = ZB + (i <= LE || i === L - 1 ? 0 : A1 / 2);
+  const Z2A = ZB - (i <= LE || i === L - 1 ? 0 : A1 / 2);
+  const Z2B = ZB + (i <= LE || i === L - 1 ? 0 : A1 / 2);
   coordinates[`D${i}.1A`] = { X: X1A, Y: Y1A, Z: Z1A };
   coordinates[`D${i}.1B`] = { X: X1B, Y: Y1B, Z: Z1B };
   coordinates[`D${i}.2A`] = { X: X2A, Y: Y2A, Z: Z2A };
@@ -104,8 +71,8 @@ Array(L).fill(null).forEach((_, i) => {
   }
   surfaces[`D${i}2A`] = [`D${i}.1A`, `D${i}.1B`, `D${i}.2B`, `D${i}.2A`];
   surfaces[`E${i}D`] = [];
-  const EsinBase = Math.sin(T * i + T1A / 2);
-  const EcosBase = Math.cos(T * i + T1A / 2);
+  const EsinBase = Math.sin(T1 + T1A / 2);
+  const EcosBase = Math.cos(T1 + T1A / 2);
   coordinatesE.forEach((c, j) => {
     coordinates[`E${i}.${j}LD`] = { X: EcosBase * c.X + EsinBase * c.Y, Y: EcosBase * c.Y - EsinBase * c.X, Z: ZB };
     surfaces[`E${i}D`].push(`E${i}.${j}LD`);
@@ -144,7 +111,7 @@ Array(L).fill(null).forEach((_, i) => {
     }).forEach((presFx, j, funcs) => {
       const prevFx = funcs[(j === 0 ? funcs.length : j) - 1];
       const { A, B } = presFx.A !== null ? presFx : prevFx;
-    
+
       let X = 0;
       let Y = 0;
     
@@ -152,8 +119,8 @@ Array(L).fill(null).forEach((_, i) => {
         X = presFx.X !== null ? presFx.X : prevFx.X;
         Y = presFx.Y !== null ? presFx.Y : prevFx.Y !== null ? prevFx.Y : X * A + B;
       } else if (presFx.Y !== null || prevFx.Y !== null) {
-        Y = presFx.Y !== null ? presFx.Y : prevFx.Y;
         X = presFx.X !== null ? presFx.X : prevFx.X !== null ? prevFx.X : (Y - B) / A;
+        Y = presFx.Y !== null ? presFx.Y : prevFx.Y;
       } else {
         X = (prevFx.B - presFx.B) / (presFx.A - prevFx.A);
         Y = presFx.A * X + presFx.B;
@@ -165,10 +132,13 @@ Array(L).fill(null).forEach((_, i) => {
   }
 });
 
-Object.keys(surfaces).forEach((sk) => {
-  surfaces[sk].forEach((ck) => {
-    if (!coordinates[ck]) {
-      console.log(ck);
-    }
-  });
-});
+const colors = {
+  default: [255, 255, 255],
+  D: [255, 200, 224],
+  E: [200, 160, 128],
+};
+
+const strokeColors = {
+  default: [0, 0, 0],
+  D: [176, 80, 96],
+};
