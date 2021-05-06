@@ -143,6 +143,7 @@ const makeBrick = (cs, ss, sign, CX, CY, CZ, T, LV, LY, isHalfStart) => {
   });
 };
 
+// 煉瓦描画(処理負荷注意)
 // makeBrick(coordinatesL, surfacesL, 'RBT0', towerSideX, battlementYU, towerSideZ, Math.PI, 1.5, 4, true);
 // makeBrick(coordinatesL, surfacesL, 'RBT1', towerSideX, battlementYU, towerSideZ, Math.PI / -4, 1.5, 4, false);
 // makeBrick(coordinatesL, surfacesL, 'RBT2', towerSideX + ((battlementW + gapW) * 1 - battlementW / 2) * -1, battlementYU, towerSideZ, Math.PI, 3, 4, false);
@@ -181,10 +182,8 @@ const surfaces = ['A', 'B', 'C', 'D'].reduce((res1, c) => surfacesBase.reduce((r
   [`${s.C}${c}`]: s.S.map((ss) => `${ss}${c}`),
 }), res1), {});
 
-// const curtainBaseX = towerSideX + (battlementWD + gapWD) * (battlementLD + 1) - 10;
-// const curtainY = fulcrumDY + 5;
-const curtainBaseX = towerSideX + (battlementWD + gapWD) * (battlementLD + 1);
-const curtainY = battlementYD;
+const curtainBaseX = towerSideX + (battlementWD + gapWD) * (battlementLD + 1) - 10;
+const curtainY = fulcrumDY + 5;
 Array(curtainL).fill(null).reduce((res, _, i) => {
   const cLSF = { C: `K${i}SF`, X: curtainBaseX + (battlementW + gapW) * i, Z: -30, Y: curtainY };
   const cLEF = { C: `K${i}EF`, X: cLSF.X + battlementW, Z: cLSF.Z, Y: cLSF.Y };
@@ -217,21 +216,22 @@ coordinates['KEFDR'] = { ...coordinates[`K${curtainL - 1}EFDR`], Y: wallDDY };
 surfaces['KL'] = ['K0SFDL', 'KSFDL', 'KEFDL', `K${curtainL - 1}EFDL`];
 surfaces['KR'] = ['K0SFDR', 'KSFDR', 'KEFDR', `K${curtainL - 1}EFDR`];
 
-// const [cs, ss] = [[], []];
-// Array(curtainL).fill(null).forEach((_, i) => {
-//   const Z = curtainBaseX + (battlementW + gapW) * i;
-//   makeBrick(cs, ss, `WBA${i}`, -30, curtainY, Z, Math.PI / 2, 3, 4, false);
-//   makeBrick(cs, ss, `WBB${i}`, -30, curtainY, Z + battlementW, 0, 1, 4, false);
-// });
-// // makeBrick(cs, ss, 'WW', -30, fulcrumDY + 5 - battlementYU + battlementYD, curtainBaseX, Math.PI / 2, curtainL * 4, 35, false);
-// makeBrick(cs, ss, 'WW', -30, curtainY - battlementYU + battlementYD, curtainBaseX, Math.PI / 2, curtainL * 4, 5, false);
-// cs.forEach((_c) => {
-//   const { C, ...c } = _c;
-//   coordinates[C] = c;
-// });
-// ss.forEach((s) => {
-//   surfaces[s.C] = s.S;
-// });
+const [cs, ss] = [[], []];
+Array(curtainL).fill(null).forEach((_, i) => {
+  const Z = curtainBaseX + (battlementW + gapW) * i;
+  makeBrick(cs, ss, `WBA${i}`, -30, curtainY, Z, Math.PI / 2, 3, 4, false);
+  makeBrick(cs, ss, `WBB${i}`, -30, curtainY, Z + battlementW, 0, 1, 4, false);
+});
+
+// 煉瓦描画(処理負荷注意)
+// makeBrick(cs, ss, 'WW', -30, fulcrumDY + 5 - battlementYU + battlementYD, curtainBaseX, Math.PI / 2, curtainL * 4, 35, false);
+cs.forEach((_c) => {
+  const { C, ...c } = _c;
+  coordinates[C] = c;
+});
+ss.forEach((s) => {
+  surfaces[s.C] = s.S;
+});
 
 const [bridgeL, bridgeWX, bridgeWZ] = [16, 50, 32];
 const bridgeX = -32 - bridgeWX;

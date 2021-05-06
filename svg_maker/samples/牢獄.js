@@ -1,9 +1,10 @@
 const [WX, WY, WZ, G] = [21, 6, 10, 2];
-const [coordinates, surfaces] = [{}, {}];
 const [baseAX, baseAZ, ALX, ALZ] = [40, 100, 8, 5];
 const [baseBX, baseBZ, BLX] = [-40, 100, 8];
 const sideAZ = baseAZ - (WX + G) * ALZ + G;
 const [LL, LW, GW] = [12, 3, 15];
+
+const [coordinates, surfaces] = [{}, {}];
 
 const makeWall = (sign, coordinateX, coordinateZ, vectorXorZ, vector, lengthV, lengthY, isHalfStart) => {
   const moveV = (XorZ, VL, YL, SorE) => {

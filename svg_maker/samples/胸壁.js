@@ -1,7 +1,9 @@
 const [WX, WY, WZ] = [10.5, 6, -10];
 const BL = 10;
 const PX = WX * BL * 5 / -2 + 1;
+
 const [coordinates, surfaces] = [{}, {}];
+
 Array(BL).fill(null).forEach((_, i) => {
   Array(5).fill(null).forEach((_, j) => {
     const coordinatesA = [{ X: PX + WX * i * 5, Y: WY * j, Z: 0 }];
@@ -32,6 +34,7 @@ Array(BL).fill(null).forEach((_, i) => {
     });
   });
 });
+
 Array(5).fill(null).forEach((_, j) => {
   coordinates[`0.${j}WU`] = { X: PX, Y: WY * j * -1,      Z: 0 };
   coordinates[`0.${j}WD`] = { X: PX, Y: WY * j * -1 - WY, Z: 0 };
