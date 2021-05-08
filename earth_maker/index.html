@@ -1,0 +1,855 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script>
+      const R = 150;
+      const latitudeL = 40;
+      const landL = 5;
+      const landS = 5;
+      const STATUS_SEA = 1;
+      const STATUS_LAND = 2;
+      const STATUS_LAND_CORE = 4;
+      
+      const latitudeW = R * Math.PI / latitudeL;
+      const coordinatesBase = {
+        N: { X: 0, Y: R,      Z: 0 },
+        S: { X: 0, Y: R * -1, Z: 0 },
+      };
+      const coordinates = {};
+      const surfaces = {};
+      const terrainParams = { N: [], S: [] };
+      
+      Array(Math.ceil(latitudeL / 2)).fill(null).forEach((_1, i) => {
+        const TI1 = Math.PI / latitudeL * (i);
+        const TI2 = Math.PI / latitudeL * (i + 1);
+        const RI1 = Math.sin(TI1) * R;
+        const RI2 = Math.sin(TI2) * R;
+        const Y1 = Math.cos(TI1) * R;
+        const Y2 = Math.cos(TI2) * R;
+        const longitudeW = RI2 * Math.PI * 2;
+        const longitudeL = Math.floor(longitudeW / latitudeW);
+      
+        terrainParams.N[i] = [];
+        terrainParams.S[i] = [];
+      
+        Array(longitudeL).fill(null).forEach((_2, k2) => {
+          const k1 = k2 > 0 ? k2 - 1 : longitudeL - 1;
+          const TK = Math.PI * 2 / longitudeL * k2;
+          const X1 = Math.sin(TK) * RI1;
+          const X2 = Math.sin(TK) * RI2;
+          const Z1 = Math.cos(TK) * RI1;
+          const Z2 = Math.cos(TK) * RI2;
+      
+          ['N', 'S'].forEach((v) => {
+            coordinatesBase[`${v}.I${i + 1}.K${k2}.1`] = { X: X1, Y: Y1 * (v === 'N' ? 1 : -1), Z: Z1 };
+            coordinatesBase[`${v}.I${i + 1}.K${k2}.2`] = { X: X2, Y: Y2 * (v === 'N' ? 1 : -1), Z: Z2 };
+      
+            if (i === 0) {
+              terrainParams[v][i][k2] = { S: 0, C: [v, `${v}.I${i + 1}.K${k1}.2`, `${v}.I${i + 1}.K${k2}.2`] };
+            } else {
+              terrainParams[v][i][k2] = { S: 0, C: [`${v}.I${i + 1}.K${k1}.1`, `${v}.I${i + 1}.K${k1}.2`, `${v}.I${i + 1}.K${k2}.2`, `${v}.I${i + 1}.K${k2}.1`] };
+            }
+          });
+          if (latitudeL % 2 && i + 2 > latitudeL / 2) {
+            terrainParams.N[i + 1][k2] = { S: 0, C: [`N.I${i + 1}.K${k1}.2`, `S.I${i + 1}.K${k1}.2`, `S.I${i + 1}.K${k2}.2`, `N.I${i + 1}.K${k2}.2`] };
+          }
+        });
+      });
+      
+      const params = terrainParams.N.concat(terrainParams.S.reverse());
+      
+      const colors = {
+        default: '#22aa22',
+        LC: '#aa44aa',
+      };
+      const strokeColors = {
+        default: '#22aa22',
+      };
+      
+      const getSurface = (latitude, longitude) => {
+        const i = latitude === 1 ? 0 : Math.floor(latitude * latitudeL);
+        const k = longitude === 1 ? 0 : Math.floor(longitude * params[i].length);
+      
+        return [i, k];
+      };
+      
+      const getAroundSurfaces = (latitude, longitude, surfaceL) => {
+        const aroundSurfaces = [];
+      
+        const TI = Math.PI * latitude;
+        const TK = Math.PI * longitude * 2;
+        const TL = Math.PI / latitudeL * surfaceL;
+        const LT = Math.max(Math.ceil(surfaceL * 2 * Math.PI), 8);
+        const RL = Math.sin(TL);
+        const ZL = Math.cos(TL);
+      
+        Array(LT).fill(null).forEach((_, i) => {
+          const T = Math.PI * 2 / LT * i;
+          const I = Math.cos(T) * RL;
+          const K = Math.sin(T) * RL;
+          const ZL2 = Math.pow(I * I + ZL * ZL, 1 / 2);
+          const TI2 = TI - Math.asin(I / ZL2);
+          const Z = Math.sin(TI2) * ZL2;
+          const Y = Math.cos(TI2) * ZL2;
+          const TI3 = (Math.acos(Y) * (Z >= 0 ? 1 : -1)) % Math.PI;
+          const TK2 = (TK + (K !== 0 ? Math.atan(K / Z) : 0)) % (Math.PI * 2);
+          let I2 = TI3 / Math.PI;
+          let K2 = TK2 / Math.PI / 2;
+          if (I2 < 0) {
+            I2 = I2 * -1;
+            K2 += 1 / 2;
+          }
+          if (K2 < 0) {
+            K2 += 1;
+          } else if (K2 > 1) {
+            K2 -= 1;
+          }
+          const [PI, PK] = getSurface(I2, K2);
+          if (!aroundSurfaces.find((pi, pk) => PI === pi && PK === pk)) {
+            aroundSurfaces.push([PI, PK, I2, K2]);
+          }
+        });
+      
+        return aroundSurfaces;
+      };
+
+      Array(4).fill(null).forEach((_1) => {
+        const [ti, tk] = [Math.random(), Math.random()];
+        const [ib, kb] = getSurface(ti, tk);
+        params[ib][kb].S = STATUS_LAND;
+      
+        Array(landS).fill(null).forEach((_2, c) => {
+          getAroundSurfaces(ti, tk, c + 1).forEach(([i, k, ti, tk]) => {
+            const [S, L, U] = getAroundSurfaces(ti, tk, 1).reduce(([s, l, u], [ai, ak]) => {
+              if (params[i][k].S !== 0) return [s, l, u];
+      
+              switch (params[ai][ak].S) {
+                case STATUS_SEA:
+                  return [s + 1, l, u];
+                case STATUS_LAND:
+                  return [s, l + 1, u];
+                default:
+                  return [s, l, u + 1];
+              }
+            }, [0, 0, 0]);
+      
+            const denominator = 5 * (landS - 1) + 3 * L * (landS - 1) + 2 * S * landS + U;
+            const percentage = (5 * (landS - 1) + 3 * L * (landS - 1)) / denominator;
+            const rand = Math.random();
+            params[i][k].S = rand < percentage ? STATUS_LAND : STATUS_SEA;
+          });
+        });
+        params[ib][kb].S += STATUS_LAND_CORE;
+      });
+      
+      params.forEach((param1, i) => {
+        param1.forEach((param2, k) => {
+          if (param2.S === STATUS_LAND) {
+            surfaces[`${i}.${k}`] = param2.C;
+          } else if (param2.S === STATUS_LAND + STATUS_LAND_CORE) {
+            surfaces[`LC.${i}.${k}`] = param2.C;
+          } else {
+            return;
+          }
+
+          param2.C.forEach((c) => {
+            if (!coordinates[c]) {
+              coordinates[c] = coordinatesBase[c];
+            }
+          });
+        });
+      });
+    </script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overscroll-behavior-x: none;
+        overscroll-behavior-y: none;
+      }
+      #contents {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto auto;
+      }
+      #form {
+        display: block;
+        grid-column: 1 / 3;
+        grid-row: 1;
+        display: flex;
+        justify-content: flex-start;
+        margin: 10px 10px 0 10px;
+        padding: 5px 5px 0 5px;
+        border: solid 1px #aaaaaa;
+      }
+      #form ul {
+        list-style: none;
+        margin: 0 10px 0 0;
+        padding: 0;
+      }
+      #form li {
+        display: grid;
+        grid-template-columns: 100px 1fr;
+        margin-bottom: 5px;
+      }
+      #form li p {
+        margin: 0;
+        display: flex;
+        justify-content: flex-start;
+      }
+      #focal-length-meter {
+        position: relative;
+        height: 24px;
+      }
+      #focal-length-meter::before {
+        content: "";
+        position: absolute;
+        display: block;
+        width: 100%;
+        height: 1px;
+        top: 50%;
+        border-top: solid 1px #aaaaaa;
+      }
+      #focal-length-meter-handle {
+        position: absolute;
+        top: 0;
+        width: 10px;
+        height: calc(100% - 2px);
+        border: solid 1px #888888;
+        background-color: #ffffff;
+      }
+      #display-wrapper {
+        grid-column: 1;
+        grid-row: 2;
+        position: relative;
+        margin: 10px 0 0 10px;
+        border: solid 1px #aaaaaa;
+      }
+      #display,
+      #auxiliary-line {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="contents">
+      <form id="form">
+        <ul>
+          <li>
+            <p>画面サイズ</p>
+            <p>：<input type="text" id="displaySize" /></p>
+          </li>
+          <li>
+            <p>中心点距離</p>
+            <p>：<input type="text" id="focalLength" /></p>
+          </li>
+          <li>
+            <p></p>
+            <div id="focal-length-meter">
+              <div id="focal-length-meter-handle"></div>
+            </div>
+          </li>
+        </ul>
+      </form>
+      <div id="display-wrapper">
+        <canvas id="auxiliary-line">
+        </canvas>
+        <canvas id="display">
+        </canvas>
+      </div>
+    </div>
+    <script>
+      // ユーザー定義変数
+      let displaySize = 700;
+      let strokeStyle = [128, 128, 128, 1];
+      let fillStyle = [255, 255, 255, 0.75];
+      let focalLengthPercentage = 1;
+      // 内部変数
+      let displayRadius = displaySize / 2;
+      let vectorSlideRadius = displaySize / 8 * 3;
+      let rotateTheta = 0 / 180 * Math.PI;
+      let vectorTheta = 0 / 180 * Math.PI;
+      let lengthTheta = 0 / 180 * Math.PI;
+      let viewingAngle = 0 / 180 * Math.PI;
+      let moveSwitch = false;
+      let latestMoveX = 0;
+      let latestMoveY = 0;
+      let latestBaseX = 0;
+      let latestBaseY = 0;
+      let moveType = "vector";
+      let moveRotateTheta = 0;
+      let moveVectorTheta = 0;
+      let moveLengthTheta = 0;
+      let diffRotateTheta = 0;
+      let diffLengthTheta = 0;
+      let rotateThetaBase = 0;
+      let vectorThetaBase = 0;
+      let lengthThetaBase = 0;
+      let animationSwitch = false;
+      let animationStartSwitch = false;
+      let animation = null;
+      let animationTimeout = null;
+      let momentPoses = {};
+      let momentSurfaces = [];
+      let focalLengthSwitch = false;
+      let horizonDepth =  R * R / displaySize / focalLengthPercentage;
+      let meterHandleDiffX = 0;
+
+      const displayWrapper = document.getElementById("display-wrapper");
+      const display = document.getElementById("display");
+      const displayContext = display.getContext("2d");
+      const auxiliaryLine = document.getElementById("auxiliary-line");
+      const auxiliaryLineContext = auxiliaryLine.getContext("2d");
+      const inputD = document.getElementById("displaySize");
+      const inputF = document.getElementById("focalLength");
+      const meter = document.getElementById("focal-length-meter");
+      const meterHandle = document.getElementById("focal-length-meter-handle");
+      const form = document.getElementById("form");
+
+      const positions = Object.keys(coordinates).reduce((res, code) => {
+        const relPos = coordinates[code];
+        const l1 = Math.pow(relPos.X * relPos.X + relPos.Y * relPos.Y, 1 / 2);
+        const l2 = Math.pow(relPos.Z * relPos.Z + l1 * l1, 1 / 2);
+        const X = Math.acos(relPos.Z / l2);
+        let Y = l1 > 0 ? Math.asin(relPos.X / l1) + Math.PI : 0;
+        if (relPos.Y < 0) {
+          Y = Math.PI - Y;
+        }
+
+        return { ...res, [code]: { R: l2, X, Y }};
+      }, {});
+
+      let _fillStyles = { default: fillStyle };
+      let _strokeStyles =  { default: strokeStyle };
+      try {
+        _fillStyles = { ..._fillStyles, ...colors };
+      } catch(_) {
+      }
+      try {
+        _strokeStyles = { ..._strokeStyles, ...strokeColors };
+      } catch(_) {
+      }
+
+      const [fillStyles, strokeStyles] = [_fillStyles, _strokeStyles].map(
+        (styleParams) => Object.keys(styleParams).reduce((res, colorCode) => {
+          const styleParam = styleParams[colorCode];
+
+          if (typeof styleParam === "string") {
+            const matches = styleParam.match(/^(#[0-9a-f]{6})([0-9a-f]{2})?$/);
+            res[colorCode] = {
+              color: matches ? matches[0] : "#ffffff",
+              colorBase: matches ? matches[1] : "#ffffff",
+              opacity: matches && matches[2] ? Math.floor(parseInt(matches[2]) * 10 / 255) / 10 : 1,
+            };
+          } else {
+            const  opacity = styleParam[3] || 1;
+            styleParam[0] = `00${parseInt(styleParam[0]).toString(16)}`.substr(-2);
+            styleParam[1] = `00${parseInt(styleParam[1]).toString(16)}`.substr(-2);
+            styleParam[2] = `00${parseInt(styleParam[2]).toString(16)}`.substr(-2);
+            styleParam[3] = `00${Math.floor(parseFloat(styleParam[3] || 1) * 255).toString(16)}`.substr(-2);
+            res[colorCode] = {
+              color: `#${styleParam[0]}${styleParam[1]}${styleParam[2]}${styleParam[3]}`,
+              colorBase: `#${styleParam[0]}${styleParam[1]}${styleParam[2]}`,
+              opacity,
+            };
+          }
+          return res;
+        }, {})
+      );
+
+      const styles = Object.keys(surfaces).reduce((res, code) => {
+        const fillCode = Object.keys(fillStyles).reduce((res, c) => code.match(new RegExp(`^${escape(c)}`)) && c.length > res.length ? c : res, "");
+        const strokeCode = Object.keys(strokeStyles).reduce((res, c) => code.match(new RegExp(`^${escape(c)}`)) && c.length > res.length ? c : res, "");
+
+        return {
+          ...res,
+          [code]: {
+            fill: fillStyles[fillCode || "default"],
+            stroke: strokeStyles[strokeCode || "default"],
+          },
+        };
+      }, {});
+
+      const getLengthByPytha = (hypotenuse, cathetus1, cathetus2) => {
+        switch (null) {
+          case hypotenuse: return Math.pow((Math.pow(cathetus1,  2) + Math.pow(cathetus2, 2)), (1 / 2));
+          case cathetus1:  return Math.pow((Math.pow(hypotenuse, 2) - Math.pow(cathetus2, 2)), (1 / 2));
+          case cathetus2:  return Math.pow((Math.pow(hypotenuse, 2) - Math.pow(cathetus1, 2)), (1 / 2));
+        }
+      };
+
+      const getThetaByLengthes = (thetaCode, X, Y) => {
+        const X_ABS = Math.abs(X);
+        const Y_ABS = Math.abs(Y);
+        const TA_ZR = 0;
+        const TA_LG = Math.PI / 2;
+        const TR_ZR = Math.PI * -1;
+        const TR_LG = Math.PI * -1 / 2;
+
+        switch (thetaCode) {
+          case 'X':
+            if (X > 0 && Y > 0) return TR_LG + Math.atan(Y_ABS / X_ABS);
+            if (X > 0 && Y <= 0) return TR_LG - Math.atan(Y_ABS / X_ABS);
+            if (X < 0 && Y > 0) return TA_LG - Math.atan(Y_ABS / X_ABS);
+            if (X < 0 && Y <= 0) return TA_LG + Math.atan(Y_ABS / X_ABS);
+            if (X === 0 && Y > 0) return TA_ZR;
+            if (X === 0 && Y <= 0) return TR_ZR;
+          case 'Y':
+            if (X > 0 && Y > 0) return TR_LG - Math.atan(Y_ABS / X_ABS);
+            if (X > 0 && Y <= 0) return TR_LG + Math.atan(Y_ABS / X_ABS);
+            if (X < 0 && Y > 0) return TA_LG + Math.atan(Y_ABS / X_ABS);
+            if (X < 0 && Y <= 0) return TA_LG - Math.atan(Y_ABS / X_ABS);
+            if (X === 0 && Y > 0) return TR_ZR;
+            if (X === 0 && Y <= 0) return TA_ZR;
+          case 'Z':
+            if (X > 0 && Y > 0) return TA_ZR - Math.atan(Y_ABS / X_ABS);
+            if (X > 0 && Y <= 0) return TA_ZR + Math.atan(Y_ABS / X_ABS);
+            if (X < 0 && Y > 0) return TR_ZR + Math.atan(Y_ABS / X_ABS);
+            if (X < 0 && Y <= 0) return TR_ZR - Math.atan(Y_ABS / X_ABS);
+            if (X === 0 && Y > 0) return TR_LG;
+            if (X === 0 && Y <= 0) return TA_LG;
+          default:
+        }
+
+        return 0;
+      };
+
+      const getLengthesByTheta = (thetaCode, theta) => {
+        theta = theta % (Math.PI * 2);
+        theta = theta > Math.PI ? theta - Math.PI * 2 : theta;
+        theta = theta < Math.PI * -1 ? theta + Math.PI * 2 : theta;
+
+        const T_ABS = Math.abs(theta);
+        const S_ABS = Math.abs(Math.sin(theta));
+        const C_ABS = Math.abs(Math.cos(theta));
+        const TA_ZR = 0;
+        const TA_LG = Math.PI / 2;
+        const TR_ZR = Math.PI * -1;
+        const TR_LG = Math.PI * -1 / 2;
+
+        switch (thetaCode) {
+          case 'X':
+            return {
+              X: theta > TA_ZR ? S_ABS * -1 : S_ABS,
+              Y: T_ABS > TA_LG ? C_ABS * -1 : C_ABS,
+            };
+          case 'Y':
+            return {
+              X: theta > TA_ZR ? S_ABS * -1 : S_ABS,
+              Y: T_ABS > TA_LG ? C_ABS : C_ABS * -1,
+            };
+          case 'Z':
+            return {
+              X: T_ABS > TA_LG ? C_ABS * -1 : C_ABS,
+              Y: theta > TA_ZR ? S_ABS * -1 : S_ABS,
+            };
+        }
+      };
+
+      const getThetasByRelative = (base_rotateTheta, base_vectorTheta, base_lengthTheta, moveRotateTheta, moveVectorTheta, moveLengthTheta) => {
+        const TA0 = moveVectorTheta - Math.PI / 2;
+        const TY0 = base_vectorTheta - TA0;
+        const LS0 = getLengthesByTheta('Z', base_lengthTheta);
+        const RY0 = LS0.Y;
+        const LZ0 = LS0.X;
+        const LS1 = getLengthesByTheta('Y', TY0);
+        const LX1 = LS1.X * RY0;
+        const LY1 = LS1.Y * RY0;
+        const RX1 = getLengthByPytha(null, LX1, LZ0);
+        const TX1 = getThetaByLengthes('X', LX1, LZ0);
+        const TX2 = TX1 + moveLengthTheta;
+        const LS2 = getLengthesByTheta('X', TX2);
+        const LX2 = LS2.X * RX1;
+        const LZ2 = LS2.Y * RX1;
+        const RY2 = getLengthByPytha(null, LX2, LY1);
+        const TL2 = getThetaByLengthes('Z', LZ2, RY2);
+        const TV2 = getThetaByLengthes('Y', LX2, LY1);
+
+        if (LY1 === 0) {
+          return {
+            rotateTheta: base_rotateTheta,
+            vectorTheta: TV2 + TA0,
+            lengthTheta: TL2
+          };
+        }
+
+        const LS3 = getLengthesByTheta('X', TX1);
+        const LX3 = LS3.X * RX1;
+        const LZ3 = LS3.Y * RX1;
+        const RY3 = getLengthByPytha(null, LX3, LY1);
+        const TL3 = getThetaByLengthes('Z', LZ3, RY3);
+        const TV3 = getThetaByLengthes('Y', LX3, LY1);
+        const L0 = Math.sin(TV3);
+        const L1 = Math.cos(TV3);
+        const L2 = Math.cos(TL3) * L1;
+        const T0 = getThetaByLengthes('Y', L2, L0);
+        const T1 = T0 + TV3;
+        const L3 = Math.sin(TV2);
+        const L4 = Math.cos(TV2);
+        const L5 = Math.cos(TL2) * L4;
+        const T2 = getThetaByLengthes('Y', L5, L3);
+        const T3 = T2 + TV2;
+        const TX = T3 - T1;
+
+        return {
+          rotateTheta: TX + base_rotateTheta,
+          vectorTheta: TV2 + TA0,
+          lengthTheta: TL2
+        };
+      };
+
+      const output = () => {
+        const axisTheta = vectorTheta - (Math.PI / 2);
+
+        momentSurfaces = [];
+
+        for (const surfaceCode in surfaces) {
+          let zIndex = 0;
+
+          surfaces[surfaceCode].forEach((posCode) => {
+            let X = 0;
+            let Y = 0;
+            let Z = 0;
+
+            if (posCode !== "O") {
+              const LS0 = getLengthesByTheta("Z", positions[posCode].X);
+              const RY0 = LS0.Y;
+              const LZ0 = LS0.X;
+              const TY1 = positions[posCode].Y + rotateTheta - axisTheta;
+              const LS1 = getLengthesByTheta("Y", TY1);
+              const LX1 = LS1.X * RY0;
+              const LY1 = LS1.Y * RY0;
+              const TX1 = getThetaByLengthes("X", LX1, LZ0);
+              const RX1 = getLengthByPytha(null, LX1, LZ0);
+              const TX2 = TX1 + lengthTheta;
+              const LS2 = getLengthesByTheta("X", TX2);
+              const LX2 = LS2.X * RX1;
+              const LZ2 = LS2.Y * RX1;
+              const TY2 = getThetaByLengthes("Y", LX2, LY1);
+              const RY2 = getLengthByPytha(null, LX2, LY1);
+              const TY3 = TY2 + axisTheta;
+              const LS3 = getLengthesByTheta("Y", TY3);
+              const LX3 = LS3.X * RY2;
+              const LY3 = LS3.Y * RY2;
+
+              X = LX3 * positions[posCode].R;
+              Y = LY3 * positions[posCode].R;
+              Z = LZ2 * positions[posCode].R;
+              const focalLength = displaySize * focalLengthPercentage;
+              X *= displayRadius / Math.abs(displayRadius * (focalLength - LZ2 * positions[posCode].R) / focalLength);
+              Y *= displayRadius / Math.abs(displayRadius * (focalLength - LZ2 * positions[posCode].R) / focalLength);
+            }
+
+            momentPoses[posCode] = { X, Y, Z };
+
+            zIndex += Z;
+          });
+
+          if (zIndex / surfaces[surfaceCode].length < horizonDepth) continue;
+
+          momentSurfaces.push({
+            code: surfaceCode,
+            z_index: (zIndex / surfaces[surfaceCode].length)
+          });
+        }
+
+        momentSurfaces.sort((A, B) => A.z_index - B.z_index);
+
+        displayContext.setTransform(1, 0, 0, 1, 0, 0);
+        displayContext.clearRect(0, 0, displaySize, displaySize);
+
+        momentSurfaces.forEach((momentSurface) => {
+          displayContext.beginPath();
+
+          surfaces[momentSurface.code].forEach((posCode, j) => {
+            const pos = momentPoses[posCode];
+
+            if (j === 0) {
+              displayContext.moveTo(displayRadius + pos.X, displayRadius + pos.Y);
+            } else {
+              displayContext.lineTo(displayRadius + pos.X, displayRadius + pos.Y);
+            }
+          });
+
+          displayContext.closePath();
+          displayContext.fillStyle = styles[momentSurface.code].fill.color;
+          displayContext.strokeStyle = styles[momentSurface.code].stroke.color;
+          displayContext.fill();
+          displayContext.stroke();
+        });
+      };
+
+      const outputAuxiliaryLine = () => {
+        const RL = getLengthesByTheta('Z', rotateThetaBase);
+        const RsinLength = displaySize * RL.X;
+        const RcosLength = displaySize * RL.Y;
+        const focalLength = displaySize * focalLengthPercentage;
+        const Z2 = Math.pow(focalLength * focalLength - R * R, 1 / 2);
+        const ER = R / Z2 * focalLength;
+        auxiliaryLineContext.setTransform(1, 0, 0, 1, 0, 0);
+        auxiliaryLineContext.clearRect(0, 0, displaySize, displaySize);
+        auxiliaryLineContext.strokeStyle = '#aaaaaa';
+        auxiliaryLineContext.beginPath();
+        auxiliaryLineContext.moveTo(0, displayRadius + 0.5);
+        auxiliaryLineContext.lineTo(displaySize, displayRadius + 0.5);
+        auxiliaryLineContext.stroke();
+        auxiliaryLineContext.beginPath();
+        auxiliaryLineContext.moveTo(displayRadius + 0.5, 0);
+        auxiliaryLineContext.lineTo(displayRadius + 0.5, displaySize);
+        auxiliaryLineContext.stroke();
+        auxiliaryLineContext.strokeStyle = '#eeeeee';
+        auxiliaryLineContext.beginPath();
+        auxiliaryLineContext.arc(displayRadius + 0.5, displayRadius + 0.5, vectorSlideRadius, 0, Math.PI * 2);
+        auxiliaryLineContext.stroke();
+        auxiliaryLineContext.beginPath();
+        auxiliaryLineContext.strokeStyle = '#000000';
+        auxiliaryLineContext.fillStyle = '#0066ff';
+        auxiliaryLineContext.arc(displayRadius, displayRadius, ER, 0, Math.PI * 2);
+        auxiliaryLineContext.fill();
+        auxiliaryLineContext.stroke();
+      };
+
+      const move = () => {
+        rotateThetaBase = rotateTheta;
+        vectorThetaBase = vectorTheta;
+        lengthThetaBase = lengthTheta;
+
+        if (moveType === "vector") {
+          const diffX = latestMoveX - latestBaseX;
+          const diffY = latestMoveY - latestBaseY;
+          const direction_X = diffX > 0 ? -1 : 1;
+          const direction_Y = diffY > 0 ? 1 : -1;
+
+          let absX = Math.abs(diffX);
+          let absY = Math.abs(diffY);
+          if (absX > 30) absX = 30;
+          if (absY > 30) absY = 30;
+
+          const thetaDiffX = absX / 200 * direction_X;
+          const thetaDiffY = absY / 200 * direction_Y;
+
+          moveRotateTheta = 0;
+          moveVectorTheta = getThetaByLengthes('Y', thetaDiffX, thetaDiffY) * -1 + Math.PI;
+          moveLengthTheta = 0;
+          diffLengthTheta = getLengthByPytha(null, thetaDiffX, thetaDiffY);
+          diffRotateTheta = 0;
+        } else {
+          const LD0X = latestBaseX - displayRadius;
+          const LD0Y = latestBaseY - displayRadius;
+          const LD1X = latestMoveX - displayRadius;
+          const LD1Y = latestMoveY - displayRadius;
+          const TD0 = getThetaByLengthes('Y', LD0X, LD0Y);
+          const TD1 = getThetaByLengthes('Y', LD1X, LD1Y);
+          const TD2 = TD1 - TD0;
+
+          const direction_T = TD2 > 0 ? 1 : -1;
+
+          let absT = Math.abs(TD2);
+          if (absT > 0.2) absT = 0.2;
+
+          const thetaDiff = absT * direction_T;
+
+          moveRotateTheta = 0;
+          moveLengthTheta = 0;
+          diffLengthTheta = 0;
+          diffRotateTheta = thetaDiff;
+        }
+
+        latestBaseX = latestMoveX;
+        latestBaseY = latestMoveY;
+      };
+
+      const slide = () => {
+        if (diffLengthTheta > 0) {
+          moveLengthTheta += diffLengthTheta;
+
+          const thetas = getThetasByRelative(
+            rotateThetaBase,
+            vectorThetaBase,
+            lengthThetaBase,
+            moveRotateTheta,
+            moveVectorTheta,
+            moveLengthTheta,
+          );
+
+          rotateTheta = thetas.rotateTheta;
+          vectorTheta = thetas.vectorTheta;
+          lengthTheta = thetas.lengthTheta;
+        } else if (diffRotateTheta != 0) {
+          moveRotateTheta += diffRotateTheta;
+          rotateTheta = rotateThetaBase + moveRotateTheta;
+          vectorTheta = vectorThetaBase + moveRotateTheta;
+        }
+      };
+      const animate = () => {
+        if (moveSwitch === true) move();
+        slide();
+        output();
+      };
+
+      const startAnimation = () => {
+        if (animation) clearInterval(animation);
+
+        animationSwitch = true;
+        animation = setInterval(animate, 50);
+      };
+
+      const stopAnimation = () => {
+        if (animation) clearInterval(animation);
+
+        animationSwitch = false;
+        animationStartSwitch = false;
+      };
+
+      const moveStopCheck = (clientX, clientY) => {
+        animationStartSwitch = latestMoveX !== clientX || latestMoveY !== clientY;
+      };
+
+      const resize = () => {
+        displayWrapper.style.width = `${displaySize + 2}px`;
+        displayWrapper.style.height = `${displaySize + 2}px`;
+        display.setAttribute("width", displaySize);
+        display.setAttribute("height", displaySize);
+        auxiliaryLine.setAttribute("width", displaySize);
+        auxiliaryLine.setAttribute("height", displaySize);
+        inputD.value = displaySize;
+      };
+
+      const getMeterParams = () => {
+        const meterRect = meter.getBoundingClientRect();
+        const meterHandleRect = meterHandle.getBoundingClientRect();
+
+        return {
+          left: meterRect.left + meterHandleRect.width / 2,
+          right: meterRect.left + meterRect.width - meterHandleRect.width / 2,
+        };
+      };
+
+      const setMeterPosition = (percentage) => {
+        const { left, right } = getMeterParams();
+        meterHandle.style.left = `${Math.floor((right - left) * percentage)}px`;
+      };
+
+      const setFocalLengthSwitch = (operate, clientX) => {
+        focalLengthSwitch = operate;
+        if (operate === false) return;
+
+        const meterHandleRect = meterHandle.getBoundingClientRect();
+        if (clientX >= meterHandleRect.left && clientX <= meterHandleRect.left + meterHandleRect.width) {
+          meterHandleDiffX = clientX - (meterHandleRect.left + meterHandleRect.width / 2);
+        } else {
+          meterHandleDiffX = 0;
+          setFocalLength(clientX);
+        }
+      };
+
+      const setFocalLength = (clientX) => {
+        const { left, right } = getMeterParams();
+        let percentage = (clientX - meterHandleDiffX - left) / (right - left);
+        if (percentage < 0) percentage = 0;
+        if (percentage > 1) percentage = 1;
+        setMeterPosition(percentage);
+        focalLengthPercentage = 1 / 2 + 2 * percentage;
+
+        const focalLength = displaySize * focalLengthPercentage;
+        horizonDepth = R * R / focalLength;
+
+        inputF.value = Math.floor(displaySize * focalLengthPercentage);
+
+        outputAuxiliaryLine();
+        if (!animationSwitch) output();
+      };
+
+      const getClientPosition = (event) => ({
+        X: event.clientX !== undefined ? event.clientX : event.changedTouches[0].clientX,
+        Y: event.clientY !== undefined ? event.clientY : event.changedTouches[0].clientY,
+      });
+
+      const displayOnpointerdown = (event) => {
+        if (moveSwitch === true || focalLengthSwitch === true) return;
+
+        stopAnimation();
+
+        const { X, Y } = getClientPosition(event);
+
+        moveSwitch = true;
+        latestMoveX = X;
+        latestMoveY = Y;
+        latestBaseX = X;
+        latestBaseY = Y;
+
+        const displayRect = display.getBoundingClientRect();
+        const relativeDiffX = Math.abs(X - displayRect.left - displayRadius);
+        const relativeDiffY = Math.abs(Y - displayRect.top - displayRadius);
+        const relativeDiffRadius = getLengthByPytha(null, relativeDiffX, relativeDiffY);
+        moveType = relativeDiffRadius <= vectorSlideRadius ? "vector" : "rotate";
+      };
+
+      const documentMousemove = (event) => {
+        const { X, Y } = getClientPosition(event);
+
+        if (moveSwitch === true) {
+          animationStartSwitch = true;
+          clearTimeout(animationTimeout);
+          animationTimeout = setTimeout(() => {
+            moveStopCheck(X, Y);
+          }, 100);
+          latestMoveX = X;
+          latestMoveY = Y;
+          animate();
+        } else if (focalLengthSwitch === true) {
+          setFocalLength(X);
+        } 
+      };
+
+      document.onpointerup = (event) => {
+        if (moveSwitch === true) {
+          moveSwitch = false;
+
+          const { X, Y } = getClientPosition(event);
+          latestMoveX = X;
+          latestMoveY = Y;
+        }
+
+        if (animationStartSwitch) startAnimation();
+        setFocalLengthSwitch(false);
+      };
+
+      document.onkeydown = (event) => {
+        if (event.code !== "Enter") return;
+        if (document.activeElement.tagName === "INPUT") {
+          event.preventDefault();
+        } else if (animationSwitch === false) {
+          startAnimation();
+        } else {
+          stopAnimation();
+        }
+      };
+
+      meter.onpointerdown = (event) => {
+        setFocalLengthSwitch(true, getClientPosition(event).X);
+      };
+
+      if (typeof display.ontouchstart === 'object') {
+        display.ontouchstart = displayOnpointerdown;
+      } else {
+        display.onpointerdown = displayOnpointerdown;
+      }
+      if (typeof document.ontouchmove === 'object') {
+        document.ontouchmove = documentMousemove;
+      } else {
+        document.onmousemove = documentMousemove;
+      }
+
+      inputF.value = Math.floor(displaySize * focalLengthPercentage);
+      form.onsubmit = () => false;
+
+      resize();
+      outputAuxiliaryLine();
+      setMeterPosition(focalLengthPercentage / 2 - (1 / 4));
+      output();
+    </script>
+  </body>
+</html>
