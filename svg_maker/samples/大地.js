@@ -20,7 +20,7 @@ Array(Math.ceil(latitudeL / 2)).fill(null).forEach((_1, i) => {
   const Y1 = Math.cos(TI1) * R;
   const Y2 = Math.cos(TI2) * R;
   const longitudeW = RI2 * Math.PI * 2;
-  const longitudeL = Math.floor(longitudeW / latitudeW);
+  const longitudeL = Math.round(longitudeW / latitudeW);
 
   terrainParams.N[i] = [];
   terrainParams.S[i] = [];
@@ -74,7 +74,7 @@ const getAroundSurfaces = (latitude, longitude, surfaceL) => {
   const TI = Math.PI * latitude;
   const TK = Math.PI * longitude * 2;
   const TL = Math.PI / latitudeL * surfaceL;
-  const LT = Math.max(Math.ceil(surfaceL * 2 * Math.PI), 8);
+  const LT = Math.max(Math.ceil(surfaceL * 2 * Math.PI) * 2, 8);
   const RL = Math.sin(TL);
   const ZL = Math.cos(TL);
 

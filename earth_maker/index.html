@@ -1,165 +1,6 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <script>
-      const R = 150;
-      const latitudeL = 40;
-      const landL = 5;
-      const landS = 5;
-      const STATUS_SEA = 1;
-      const STATUS_LAND = 2;
-      const STATUS_LAND_CORE = 4;
-      
-      const latitudeW = R * Math.PI / latitudeL;
-      const coordinatesBase = {
-        N: { X: 0, Y: R,      Z: 0 },
-        S: { X: 0, Y: R * -1, Z: 0 },
-      };
-      const coordinates = {};
-      const surfaces = {};
-      const terrainParams = { N: [], S: [] };
-      
-      Array(Math.ceil(latitudeL / 2)).fill(null).forEach((_1, i) => {
-        const TI1 = Math.PI / latitudeL * (i);
-        const TI2 = Math.PI / latitudeL * (i + 1);
-        const RI1 = Math.sin(TI1) * R;
-        const RI2 = Math.sin(TI2) * R;
-        const Y1 = Math.cos(TI1) * R;
-        const Y2 = Math.cos(TI2) * R;
-        const longitudeW = RI2 * Math.PI * 2;
-        const longitudeL = Math.floor(longitudeW / latitudeW);
-      
-        terrainParams.N[i] = [];
-        terrainParams.S[i] = [];
-      
-        Array(longitudeL).fill(null).forEach((_2, k2) => {
-          const k1 = k2 > 0 ? k2 - 1 : longitudeL - 1;
-          const TK = Math.PI * 2 / longitudeL * k2;
-          const X1 = Math.sin(TK) * RI1;
-          const X2 = Math.sin(TK) * RI2;
-          const Z1 = Math.cos(TK) * RI1;
-          const Z2 = Math.cos(TK) * RI2;
-      
-          ['N', 'S'].forEach((v) => {
-            coordinatesBase[`${v}.I${i + 1}.K${k2}.1`] = { X: X1, Y: Y1 * (v === 'N' ? 1 : -1), Z: Z1 };
-            coordinatesBase[`${v}.I${i + 1}.K${k2}.2`] = { X: X2, Y: Y2 * (v === 'N' ? 1 : -1), Z: Z2 };
-      
-            if (i === 0) {
-              terrainParams[v][i][k2] = { S: 0, C: [v, `${v}.I${i + 1}.K${k1}.2`, `${v}.I${i + 1}.K${k2}.2`] };
-            } else {
-              terrainParams[v][i][k2] = { S: 0, C: [`${v}.I${i + 1}.K${k1}.1`, `${v}.I${i + 1}.K${k1}.2`, `${v}.I${i + 1}.K${k2}.2`, `${v}.I${i + 1}.K${k2}.1`] };
-            }
-          });
-          if (latitudeL % 2 && i + 2 > latitudeL / 2) {
-            terrainParams.N[i + 1][k2] = { S: 0, C: [`N.I${i + 1}.K${k1}.2`, `S.I${i + 1}.K${k1}.2`, `S.I${i + 1}.K${k2}.2`, `N.I${i + 1}.K${k2}.2`] };
-          }
-        });
-      });
-      
-      const params = terrainParams.N.concat(terrainParams.S.reverse());
-      
-      const colors = {
-        default: '#22aa22',
-        LC: '#aa44aa',
-      };
-      const strokeColors = {
-        default: '#22aa22',
-      };
-      
-      const getSurface = (latitude, longitude) => {
-        const i = latitude === 1 ? 0 : Math.floor(latitude * latitudeL);
-        const k = longitude === 1 ? 0 : Math.floor(longitude * params[i].length);
-      
-        return [i, k];
-      };
-      
-      const getAroundSurfaces = (latitude, longitude, surfaceL) => {
-        const aroundSurfaces = [];
-      
-        const TI = Math.PI * latitude;
-        const TK = Math.PI * longitude * 2;
-        const TL = Math.PI / latitudeL * surfaceL;
-        const LT = Math.max(Math.ceil(surfaceL * 2 * Math.PI), 8);
-        const RL = Math.sin(TL);
-        const ZL = Math.cos(TL);
-      
-        Array(LT).fill(null).forEach((_, i) => {
-          const T = Math.PI * 2 / LT * i;
-          const I = Math.cos(T) * RL;
-          const K = Math.sin(T) * RL;
-          const ZL2 = Math.pow(I * I + ZL * ZL, 1 / 2);
-          const TI2 = TI - Math.asin(I / ZL2);
-          const Z = Math.sin(TI2) * ZL2;
-          const Y = Math.cos(TI2) * ZL2;
-          const TI3 = (Math.acos(Y) * (Z >= 0 ? 1 : -1)) % Math.PI;
-          const TK2 = (TK + (K !== 0 ? Math.atan(K / Z) : 0)) % (Math.PI * 2);
-          let I2 = TI3 / Math.PI;
-          let K2 = TK2 / Math.PI / 2;
-          if (I2 < 0) {
-            I2 = I2 * -1;
-            K2 += 1 / 2;
-          }
-          if (K2 < 0) {
-            K2 += 1;
-          } else if (K2 > 1) {
-            K2 -= 1;
-          }
-          const [PI, PK] = getSurface(I2, K2);
-          if (!aroundSurfaces.find((pi, pk) => PI === pi && PK === pk)) {
-            aroundSurfaces.push([PI, PK, I2, K2]);
-          }
-        });
-      
-        return aroundSurfaces;
-      };
-
-      Array(4).fill(null).forEach((_1) => {
-        const [ti, tk] = [Math.random(), Math.random()];
-        const [ib, kb] = getSurface(ti, tk);
-        params[ib][kb].S = STATUS_LAND;
-      
-        Array(landS).fill(null).forEach((_2, c) => {
-          getAroundSurfaces(ti, tk, c + 1).forEach(([i, k, ti, tk]) => {
-            const [S, L, U] = getAroundSurfaces(ti, tk, 1).reduce(([s, l, u], [ai, ak]) => {
-              if (params[i][k].S !== 0) return [s, l, u];
-      
-              switch (params[ai][ak].S) {
-                case STATUS_SEA:
-                  return [s + 1, l, u];
-                case STATUS_LAND:
-                  return [s, l + 1, u];
-                default:
-                  return [s, l, u + 1];
-              }
-            }, [0, 0, 0]);
-      
-            const denominator = 5 * (landS - 1) + 3 * L * (landS - 1) + 2 * S * landS + U;
-            const percentage = (5 * (landS - 1) + 3 * L * (landS - 1)) / denominator;
-            const rand = Math.random();
-            params[i][k].S = rand < percentage ? STATUS_LAND : STATUS_SEA;
-          });
-        });
-        params[ib][kb].S += STATUS_LAND_CORE;
-      });
-      
-      params.forEach((param1, i) => {
-        param1.forEach((param2, k) => {
-          if (param2.S === STATUS_LAND) {
-            surfaces[`${i}.${k}`] = param2.C;
-          } else if (param2.S === STATUS_LAND + STATUS_LAND_CORE) {
-            surfaces[`LC.${i}.${k}`] = param2.C;
-          } else {
-            return;
-          }
-
-          param2.C.forEach((c) => {
-            if (!coordinates[c]) {
-              coordinates[c] = coordinatesBase[c];
-            }
-          });
-        });
-      });
-    </script>
     <style>
       body {
         margin: 0;
@@ -169,33 +10,16 @@
       }
       #contents {
         display: grid;
-        grid-template-columns: auto 1fr;
+        grid-template-columns: auto;
         grid-template-rows: auto auto;
       }
       #form {
-        display: block;
-        grid-column: 1 / 3;
+        grid-column: 1;
         grid-row: 1;
-        display: flex;
-        justify-content: flex-start;
+        box-sizing: border-box;
         margin: 10px 10px 0 10px;
-        padding: 5px 5px 0 5px;
+        padding: 5px;
         border: solid 1px #aaaaaa;
-      }
-      #form ul {
-        list-style: none;
-        margin: 0 10px 0 0;
-        padding: 0;
-      }
-      #form li {
-        display: grid;
-        grid-template-columns: 100px 1fr;
-        margin-bottom: 5px;
-      }
-      #form li p {
-        margin: 0;
-        display: flex;
-        justify-content: flex-start;
       }
       #focal-length-meter {
         position: relative;
@@ -219,6 +43,7 @@
         background-color: #ffffff;
       }
       #display-wrapper {
+        box-sizing: border-box;
         grid-column: 1;
         grid-row: 2;
         position: relative;
@@ -235,24 +60,12 @@
   </head>
   <body>
     <div id="contents">
-      <form id="form">
-        <ul>
-          <li>
-            <p>画面サイズ</p>
-            <p>：<input type="text" id="displaySize" /></p>
-          </li>
-          <li>
-            <p>中心点距離</p>
-            <p>：<input type="text" id="focalLength" /></p>
-          </li>
-          <li>
-            <p></p>
-            <div id="focal-length-meter">
-              <div id="focal-length-meter-handle"></div>
-            </div>
-          </li>
-        </ul>
-      </form>
+      <div id="form">
+        <div id="title">中心点距離</div>
+        <div id="focal-length-meter">
+          <div id="focal-length-meter-handle"></div>
+        </div>
+      </div>
       <div id="display-wrapper">
         <canvas id="auxiliary-line">
         </canvas>
@@ -261,32 +74,204 @@
       </div>
     </div>
     <script>
-      // ユーザー定義変数
+      const R = 150;
+      const latitudeL = 60;
+      const landL = 5;
+      const landS = 10;
+      const STATUS_SEA = 1;
+      const STATUS_LAND = 2;
+      const STATUS_LAND_CORE = 4;
+
+      const latitudeW = R * Math.PI / latitudeL;
+      const positionsBase = {
+        N: { R, X: 0,       Y: 0 },
+        S: { R, X: Math.PI, Y: 0 },
+      };
+      const positions = {};
+      const surfaces = {};
+      const terrainParams = { N: [], S: [] };
+
+      Array(Math.ceil(latitudeL / 2)).fill(null).forEach((_1, i) => {
+        const X1 = Math.PI / latitudeL * i;
+        const X2 = Math.PI / latitudeL * (i + 1);
+        const longitudeW = Math.sin(X2) * 2 * Math.PI * R;
+        const longitudeL = Math.round(longitudeW / latitudeW);
+
+        terrainParams.N[i] = [];
+        terrainParams.S[i] = [];
+        if (latitudeL % 2 && i + 2 > latitudeL / 2) {
+          terrainParams.N[i + 1] = [];
+        }
+
+        Array(longitudeL).fill(null).forEach((_2, k2) => {
+          const Y = Math.PI * 2 / longitudeL * k2;
+          const k1 = k2 > 0 ? k2 - 1 : longitudeL - 1;
+
+          ['N', 'S'].forEach((v) => {
+            positionsBase[`${v}.I${i + 1}.K${k2}.1`] = { R, X: (v === 'N' ? X1 : Math.PI - X1), Y };
+            positionsBase[`${v}.I${i + 1}.K${k2}.2`] = { R, X: (v === 'N' ? X2 : Math.PI - X2), Y };
+
+            if (i === 0) {
+              terrainParams[v][i][k2] = { S: 0, C: [v, `${v}.I${i + 1}.K${k1}.2`, `${v}.I${i + 1}.K${k2}.2`] };
+            } else {
+              terrainParams[v][i][k2] = { S: 0, C: [`${v}.I${i + 1}.K${k1}.1`, `${v}.I${i + 1}.K${k1}.2`, `${v}.I${i + 1}.K${k2}.2`, `${v}.I${i + 1}.K${k2}.1`] };
+            }
+          });
+          if (latitudeL % 2 && i + 2 > latitudeL / 2) {
+            terrainParams.N[i + 1][k2] = { S: 0, C: [`N.I${i + 1}.K${k1}.2`, `S.I${i + 1}.K${k1}.2`, `S.I${i + 1}.K${k2}.2`, `N.I${i + 1}.K${k2}.2`] };
+          }
+          if (i === latitudeL / 2 - 1) {
+            positions[`N.I${i + 1}.K${k1}.2`] = positionsBase[`N.I${i + 1}.K${k1}.2`];
+            positions[`N.I${i + 1}.K${k2}.2`] = positionsBase[`N.I${i + 1}.K${k2}.2`];
+            surfaces[`R.${k2}`] = [`N.I${i + 1}.K${k1}.2`, `N.I${i + 1}.K${k2}.2`];
+          }
+        });
+      });
+
+      const params = terrainParams.N.concat(terrainParams.S.reverse());
+
+      const colors = {
+        default: '#22aa22',
+        LC: '#aa44aa',
+      };
+      const strokeColors = {
+        default: '#22aa22',
+        R: '#ff0000',
+      };
+
+      const getCoordinate = (latitude, longitude, T, surfaceL) => {
+        const TI = Math.PI * latitude;
+        const TK = Math.PI * longitude * 2;
+        const TL = Math.PI / latitudeL * surfaceL;
+        const RL = Math.sin(TL);
+        const ZL = Math.cos(TL);
+        const I = Math.cos(T) * RL;
+        const K = Math.sin(T) * RL;
+        const ZL2 = Math.pow(I * I + ZL * ZL, 1 / 2);
+        const TI2 = TI - Math.asin(I / ZL2);
+        const Z = Math.sin(TI2) * ZL2;
+        const Y = Math.cos(TI2) * ZL2;
+        const TI3 = (Math.acos(Y) * (Z >= 0 ? 1 : -1)) % Math.PI;
+        const TK2 = (TK + (K !== 0 ? Math.atan(K / Z) : 0)) % (Math.PI * 2);
+        let I2 = TI3 / Math.PI;
+        let K2 = TK2 / Math.PI / 2;
+        if (I2 < 0) {
+          I2 = I2 * -1;
+          K2 += 1 / 2;
+        }
+        if (K2 < 0) {
+          K2 += 1;
+        } else if (K2 > 1) {
+          K2 -= 1;
+        }
+
+        return [I2, K2];
+      };
+
+      const getSurface = (latitude, longitude) => {
+        const i = latitude === 1 ? 0 : Math.floor(latitude * latitudeL);
+        const k = longitude === 1 ? 0 : Math.floor(longitude * params[i].length);
+
+        return [i, k];
+      };
+
+      const getAroundSurfaces = (latitude, longitude, surfaceL) => {
+        const aroundSurfaces = [];
+        const LT = Math.max(Math.ceil(surfaceL * 2 * Math.PI), 8);
+
+        Array(LT).fill(null).forEach((_, i) => {
+          const T = Math.PI * 2 / LT * i;
+          const [I, K] = getCoordinate(latitude, longitude, T, surfaceL);
+          const [PI, PK] = getSurface(I, K);
+          if (!aroundSurfaces.find((pi, pk) => PI === pi && PK === pk)) {
+            aroundSurfaces.push([PI, PK, I, K]);
+          }
+        });
+
+        return aroundSurfaces;
+      };
+
+      const makeLand = (I, K, scale) => {
+        const [ib, kb] = getSurface(I, K);
+        params[ib][kb].S = STATUS_LAND;
+
+        Array(landS).fill(null).forEach((_2, c) => {
+          const percentageBase = Math.pow(Math.cos(Math.PI / 2 * c / landS), 4);
+
+          getAroundSurfaces(I, K, c + 1).forEach(([i, k, ti, tk]) => {
+            const [S, L, U] = getAroundSurfaces(ti, tk, 1).reduce(([s, l, u], [ai, ak]) => {
+              if (params[i][k].S !== 0) return [s, l, u];
+
+              switch (params[ai][ak].S) {
+                case STATUS_SEA:
+                  return [s + 1, l, u];
+                case STATUS_LAND:
+                  return [s, l + 1, u];
+                default:
+                  return [s, l, u + 1];
+              }
+            }, [0, 0, 0]);
+
+            // const denominator = 5 * (landS - 1) + 3 * L * (landS - 1) + 2 * S * landS + U;
+            // const percentage = (5 * (landS - 1) + 3 * L * (landS - 1)) / denominator;
+            // const percentage = percentageBase + (L + S > 0 ? (c / landS * L / (L + S)) : 0);
+            const percentage = percentageBase + c / landS * L / (L + S + U);
+            const rand = Math.random();
+            // params[i][k].S = rand < percentage ? STATUS_LAND : STATUS_SEA;
+            if (rand < percentage) params[i][k].S = STATUS_LAND;
+          });
+        });
+        params[ib][kb].S += STATUS_LAND_CORE;
+      };
+
+      const makeLandChain = (I, K, life) => {
+        const scale = 4 + Math.floor(Math.random() * 4);
+        makeLand(I, K, scale);
+
+        life -= Math.ceil(Math.random() * 2);
+
+        if (life > 0) {
+          const [NI, NK] = getCoordinate(I, K, Math.random() * Math.PI * 2, scale);
+          makeLandChain(NI, NK, life);
+        }
+      };
+
+      Array(4).fill(null).forEach((_1) => {
+        makeLandChain(Math.random(), Math.random(), 5, 5);
+      });
+
+      params.forEach((param1, i) => {
+        param1.forEach((param2, k) => {
+          if (param2.S === STATUS_LAND) {
+            surfaces[`${i}.${k}`] = param2.C;
+          } else if (param2.S === STATUS_LAND + STATUS_LAND_CORE) {
+            surfaces[`LC.${i}.${k}`] = param2.C;
+          } else {
+            return;
+          }
+
+          param2.C.forEach((c) => {
+            if (!positions[c]) {
+              positions[c] = positionsBase[c];
+            }
+          });
+        });
+      });
+
       let displaySize = 700;
       let strokeStyle = [128, 128, 128, 1];
       let fillStyle = [255, 255, 255, 0.75];
       let focalLengthPercentage = 1;
+
       // 内部変数
       let displayRadius = displaySize / 2;
       let vectorSlideRadius = displaySize / 8 * 3;
-      let rotateTheta = 0 / 180 * Math.PI;
-      let vectorTheta = 0 / 180 * Math.PI;
-      let lengthTheta = 0 / 180 * Math.PI;
-      let viewingAngle = 0 / 180 * Math.PI;
       let moveSwitch = false;
       let latestMoveX = 0;
       let latestMoveY = 0;
       let latestBaseX = 0;
       let latestBaseY = 0;
       let moveType = "vector";
-      let moveRotateTheta = 0;
-      let moveVectorTheta = 0;
-      let moveLengthTheta = 0;
-      let diffRotateTheta = 0;
-      let diffLengthTheta = 0;
-      let rotateThetaBase = 0;
-      let vectorThetaBase = 0;
-      let lengthThetaBase = 0;
       let animationSwitch = false;
       let animationStartSwitch = false;
       let animation = null;
@@ -296,30 +281,27 @@
       let focalLengthSwitch = false;
       let horizonDepth =  R * R / displaySize / focalLengthPercentage;
       let meterHandleDiffX = 0;
+      // 位置軸: 静止状態の対象物の基本姿勢からの傾きを表す軸
+      let positionAxisX = Math.PI / 2; // 位置軸のZ軸(正面方向軸)に対する角度(0 ~ π)
+      let positionAxisY = 0; // 位置軸のY軸(上下方向軸)に対する角度(-π ~ π)
+      let positionAxisL = 0; // 位置軸に対する回転角度(-π ~ π)
+      // 回転軸: 自転するベースとなる軸
+      let momentAxisX = 0; // 位置軸のZ軸(正面方向軸)に対する角度(0 ~ π)
+      let momentAxisY = 0; // 位置軸のY軸(上下方向軸)に対する角度(-π ~ π)
+      let momentAxisL = 0; // 位置軸に対する回転角度(-π ~ π)
+      let diffAxisL = 0;
+      let axisX = Math.PI / 2;
+      let axisY = 0;
+      let axisL = 0;
 
       const displayWrapper = document.getElementById("display-wrapper");
       const display = document.getElementById("display");
       const displayContext = display.getContext("2d");
       const auxiliaryLine = document.getElementById("auxiliary-line");
       const auxiliaryLineContext = auxiliaryLine.getContext("2d");
-      const inputD = document.getElementById("displaySize");
-      const inputF = document.getElementById("focalLength");
       const meter = document.getElementById("focal-length-meter");
       const meterHandle = document.getElementById("focal-length-meter-handle");
       const form = document.getElementById("form");
-
-      const positions = Object.keys(coordinates).reduce((res, code) => {
-        const relPos = coordinates[code];
-        const l1 = Math.pow(relPos.X * relPos.X + relPos.Y * relPos.Y, 1 / 2);
-        const l2 = Math.pow(relPos.Z * relPos.Z + l1 * l1, 1 / 2);
-        const X = Math.acos(relPos.Z / l2);
-        let Y = l1 > 0 ? Math.asin(relPos.X / l1) + Math.PI : 0;
-        if (relPos.Y < 0) {
-          Y = Math.PI - Y;
-        }
-
-        return { ...res, [code]: { R: l2, X, Y }};
-      }, {});
 
       let _fillStyles = { default: fillStyle };
       let _strokeStyles =  { default: strokeStyle };
@@ -372,137 +354,7 @@
         };
       }, {});
 
-      const getLengthByPytha = (hypotenuse, cathetus1, cathetus2) => {
-        switch (null) {
-          case hypotenuse: return Math.pow((Math.pow(cathetus1,  2) + Math.pow(cathetus2, 2)), (1 / 2));
-          case cathetus1:  return Math.pow((Math.pow(hypotenuse, 2) - Math.pow(cathetus2, 2)), (1 / 2));
-          case cathetus2:  return Math.pow((Math.pow(hypotenuse, 2) - Math.pow(cathetus1, 2)), (1 / 2));
-        }
-      };
-
-      const getThetaByLengthes = (thetaCode, X, Y) => {
-        const X_ABS = Math.abs(X);
-        const Y_ABS = Math.abs(Y);
-        const TA_ZR = 0;
-        const TA_LG = Math.PI / 2;
-        const TR_ZR = Math.PI * -1;
-        const TR_LG = Math.PI * -1 / 2;
-
-        switch (thetaCode) {
-          case 'X':
-            if (X > 0 && Y > 0) return TR_LG + Math.atan(Y_ABS / X_ABS);
-            if (X > 0 && Y <= 0) return TR_LG - Math.atan(Y_ABS / X_ABS);
-            if (X < 0 && Y > 0) return TA_LG - Math.atan(Y_ABS / X_ABS);
-            if (X < 0 && Y <= 0) return TA_LG + Math.atan(Y_ABS / X_ABS);
-            if (X === 0 && Y > 0) return TA_ZR;
-            if (X === 0 && Y <= 0) return TR_ZR;
-          case 'Y':
-            if (X > 0 && Y > 0) return TR_LG - Math.atan(Y_ABS / X_ABS);
-            if (X > 0 && Y <= 0) return TR_LG + Math.atan(Y_ABS / X_ABS);
-            if (X < 0 && Y > 0) return TA_LG + Math.atan(Y_ABS / X_ABS);
-            if (X < 0 && Y <= 0) return TA_LG - Math.atan(Y_ABS / X_ABS);
-            if (X === 0 && Y > 0) return TR_ZR;
-            if (X === 0 && Y <= 0) return TA_ZR;
-          case 'Z':
-            if (X > 0 && Y > 0) return TA_ZR - Math.atan(Y_ABS / X_ABS);
-            if (X > 0 && Y <= 0) return TA_ZR + Math.atan(Y_ABS / X_ABS);
-            if (X < 0 && Y > 0) return TR_ZR + Math.atan(Y_ABS / X_ABS);
-            if (X < 0 && Y <= 0) return TR_ZR - Math.atan(Y_ABS / X_ABS);
-            if (X === 0 && Y > 0) return TR_LG;
-            if (X === 0 && Y <= 0) return TA_LG;
-          default:
-        }
-
-        return 0;
-      };
-
-      const getLengthesByTheta = (thetaCode, theta) => {
-        theta = theta % (Math.PI * 2);
-        theta = theta > Math.PI ? theta - Math.PI * 2 : theta;
-        theta = theta < Math.PI * -1 ? theta + Math.PI * 2 : theta;
-
-        const T_ABS = Math.abs(theta);
-        const S_ABS = Math.abs(Math.sin(theta));
-        const C_ABS = Math.abs(Math.cos(theta));
-        const TA_ZR = 0;
-        const TA_LG = Math.PI / 2;
-        const TR_ZR = Math.PI * -1;
-        const TR_LG = Math.PI * -1 / 2;
-
-        switch (thetaCode) {
-          case 'X':
-            return {
-              X: theta > TA_ZR ? S_ABS * -1 : S_ABS,
-              Y: T_ABS > TA_LG ? C_ABS * -1 : C_ABS,
-            };
-          case 'Y':
-            return {
-              X: theta > TA_ZR ? S_ABS * -1 : S_ABS,
-              Y: T_ABS > TA_LG ? C_ABS : C_ABS * -1,
-            };
-          case 'Z':
-            return {
-              X: T_ABS > TA_LG ? C_ABS * -1 : C_ABS,
-              Y: theta > TA_ZR ? S_ABS * -1 : S_ABS,
-            };
-        }
-      };
-
-      const getThetasByRelative = (base_rotateTheta, base_vectorTheta, base_lengthTheta, moveRotateTheta, moveVectorTheta, moveLengthTheta) => {
-        const TA0 = moveVectorTheta - Math.PI / 2;
-        const TY0 = base_vectorTheta - TA0;
-        const LS0 = getLengthesByTheta('Z', base_lengthTheta);
-        const RY0 = LS0.Y;
-        const LZ0 = LS0.X;
-        const LS1 = getLengthesByTheta('Y', TY0);
-        const LX1 = LS1.X * RY0;
-        const LY1 = LS1.Y * RY0;
-        const RX1 = getLengthByPytha(null, LX1, LZ0);
-        const TX1 = getThetaByLengthes('X', LX1, LZ0);
-        const TX2 = TX1 + moveLengthTheta;
-        const LS2 = getLengthesByTheta('X', TX2);
-        const LX2 = LS2.X * RX1;
-        const LZ2 = LS2.Y * RX1;
-        const RY2 = getLengthByPytha(null, LX2, LY1);
-        const TL2 = getThetaByLengthes('Z', LZ2, RY2);
-        const TV2 = getThetaByLengthes('Y', LX2, LY1);
-
-        if (LY1 === 0) {
-          return {
-            rotateTheta: base_rotateTheta,
-            vectorTheta: TV2 + TA0,
-            lengthTheta: TL2
-          };
-        }
-
-        const LS3 = getLengthesByTheta('X', TX1);
-        const LX3 = LS3.X * RX1;
-        const LZ3 = LS3.Y * RX1;
-        const RY3 = getLengthByPytha(null, LX3, LY1);
-        const TL3 = getThetaByLengthes('Z', LZ3, RY3);
-        const TV3 = getThetaByLengthes('Y', LX3, LY1);
-        const L0 = Math.sin(TV3);
-        const L1 = Math.cos(TV3);
-        const L2 = Math.cos(TL3) * L1;
-        const T0 = getThetaByLengthes('Y', L2, L0);
-        const T1 = T0 + TV3;
-        const L3 = Math.sin(TV2);
-        const L4 = Math.cos(TV2);
-        const L5 = Math.cos(TL2) * L4;
-        const T2 = getThetaByLengthes('Y', L5, L3);
-        const T3 = T2 + TV2;
-        const TX = T3 - T1;
-
-        return {
-          rotateTheta: TX + base_rotateTheta,
-          vectorTheta: TV2 + TA0,
-          lengthTheta: TL2
-        };
-      };
-
       const output = () => {
-        const axisTheta = vectorTheta - (Math.PI / 2);
-
         momentSurfaces = [];
 
         for (const surfaceCode in surfaces) {
@@ -514,32 +366,30 @@
             let Z = 0;
 
             if (posCode !== "O") {
-              const LS0 = getLengthesByTheta("Z", positions[posCode].X);
-              const RY0 = LS0.Y;
-              const LZ0 = LS0.X;
-              const TY1 = positions[posCode].Y + rotateTheta - axisTheta;
-              const LS1 = getLengthesByTheta("Y", TY1);
-              const LX1 = LS1.X * RY0;
-              const LY1 = LS1.Y * RY0;
-              const TX1 = getThetaByLengthes("X", LX1, LZ0);
-              const RX1 = getLengthByPytha(null, LX1, LZ0);
-              const TX2 = TX1 + lengthTheta;
-              const LS2 = getLengthesByTheta("X", TX2);
-              const LX2 = LS2.X * RX1;
-              const LZ2 = LS2.Y * RX1;
-              const TY2 = getThetaByLengthes("Y", LX2, LY1);
-              const RY2 = getLengthByPytha(null, LX2, LY1);
-              const TY3 = TY2 + axisTheta;
-              const LS3 = getLengthesByTheta("Y", TY3);
-              const LX3 = LS3.X * RY2;
-              const LY3 = LS3.Y * RY2;
+              const RZ0 = Math.sin(positions[posCode].X); // Z面上の半径
+              const LZ0 = Math.cos(positions[posCode].X); // Z軸上の中心点との距離
+              const TZ1 = positions[posCode].Y + axisL; // 回転角度の加算
+              const LX1 = Math.sin(TZ1) * RZ0; // 回転軸に対するX軸上の相対距離
+              const LY1 = Math.cos(TZ1) * RZ0; // 回転軸に対するY軸上の相対距離
+              const RX1 = Math.pow(LY1 * LY1 + LZ0 * LZ0, 1 / 2);
+              const TX1 = RX1 > 0 ? (Math.acos(LZ0 / RX1) * (LY1 >= 0 ? 1 : -1)) : 0;
+              const TX2 = TX1 + axisX;
+              const LY2 = Math.sin(TX2) * RX1;
+              const LZ2 = Math.cos(TX2) * RX1;
+              const RZ2 = Math.pow(LX1 * LX1 + LY2 * LY2, 1 / 2);
+              const TZ2 = RZ2 > 0 ? (Math.acos(LY2 / RZ2) * (LX1 > 0 ? 1 : -1)) : 0;
+              const TZ3 = TZ2 + axisY;
+              const LX3 = Math.sin(TZ3) * RZ2;
+              const LY3 = Math.cos(TZ3) * RZ2;
 
               X = LX3 * positions[posCode].R;
               Y = LY3 * positions[posCode].R;
               Z = LZ2 * positions[posCode].R;
-              const focalLength = displaySize * focalLengthPercentage;
-              X *= displayRadius / Math.abs(displayRadius * (focalLength - LZ2 * positions[posCode].R) / focalLength);
-              Y *= displayRadius / Math.abs(displayRadius * (focalLength - LZ2 * positions[posCode].R) / focalLength);
+              if (focalLengthPercentage) {
+                const focalLength = displaySize * focalLengthPercentage;
+                X *= displayRadius / Math.abs(displayRadius * (focalLength - LZ2 * positions[posCode].R) / focalLength);
+                Y *= displayRadius / Math.abs(displayRadius * (focalLength - LZ2 * positions[posCode].R) / focalLength);
+              }
             }
 
             momentPoses[posCode] = { X, Y, Z };
@@ -582,12 +432,10 @@
       };
 
       const outputAuxiliaryLine = () => {
-        const RL = getLengthesByTheta('Z', rotateThetaBase);
-        const RsinLength = displaySize * RL.X;
-        const RcosLength = displaySize * RL.Y;
         const focalLength = displaySize * focalLengthPercentage;
         const Z2 = Math.pow(focalLength * focalLength - R * R, 1 / 2);
         const ER = R / Z2 * focalLength;
+
         auxiliaryLineContext.setTransform(1, 0, 0, 1, 0, 0);
         auxiliaryLineContext.clearRect(0, 0, displaySize, displaySize);
         auxiliaryLineContext.strokeStyle = '#aaaaaa';
@@ -612,77 +460,111 @@
       };
 
       const move = () => {
-        rotateThetaBase = rotateTheta;
-        vectorThetaBase = vectorTheta;
-        lengthThetaBase = lengthTheta;
+        positionAxisX = axisX;
+        positionAxisY = axisY;
+        positionAxisL = axisL;
 
         if (moveType === "vector") {
           const diffX = latestMoveX - latestBaseX;
           const diffY = latestMoveY - latestBaseY;
-          const direction_X = diffX > 0 ? -1 : 1;
-          const direction_Y = diffY > 0 ? 1 : -1;
+          const diffL = Math.pow(diffX * diffX + diffY * diffY, 1 / 2);
+          const diffR = Math.max(diffL, displayRadius / 100);
 
-          let absX = Math.abs(diffX);
-          let absY = Math.abs(diffY);
-          if (absX > 30) absX = 30;
-          if (absY > 30) absY = 30;
-
-          const thetaDiffX = absX / 200 * direction_X;
-          const thetaDiffY = absY / 200 * direction_Y;
-
-          moveRotateTheta = 0;
-          moveVectorTheta = getThetaByLengthes('Y', thetaDiffX, thetaDiffY) * -1 + Math.PI;
-          moveLengthTheta = 0;
-          diffLengthTheta = getLengthByPytha(null, thetaDiffX, thetaDiffY);
-          diffRotateTheta = 0;
+          momentAxisX = Math.PI / 2;
+          momentAxisY = (diffL > 0 ? Math.acos(diffY / diffL) * (diffX >= 0 ? 1 : -1) : 0) + Math.PI / 2;
+          momentAxisL = 0;
+          diffAxisL = diffR > 0 ? Math.asin(diffR / displayRadius) : 0;
         } else {
-          const LD0X = latestBaseX - displayRadius;
-          const LD0Y = latestBaseY - displayRadius;
-          const LD1X = latestMoveX - displayRadius;
-          const LD1Y = latestMoveY - displayRadius;
-          const TD0 = getThetaByLengthes('Y', LD0X, LD0Y);
-          const TD1 = getThetaByLengthes('Y', LD1X, LD1Y);
-          const TD2 = TD1 - TD0;
+          const X1 = latestBaseX - displayRadius;
+          const Y1 = latestBaseY - displayRadius;
+          const X2 = latestMoveX - displayRadius;
+          const Y2 = latestMoveY - displayRadius;
+          const L1 = Math.pow(X1 * X1 + Y1 * Y1, 1 / 2);
+          const L2 = Math.pow(X2 * X2 + Y2 * Y2, 1 / 2);
+          const T1 = L1 > 0 ? Math.acos(Y1 / L1) * (X1 >= 0 ? 1 : -1) : 0;
+          const T2 = L2 > 0 ? Math.acos(Y2 / L2) * (X2 >= 0 ? 1 : -1) : 0;
 
-          const direction_T = TD2 > 0 ? 1 : -1;
-
-          let absT = Math.abs(TD2);
-          if (absT > 0.2) absT = 0.2;
-
-          const thetaDiff = absT * direction_T;
-
-          moveRotateTheta = 0;
-          moveLengthTheta = 0;
-          diffLengthTheta = 0;
-          diffRotateTheta = thetaDiff;
+          momentAxisX = 0;
+          momentAxisY = 0;
+          momentAxisL = 0;
+          diffAxisL = T2 - T1;
         }
+
+        outputAuxiliaryLine();
 
         latestBaseX = latestMoveX;
         latestBaseY = latestMoveY;
       };
 
       const slide = () => {
-        if (diffLengthTheta > 0) {
-          moveLengthTheta += diffLengthTheta;
+        momentAxisL += diffAxisL;
 
-          const thetas = getThetasByRelative(
-            rotateThetaBase,
-            vectorThetaBase,
-            lengthThetaBase,
-            moveRotateTheta,
-            moveVectorTheta,
-            moveLengthTheta,
-          );
+        const RZ0 = Math.sin(positionAxisX); // Z面上の半径
+        const LZ0 = Math.cos(positionAxisX); // Z軸上の中心点との距離
+        const TZ1 = positionAxisY - momentAxisY; // 回転軸に対するZ面上の相対角度
+        const LX1 = Math.sin(TZ1) * RZ0; // 回転軸に対するX軸上の相対距離
+        const LY1 = Math.cos(TZ1) * RZ0; // 回転軸に対するY軸上の相対距離
+        const RX1 = Math.pow(LY1 * LY1 + LZ0 * LZ0, 1 / 2);
+        const TX1 = RX1 > 0 ? Math.acos(LZ0 / RX1) * (LY1 >= 0 ? 1 : -1) : 0;
+        const TX2 = TX1 - momentAxisX; // 回転軸に対するX面上の相対角度
+        const LY2 = Math.sin(TX2) * RX1;
+        const LZ2 = Math.cos(TX2) * RX1;
+        const RZ2 = Math.pow(LX1 * LX1 + LY2 * LY2, 1 / 2);
+        const TZ2 = RZ2 > 0 ? Math.acos(LY2 / RZ2) * (LX1 >= 0 ? 1 : -1) : 0;
+        const TZ3 = TZ2 + momentAxisL; // 回転角度に対するZ面上の相対角度
+        const LX3 = Math.sin(TZ3) * RZ2;
+        const LY3 = Math.cos(TZ3) * RZ2;
+        const RX3 = Math.pow(LY3 * LY3 + LZ2 * LZ2, 1 / 2);
+        const TX3 = RX3 > 0 ? Math.acos(LZ2 / RX3) * (LY3 >= 0 ? 1 : -1) : 0;
+        const TX4 = TX3 + momentAxisX;
+        const LY4 = Math.sin(TX4) * RX3;
+        const LZ4 = Math.cos(TX4) * RX3;
+        const RZ4 = Math.pow(LX3 * LX3 + LY4 * LY4, 1 / 2);
+        const TZ4 = RZ4 > 0 ? Math.acos(LY4 / RZ4) * (LX3 >= 0 ? 1 : -1) : 0;
+        const TZ5 = TZ4 + momentAxisY;
+        const RX5 = Math.pow(RZ4 * RZ4 + LZ4 * LZ4, 1 / 2);
+        const TX5 = RX5 > 0 ? Math.acos(LZ4 / RX5) : 0;
 
-          rotateTheta = thetas.rotateTheta;
-          vectorTheta = thetas.vectorTheta;
-          lengthTheta = thetas.lengthTheta;
-        } else if (diffRotateTheta != 0) {
-          moveRotateTheta += diffRotateTheta;
-          rotateTheta = rotateThetaBase + moveRotateTheta;
-          vectorTheta = vectorThetaBase + moveRotateTheta;
-        }
+        const L_LX0 = Math.sin(positionAxisL);
+        const L_LY0 = Math.cos(positionAxisL) * Math.cos(positionAxisX);
+        const L_LZ0 = Math.cos(positionAxisL) * Math.sin(positionAxisX) * -1;
+        const L_RZ0 = Math.pow(L_LX0 * L_LX0 + L_LY0 * L_LY0, 1 / 2);
+        const L_TZ0 = L_RZ0 > 0 ? Math.acos(L_LY0 / L_RZ0) * (L_LX0 >= 0 ? 1 : -1) : 0;
+        const L_TZ1 = L_TZ0 + positionAxisY - momentAxisY;
+        const L_LX1 = Math.sin(L_TZ1) * L_RZ0;
+        const L_LY1 = Math.cos(L_TZ1) * L_RZ0;
+        const L_RX1 = Math.pow(L_LY1 * L_LY1 + L_LZ0 * L_LZ0, 1 / 2);
+        const L_TX1 = L_RX1 > 0 ? Math.acos(L_LZ0 / L_RX1) * (L_LY1 >= 0 ? 1 : -1) : 0;
+        const L_TX2 = L_TX1 - momentAxisX;
+        const L_LY2 = Math.sin(L_TX2) * L_RX1;
+        const L_LZ2 = Math.cos(L_TX2) * L_RX1;
+        const L_RZ2 = Math.pow(L_LX1 * L_LX1 + L_LY2 * L_LY2, 1 / 2);
+        const L_TZ2 = L_RZ2 > 0 ? Math.acos(L_LY2 / L_RZ2) * (L_LX1 >= 0 ? 1 : -1) : 0;
+        const L_TZ3 = L_TZ2 + momentAxisL;
+        const L_LX3 = Math.sin(L_TZ3) * L_RZ2;
+        const L_LY3 = Math.cos(L_TZ3) * L_RZ2;
+        const L_RX3 = Math.pow(L_LY3 * L_LY3 + L_LZ2 * L_LZ2, 1 / 2);
+        const L_TX3 = L_RX3 > 0 ? Math.acos(L_LZ2 / L_RX3) * (L_LY3 >= 0 ? 1 : -1) : 0;
+        const L_TX4 = L_TX3 + momentAxisX;
+        const L_LY4 = Math.sin(L_TX4) * L_RX3;
+        const L_LZ4 = Math.cos(L_TX4) * L_RX3;
+        const L_RZ4 = Math.pow(L_LX3 * L_LX3 + L_LY4 * L_LY4, 1 / 2);
+        const L_TZ4 = L_RZ4 > 0 ? Math.acos(L_LY4 / L_RZ4) * (L_LX3 >= 0 ? 1 : -1) : 0;
+        const L_TZ5 = L_TZ4 - TZ4;
+        const L_LX5 = Math.sin(L_TZ5) * L_RZ4;
+        const L_LY5 = Math.cos(L_TZ5) * L_RZ4;
+        const L_RX5 = Math.pow(L_LY5 * L_LY5 + L_LZ4 * L_LZ4, 1 / 2);
+        const L_TX5 = L_RX5 > 0 ? Math.acos(L_LZ4 / L_RX5) * (L_LY5 >= 0 ? 1 : -1) : 0;
+        const L_TX6 = L_TX5 - TX5;
+        const L_LY6 = Math.sin(L_TX6) * L_RX5;
+        const L_RZ6 = Math.pow(L_LX5 * L_LX5 + L_LY6 * L_LY6, 1 / 2);
+        const L_TZ6 = L_RZ6 > 0 ? Math.acos(L_LY6 / L_RZ6) * (L_LX5 >= 0 ? 1 : -1) : 0;
+
+        axisX = TX5;
+        axisY = TZ5;
+        axisL = L_TZ6;
       };
+
       const animate = () => {
         if (moveSwitch === true) move();
         slide();
@@ -708,13 +590,13 @@
       };
 
       const resize = () => {
-        displayWrapper.style.width = `${displaySize + 2}px`;
-        displayWrapper.style.height = `${displaySize + 2}px`;
+        displayWrapper.style.width = `${displaySize}px`;
+        displayWrapper.style.height = `${displaySize}px`;
         display.setAttribute("width", displaySize);
         display.setAttribute("height", displaySize);
         auxiliaryLine.setAttribute("width", displaySize);
         auxiliaryLine.setAttribute("height", displaySize);
-        inputD.value = displaySize;
+        form.style.width = `${displaySize}px`;
       };
 
       const getMeterParams = () => {
@@ -756,8 +638,6 @@
         const focalLength = displaySize * focalLengthPercentage;
         horizonDepth = R * R / focalLength;
 
-        inputF.value = Math.floor(displaySize * focalLengthPercentage);
-
         outputAuxiliaryLine();
         if (!animationSwitch) output();
       };
@@ -781,9 +661,9 @@
         latestBaseY = Y;
 
         const displayRect = display.getBoundingClientRect();
-        const relativeDiffX = Math.abs(X - displayRect.left - displayRadius);
-        const relativeDiffY = Math.abs(Y - displayRect.top - displayRadius);
-        const relativeDiffRadius = getLengthByPytha(null, relativeDiffX, relativeDiffY);
+        const relativeDiffX = X - displayRect.left - displayRadius;
+        const relativeDiffY = Y - displayRect.top - displayRadius;
+        const relativeDiffRadius = Math.pow(relativeDiffX * relativeDiffX + relativeDiffY * relativeDiffY, 1 / 2);
         moveType = relativeDiffRadius <= vectorSlideRadius ? "vector" : "rotate";
       };
 
@@ -819,9 +699,7 @@
 
       document.onkeydown = (event) => {
         if (event.code !== "Enter") return;
-        if (document.activeElement.tagName === "INPUT") {
-          event.preventDefault();
-        } else if (animationSwitch === false) {
+        if (animationSwitch === false) {
           startAnimation();
         } else {
           stopAnimation();
@@ -842,9 +720,6 @@
       } else {
         document.onmousemove = documentMousemove;
       }
-
-      inputF.value = Math.floor(displaySize * focalLengthPercentage);
-      form.onsubmit = () => false;
 
       resize();
       outputAuxiliaryLine();
