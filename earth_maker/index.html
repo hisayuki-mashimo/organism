@@ -107,9 +107,9 @@
           const Y = Math.PI * 2 / longitudeL * k2;
           const k1 = k2 > 0 ? k2 - 1 : longitudeL - 1;
 
-          ['N', 'S'].forEach((v) => {
-            positionsBase[`${v}.I${i + 1}.K${k2}.1`] = { R, X: (v === 'N' ? X1 : Math.PI - X1), Y };
-            positionsBase[`${v}.I${i + 1}.K${k2}.2`] = { R, X: (v === 'N' ? X2 : Math.PI - X2), Y };
+          ["N", "S"].forEach((v) => {
+            positionsBase[`${v}.I${i + 1}.K${k2}.1`] = { R, X: (v === "N" ? X1 : Math.PI - X1), Y };
+            positionsBase[`${v}.I${i + 1}.K${k2}.2`] = { R, X: (v === "N" ? X2 : Math.PI - X2), Y };
 
             if (i === 0) {
               terrainParams[v][i][k2] = { S: 0, C: [v, `${v}.I${i + 1}.K${k1}.2`, `${v}.I${i + 1}.K${k2}.2`] };
@@ -131,12 +131,12 @@
       const params = terrainParams.N.concat(terrainParams.S.reverse());
 
       const colors = {
-        default: '#22aa22',
-        LC: '#aa44aa',
+        default: "#22aa22",
+        LC: "#aa44aa",
       };
       const strokeColors = {
-        default: '#22aa22',
-        R: '#ff0000',
+        default: "#22aa22",
+        R: "#ff0000",
       };
 
       const getCoordinate = (latitude, longitude, T, surfaceL) => {
@@ -382,18 +382,14 @@
               const LX3 = Math.sin(TZ3) * RZ2;
               const LY3 = Math.cos(TZ3) * RZ2;
 
-              X = LX3 * positions[posCode].R;
-              Y = LY3 * positions[posCode].R;
+              const focalLength = displaySize * focalLengthPercentage;
+              const focalPercentage = displayRadius / Math.abs(displayRadius * (focalLength - LZ2 * positions[posCode].R) / focalLength);
+              X = LX3 * positions[posCode].R * focalPercentage;
+              Y = LY3 * positions[posCode].R * focalPercentage;
               Z = LZ2 * positions[posCode].R;
-              if (focalLengthPercentage) {
-                const focalLength = displaySize * focalLengthPercentage;
-                X *= displayRadius / Math.abs(displayRadius * (focalLength - LZ2 * positions[posCode].R) / focalLength);
-                Y *= displayRadius / Math.abs(displayRadius * (focalLength - LZ2 * positions[posCode].R) / focalLength);
-              }
             }
 
             momentPoses[posCode] = { X, Y, Z };
-
             zIndex += Z;
           });
 
@@ -438,7 +434,7 @@
 
         auxiliaryLineContext.setTransform(1, 0, 0, 1, 0, 0);
         auxiliaryLineContext.clearRect(0, 0, displaySize, displaySize);
-        auxiliaryLineContext.strokeStyle = '#aaaaaa';
+        auxiliaryLineContext.strokeStyle = "#aaaaaa";
         auxiliaryLineContext.beginPath();
         auxiliaryLineContext.moveTo(0, displayRadius + 0.5);
         auxiliaryLineContext.lineTo(displaySize, displayRadius + 0.5);
@@ -447,13 +443,13 @@
         auxiliaryLineContext.moveTo(displayRadius + 0.5, 0);
         auxiliaryLineContext.lineTo(displayRadius + 0.5, displaySize);
         auxiliaryLineContext.stroke();
-        auxiliaryLineContext.strokeStyle = '#eeeeee';
+        auxiliaryLineContext.strokeStyle = "#eeeeee";
         auxiliaryLineContext.beginPath();
         auxiliaryLineContext.arc(displayRadius + 0.5, displayRadius + 0.5, vectorSlideRadius, 0, Math.PI * 2);
         auxiliaryLineContext.stroke();
         auxiliaryLineContext.beginPath();
-        auxiliaryLineContext.strokeStyle = '#000000';
-        auxiliaryLineContext.fillStyle = '#0066ff';
+        auxiliaryLineContext.strokeStyle = "#000000";
+        auxiliaryLineContext.fillStyle = "#0066ff";
         auxiliaryLineContext.arc(displayRadius, displayRadius, ER, 0, Math.PI * 2);
         auxiliaryLineContext.fill();
         auxiliaryLineContext.stroke();
@@ -710,12 +706,12 @@
         setFocalLengthSwitch(true, getClientPosition(event).X);
       };
 
-      if (typeof display.ontouchstart === 'object') {
+      if (typeof display.ontouchstart === "object") {
         display.ontouchstart = displayOnpointerdown;
       } else {
         display.onpointerdown = displayOnpointerdown;
       }
-      if (typeof document.ontouchmove === 'object') {
+      if (typeof document.ontouchmove === "object") {
         document.ontouchmove = documentMousemove;
       } else {
         document.onmousemove = documentMousemove;
