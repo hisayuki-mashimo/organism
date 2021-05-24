@@ -1,0 +1,150 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      #contents {
+        display: grid;
+        grid-template-columns: auto 10px auto 10px 1fr;
+        grid-template-rows: auto 10px auto;
+        margin: 10px 0 0 10px;
+      }
+      #display-wrapper {
+        position: relavite;
+        border: solid 1px #aaaaaa;
+      }
+      #display-wrapper canvas {
+        position: absolute;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="contents">
+      <div id="display-wrapper">
+        <canvas id="auxiliary"></canvas>
+        <canvas id="display"></canvas>
+      </div>
+    </div>
+    <script>
+      const baseR = 200;
+      const baseLC = 1000;
+      const ALC = 670;
+      const ARC = 7 / 10;
+      const displaySize = 500;
+      const displayRadius = displaySize / 2;
+      const strokeStyle = '#000000';
+      const fillStyle = '#ffffffaa';
+
+      let animationSwitch = false;
+      let animation = null;
+      let latestX = 0;
+      let latestY = 0;
+      let timer = 0;
+
+      const displayWrapper = document.getElementById("display-wrapper");
+      const display = document.getElementById("display");
+      const auxiliary = document.getElementById("auxiliary");
+      const displayContext = display.getContext("2d");
+      const auxiliaryContext = auxiliary.getContext("2d");
+      displayWrapper.style.width = `${displaySize}px`;
+      displayWrapper.style.height = `${displaySize}px`;
+      display.setAttribute("width", displaySize);
+      display.setAttribute("height", displaySize);
+      auxiliary.setAttribute("width", displaySize);
+      auxiliary.setAttribute("height", displaySize);
+      const minL = Math.min(baseLC, ALC);
+      const maxL = Math.max(baseLC, ALC);
+      const divisor = Array(minL).fill(null).map((_, i) => minL - i).find((i) => minL % i === 0 && maxL % i === 0);
+      const multiple = minL * maxL / divisor;
+
+      const AR = baseR * ALC / baseLC; // 回転円の半径
+      const output = () => {
+        const baseL = baseR * 2 * Math.PI / baseLC * timer; // 進行距離
+        const baseT = Math.PI * 2 / baseLC * timer; // 枠円上の角度
+        const AX = Math.sin(baseT) * (baseR - AR); // 回転円のX座標
+        const AY = Math.cos(baseT) * (baseR - AR); // 回転円のY座標
+        const AT = Math.PI * 2 / ALC * timer; // 回転円の相対角度
+        const X = AX + Math.sin(baseT - AT) * AR * ARC; // 回転円のX座標
+        const Y = AY + Math.cos(baseT - AT) * AR * ARC; // 回転円のY座標
+
+        if (timer > 0) {
+          displayContext.setTransform(1, 0, 0, 1, 0, 0);
+          displayContext.moveTo(displayRadius - latestX, displayRadius - latestY);
+          displayContext.lineTo(displayRadius - X, displayRadius - Y);
+          displayContext.closePath();
+          displayContext.strokeStyle = '#ff8888';
+          displayContext.stroke();
+        }
+
+        auxiliaryContext.setTransform(1, 0, 0, 1, 0, 0);
+        auxiliaryContext.clearRect(0, 0, displaySize, displaySize);
+        auxiliaryContext.strokeStyle = '#dddddd';
+        auxiliaryContext.beginPath();
+        auxiliaryContext.arc(displayRadius - 0.5, displayRadius - 0.5, baseR, 0, Math.PI * 2);
+        auxiliaryContext.stroke();
+        auxiliaryContext.beginPath();
+        auxiliaryContext.moveTo(displayRadius, displayRadius);
+        auxiliaryContext.lineTo(displayRadius - Math.sin(baseT) * baseR, displayRadius - Math.cos(baseT) * baseR);
+        auxiliaryContext.closePath();
+        auxiliaryContext.stroke();
+        auxiliaryContext.strokeStyle = '#ddddff';
+        auxiliaryContext.beginPath();
+        auxiliaryContext.arc(displayRadius - AX, displayRadius - AY, AR, 0, Math.PI * 2);
+        auxiliaryContext.closePath();
+        auxiliaryContext.stroke();
+        auxiliaryContext.beginPath();
+        auxiliaryContext.moveTo(displayRadius - AX, displayRadius - AY);
+        auxiliaryContext.lineTo(displayRadius - X, displayRadius - Y);
+        auxiliaryContext.closePath();
+        auxiliaryContext.stroke();
+        Array(8).fill(null).forEach((_, i) => {
+          const ART = baseT - AT + Math.PI * 2 / 8 * i;
+          const ARL = AR * 8 / 10;
+          auxiliaryContext.beginPath();
+          auxiliaryContext.arc(displayRadius - AX + Math.sin(ART) * ARL, displayRadius - AY + Math.cos(ART) * ARL, AR / 10, 0, Math.PI * 2);
+          auxiliaryContext.closePath();
+          auxiliaryContext.stroke();
+        });
+
+        latestX = X;
+        latestY = Y;
+      };
+
+      const animate = () => {
+        output();
+        timer ++;
+        if (timer >= multiple) {
+          stopAnimation();
+          auxiliaryContext.setTransform(1, 0, 0, 1, 0, 0);
+          auxiliaryContext.clearRect(0, 0, displaySize, displaySize);
+        }
+      };
+
+      const startAnimation = () => {
+        if (animation) clearInterval(animation);
+        animationSwitch = true;
+        animation = setInterval(animate, 5);
+      };
+
+      const stopAnimation = () => {
+        if (animation) clearInterval(animation);
+        animationSwitch = false;
+        animationStartSwitch = false;
+      };
+
+      document.onkeydown = (event) => {
+        if (event.code !== "Enter") return;
+        if (animationSwitch === false) {
+          startAnimation();
+        } else {
+          stopAnimation();
+        }
+      };
+
+      startAnimation();
+    </script>
+  </body>
+</html>
