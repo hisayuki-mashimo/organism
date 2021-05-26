@@ -5,73 +5,159 @@
       body {
         margin: 0;
         padding: 0;
+        overscroll-behavior-x: none;
+        overscroll-behavior-y: none;
       }
-      #contents {
+      #form {
+        margin: 10px 10px 0 10px;
+        padding: 5px 5px 0 5px;
+        border: solid 1px #aaaaaa;
+        box-sizing: border-box;
+      }
+      #form .row {
         display: grid;
-        grid-template-columns: auto 10px auto 10px 1fr;
-        grid-template-rows: auto 10px auto;
-        margin: 10px 0 0 10px;
+        grid-template-columns: 10% 15% 10% 1fr;
+        list-style: none;
+        margin: 0 0 5px 0;
+        padding: 0;
+      }
+      #form .row .input {
+        width: 50px;
+      }
+      #form .submit-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 0 5px 0;
+        padding-top: 5px;
+        border-top: solid 1px #dddddd;
+      }
+      #form .submit-row button {
+        margin: 0 5px;
+      }
+      #circle-size-meter,
+      #focal-length-meter {
+        position: relative;
+        height: 24px;
+      }
+      #circle-size-meter::before,
+      #focal-length-meter::before {
+        content: "";
+        position: absolute;
+        display: block;
+        width: 100%;
+        height: 1px;
+        top: 50%;
+        border-top: solid 1px #aaaaaa;
+      }
+      #circle-size-meter-handle,
+      #focal-length-meter-handle {
+        position: absolute;
+        top: 0;
+        width: 10px;
+        height: calc(100% - 2px);
+        border: solid 1px #888888;
+        background-color: #ffffff;
       }
       #display-wrapper {
-        position: relavite;
+        position: relative;
+        margin: 10px 0 0 10px;
         border: solid 1px #aaaaaa;
       }
-      #display-wrapper canvas {
+      #display,
+      #auxiliary-line {
         position: absolute;
+        top: 0;
+        left: 0;
       }
     </style>
   </head>
   <body>
-    <div id="contents">
-      <div id="display-wrapper">
-        <canvas id="auxiliary"></canvas>
-        <canvas id="display"></canvas>
+    <form id="form">
+      <div class="row">
+        <div>回転円</div>
+        <div>：<input type="text" class="input" id="circle-size" /></div>
+        <div><button id="circle-size-submit">指定</button></div>
+        <div id="circle-size-meter">
+          <div id="circle-size-meter-handle"></div>
+        </div>
       </div>
+      <div class="row">
+        <div>描画点</div>
+        <div>：<input type="text" class="input" id="focal-length" /></div>
+        <div><button id="focal-length-submit">指定</button></div>
+        <div id="focal-length-meter">
+          <div id="focal-length-meter-handle"></div>
+        </div>
+      </div>
+      <div class="submit-row">
+        <button id="execute">描画開始</button>
+        <button id="pause">停止</button>
+        <button id="delete">削除</button>
+      </div>
+    </form>
+    <div id="display-wrapper">
+      <canvas id="auxiliary">
+      </canvas>
+      <canvas id="display">
+      </canvas>
     </div>
     <script>
       const baseR = 200;
-      const baseLC = 1000;
-      const ALC = 670;
-      const ARC = 7 / 10;
+      const baseLC = 600;
       const displaySize = 500;
       const displayRadius = displaySize / 2;
-      const strokeStyle = '#000000';
-      const fillStyle = '#ffffffaa';
 
       let animationSwitch = false;
       let animation = null;
+      let startedSwitch = false;
       let latestX = 0;
       let latestY = 0;
       let timer = 0;
+      let timerMultiple = 1;
+      let meterHandleDiffX = 0;
+      let circleSize = 350;
+      let AR = baseR * circleSize / baseLC; // 回転円の半径
+      let focalLengthPercentage = 0.5;
+      let meterSwitch = false;
 
       const displayWrapper = document.getElementById("display-wrapper");
       const display = document.getElementById("display");
       const auxiliary = document.getElementById("auxiliary");
+      const form = document.getElementById("form");
       const displayContext = display.getContext("2d");
       const auxiliaryContext = auxiliary.getContext("2d");
+      const meterElements = ["circle-size", "focal-length"].reduce((elements, meterType) => ({
+        ...elements, [meterType]: {
+          input: document.getElementById(`${meterType}`),
+          meter: document.getElementById(`${meterType}-meter`),
+          handle: document.getElementById(`${meterType}-meter-handle`),
+          submit: document.getElementById(`${meterType}-submit`),
+        },
+      }), {});
+      const executeButton = document.getElementById("execute");
+      const pauseButton = document.getElementById("pause");
+      const deleteButton = document.getElementById("delete");
       displayWrapper.style.width = `${displaySize}px`;
       displayWrapper.style.height = `${displaySize}px`;
+      form.style.width = `${displaySize + 2}px`;
       display.setAttribute("width", displaySize);
       display.setAttribute("height", displaySize);
       auxiliary.setAttribute("width", displaySize);
       auxiliary.setAttribute("height", displaySize);
-      const minL = Math.min(baseLC, ALC);
-      const maxL = Math.max(baseLC, ALC);
-      const divisor = Array(minL).fill(null).map((_, i) => minL - i).find((i) => minL % i === 0 && maxL % i === 0);
-      const multiple = minL * maxL / divisor;
 
-      const AR = baseR * ALC / baseLC; // 回転円の半径
       const output = () => {
         const baseL = baseR * 2 * Math.PI / baseLC * timer; // 進行距離
         const baseT = Math.PI * 2 / baseLC * timer; // 枠円上の角度
         const AX = Math.sin(baseT) * (baseR - AR); // 回転円のX座標
         const AY = Math.cos(baseT) * (baseR - AR); // 回転円のY座標
-        const AT = Math.PI * 2 / ALC * timer; // 回転円の相対角度
-        const X = AX + Math.sin(baseT - AT) * AR * ARC; // 回転円のX座標
-        const Y = AY + Math.cos(baseT - AT) * AR * ARC; // 回転円のY座標
+        const AT = Math.PI * 2 / circleSize * timer; // 回転円の相対角度
+        const X = AX + Math.sin(baseT - AT) * AR * focalLengthPercentage; // 回転円のX座標
+        const Y = AY + Math.cos(baseT - AT) * AR * focalLengthPercentage; // 回転円のY座標
 
         if (timer > 0) {
           displayContext.setTransform(1, 0, 0, 1, 0, 0);
+          displayContext.beginPath();
           displayContext.moveTo(displayRadius - latestX, displayRadius - latestY);
           displayContext.lineTo(displayRadius - X, displayRadius - Y);
           displayContext.closePath();
@@ -95,19 +181,20 @@
         auxiliaryContext.arc(displayRadius - AX, displayRadius - AY, AR, 0, Math.PI * 2);
         auxiliaryContext.closePath();
         auxiliaryContext.stroke();
+        Array(8).fill(null).forEach((_, i) => {
+          const ART = baseT - AT + Math.PI * 2 / 8 * (i + 0.5);
+          const ARL = AR * 7 / 10;
+          auxiliaryContext.beginPath();
+          auxiliaryContext.arc(displayRadius - AX + Math.sin(ART) * ARL, displayRadius - AY + Math.cos(ART) * ARL, AR * 0.1, 0, Math.PI * 2);
+          auxiliaryContext.closePath();
+          auxiliaryContext.stroke();
+        });
+        auxiliaryContext.strokeStyle = '#ccccff';
         auxiliaryContext.beginPath();
         auxiliaryContext.moveTo(displayRadius - AX, displayRadius - AY);
         auxiliaryContext.lineTo(displayRadius - X, displayRadius - Y);
         auxiliaryContext.closePath();
         auxiliaryContext.stroke();
-        Array(8).fill(null).forEach((_, i) => {
-          const ART = baseT - AT + Math.PI * 2 / 8 * i;
-          const ARL = AR * 8 / 10;
-          auxiliaryContext.beginPath();
-          auxiliaryContext.arc(displayRadius - AX + Math.sin(ART) * ARL, displayRadius - AY + Math.cos(ART) * ARL, AR / 10, 0, Math.PI * 2);
-          auxiliaryContext.closePath();
-          auxiliaryContext.stroke();
-        });
 
         latestX = X;
         latestY = Y;
@@ -116,35 +203,214 @@
       const animate = () => {
         output();
         timer ++;
-        if (timer >= multiple) {
-          stopAnimation();
-          auxiliaryContext.setTransform(1, 0, 0, 1, 0, 0);
-          auxiliaryContext.clearRect(0, 0, displaySize, displaySize);
+        if (timer < timerMultiple) {
+          if (animationSwitch) animation = setTimeout(animate, 5);
+        } else {
+          endExecution();
         }
       };
 
       const startAnimation = () => {
         if (animation) clearInterval(animation);
         animationSwitch = true;
-        animation = setInterval(animate, 5);
+        animate();
       };
 
       const stopAnimation = () => {
-        if (animation) clearInterval(animation);
+        if (animation) clearTimeout(animation);
         animationSwitch = false;
-        animationStartSwitch = false;
+      };
+
+      const getMeterParams = (meterType) => {
+        const meterRect = meterElements[meterType].meter.getBoundingClientRect();
+        const meterHandleRect = meterElements[meterType].handle.getBoundingClientRect();
+
+        return {
+          left: meterRect.left + meterHandleRect.width / 2,
+          right: meterRect.left + meterRect.width - meterHandleRect.width / 2,
+        };
+      };
+
+      const setMeterPosition = (meterType, percentage) => {
+        if (animationSwitch) return;
+
+        const { left, right } = getMeterParams(meterType);
+        meterElements[meterType].handle.style.left = `${Math.floor((right - left) * percentage)}px`;
+      };
+
+      const setMeterSwitch = (operate, clientX) => {
+        if (animationSwitch) return;
+        meterSwitch = operate;
+        if (operate === false) return;
+        const meterHandleRect = meterElements[operate].handle.getBoundingClientRect();
+        if (clientX >= meterHandleRect.left && clientX <= meterHandleRect.left + meterHandleRect.width) {
+          meterHandleDiffX = clientX - (meterHandleRect.left + meterHandleRect.width / 2);
+        } else {
+          meterHandleDiffX = 0;
+          setMeterLength(operate, clientX);
+        }
+      };
+
+      const setMeterPercentage = (meterType, percentage) => {
+        if (animationSwitch) return;
+        if (percentage < 0) percentage = 0;
+        if (percentage > 1) percentage = 1;
+        percentage = Math.floor(percentage * 100) / 100;
+        setMeterPosition(meterType, percentage);
+        if (meterType === "circle-size") {
+          circleSize = Math.floor(baseLC / 10 + percentage * (baseLC - 10 - baseLC / 10));
+          AR = baseR * circleSize / baseLC;
+          setTimerMultiple();
+          meterElements[meterType].input.value = circleSize;
+        } else {
+          focalLengthPercentage = percentage;
+          meterElements[meterType].input.value = percentage * 100;
+        }
+        output();
+      };
+
+      const setMeterLength = (meterType, clientX) => {
+        if (animationSwitch) return;
+        const { left, right } = getMeterParams(meterType);
+        const percentage = (clientX - meterHandleDiffX - left) / (right - left);
+        setMeterPercentage(meterType, percentage);
+      };
+
+      const submitMeter = (meterType) => {
+        if (animationSwitch) return;
+        const inputValue = parseInt(meterElements[meterType].input.value);
+        if (meterType === "focal-length") {
+          setMeterPercentage(meterType, inputValue / 100);
+        } else {
+          circleSize = inputValue;
+          if (circleSize < baseLC / 10) circleSize = baseLC / 10;
+          if (circleSize > baseLC - 10) circleSize = baseLC - 10;
+          const percentage = (circleSize - baseLC / 10) / (baseLC - 10 - baseLC / 10);
+          setMeterPosition(meterType, percentage);
+          AR = baseR * circleSize / baseLC;
+          meterElements[meterType].input.value = circleSize;
+          setTimerMultiple();
+          output();
+        }
+      };
+
+      const getClientPosition = (event) => ({
+        X: event.clientX !== undefined ? event.clientX : event.changedTouches[0].clientX,
+        Y: event.clientY !== undefined ? event.clientY : event.changedTouches[0].clientY,
+      });
+
+      const setTimerMultiple = () => {
+        const minL = Math.min(baseLC, circleSize);
+        const maxL = Math.max(baseLC, circleSize);
+        const divisor = Array(minL).fill(null).map((_, i) => minL - i).find((i) => minL % i === 0 && maxL % i === 0);
+        timerMultiple = minL * maxL / divisor;
+      }
+
+      const startExecution = () => {
+        startedSwitch = true;
+        startAnimation();
+        meterElements["circle-size"].input.disabled = true;
+        meterElements["circle-size"].submit.disabled = true;
+        meterElements["focal-length"].input.disabled = true;
+        meterElements["focal-length"].submit.disabled = true;
+        executeButton.disabled = true;
+        pauseButton.innerText = "停止";
+        pauseButton.disabled = false;
+        deleteButton.disabled = false;
+      };
+
+      const endExecution = () => {
+        startedSwitch = false;
+        stopAnimation();
+        auxiliaryContext.setTransform(1, 0, 0, 1, 0, 0);
+        auxiliaryContext.clearRect(0, 0, displaySize, displaySize);
+        timer = 0;
+        meterElements["circle-size"].input.disabled = false;
+        meterElements["circle-size"].submit.disabled = false;
+        meterElements["focal-length"].input.disabled = false;
+        meterElements["focal-length"].submit.disabled = false;
+        executeButton.disabled = false;
+      };
+
+      const pause = () => {
+        if (!animationSwitch) {
+          startAnimation();
+          pauseButton.innerText = "停止";
+        } else {
+          stopAnimation();
+          pauseButton.innerText = "再開";
+        }
+      };
+
+      const deleteExecution = () => {
+        endExecution();
+        displayContext.setTransform(1, 0, 0, 1, 0, 0);
+        displayContext.clearRect(0, 0, displaySize, displaySize);
+        output();
+        deleteButton.disabled = true;
+      };
+
+      meterElements["circle-size"].meter.onpointerdown = (event) => {
+        setMeterSwitch("circle-size", getClientPosition(event).X);
+      };
+
+      meterElements["focal-length"].meter.onpointerdown = (event) => {
+        setMeterSwitch("focal-length", getClientPosition(event).X);
       };
 
       document.onkeydown = (event) => {
         if (event.code !== "Enter") return;
-        if (animationSwitch === false) {
-          startAnimation();
+        if (document.activeElement.tagName === "INPUT") {
+          submitMeter(document.activeElement.id);
+        } else if (!startedSwitch && !animationSwitch) {
+          startExecution();
         } else {
-          stopAnimation();
+          pause();
         }
       };
 
-      startAnimation();
+      meterElements["circle-size"].submit.onclick = () => submitMeter("circle-size");
+      meterElements["focal-length"].submit.onclick = () => submitMeter("focal-length");
+
+      const documentMousemove = (event) => {
+        if (animationSwitch || !meterSwitch) return;
+        const { X } = getClientPosition(event);
+        setMeterLength(meterSwitch, X);
+      };
+
+      document.onpointerup = (event) => {
+        setMeterSwitch(false);
+      };
+
+      if (typeof document.ontouchmove === "object") {
+        document.ontouchmove = documentMousemove;
+      } else {
+        document.onmousemove = documentMousemove;
+      }
+
+      executeButton.onclick = () => {
+        if (animationSwitch) return;
+        startExecution();
+      };
+
+      pauseButton.onclick = () => {
+        pause();
+      }
+
+      deleteButton.onclick = () => {
+        deleteExecution();
+      };
+
+      form.onsubmit = () => false;
+
+      setMeterPosition("circle-size", (circleSize - baseLC / 10) / (baseLC - 10 - baseLC / 10));
+      setMeterPosition("focal-length", focalLengthPercentage);
+      meterElements["circle-size"].input.value = circleSize;
+      meterElements["focal-length"].input.value = focalLengthPercentage * 100;
+      pauseButton.disabled = true;
+      deleteButton.disabled = true;
+      setTimerMultiple();
+      output();
     </script>
   </body>
 </html>
