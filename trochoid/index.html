@@ -74,16 +74,27 @@
         left: 0;
       }
       #counter {
+        position: relative;
+        box-sizing: border-box;
         margin-left: 10px;
         height: 30px;
-        line-height: 30px;
-        padding: 0 5px;
-        box-sizing: border-box;
+        padding: 0;
         border-right: solid 1px #aaaaaa;
         border-bottom: solid 1px #aaaaaa;
         border-left: solid 1px #aaaaaa;
-        background-color: #f0f0f0;
+      }
+      #announcer {
+        position: absolute;
+        box-sizing: border-box;
+        width: 100%;
+        height: 29px;
+        line-height: 29px;
+        padding: 0 5px;
         text-align: right;
+      }
+      #gauge {
+        position: absolute;
+        left: 0;
       }
     </style>
   </head>
@@ -132,12 +143,16 @@
       <canvas id="display">
       </canvas>
     </div>
-    <div id="counter"></div>
+    <div id="counter">
+      <canvas id="gauge"></canvas>
+      <div id="announcer"></div>
+    </div>
     <script>
       const baseCircleRadius = 200;
       const baseCircleCircumference = 600;
       const displaySize = 500;
       const displayRadius = displaySize / 2;
+      const gaugeHeight = 29;
 
       const displayWrapper = document.getElementById("display-wrapper");
       const display = document.getElementById("display");
@@ -157,15 +172,21 @@
       const executeButton = document.getElementById("execute");
       const pauseButton = document.getElementById("pause");
       const deleteButton = document.getElementById("delete");
-      const counter = document.getElementById("counter");
+      const counterAnnouncer = document.getElementById("announcer");
+      const counterGauge = document.getElementById("gauge");
+      const counterGaugeContext = counterGauge.getContext("2d");
       displayWrapper.style.width = `${displaySize}px`;
       displayWrapper.style.height = `${displaySize}px`;
+      counterGauge.style.width = `${displaySize}px`;
       form.style.width = `${displaySize + 2}px`;
       counter.style.width = `${displaySize + 2}px`;
       display.setAttribute("width", displaySize);
       display.setAttribute("height", displaySize);
       auxiliary.setAttribute("width", displaySize);
       auxiliary.setAttribute("height", displaySize);
+      counterGauge.setAttribute("width", displaySize);
+      counterGauge.setAttribute("height", gaugeHeight);
+      counterGaugeContext.fillStyle = "#66cc66";
 
       let standingCircleCircumference = baseCircleCircumference;
       let standingCircleRadius= baseCircleRadius;
@@ -240,8 +261,9 @@
       const animate = () => {
         output();
         timer ++;
+        counterGaugeContext.fillRect(0, 0, displaySize * timer / timerMultiple, gaugeHeight);
         if (!(timer % standingCircleCircumference)) {
-          counter.innerText = `${timer / standingCircleCircumference} / ${timerMultiple / standingCircleCircumference}周`;
+          counterAnnouncer.innerText = `${timer / standingCircleCircumference} / ${timerMultiple / standingCircleCircumference}周`;
         }
         if (timer <= timerMultiple) {
           if (animationSwitch) animation = setTimeout(animate, 5);
@@ -367,7 +389,8 @@
         const maxL = Math.max(standingCircleCircumference, rolingCircleCircumference);
         const divisor = Array(minL).fill(null).map((_, i) => minL - i).find((i) => minL % i === 0 && maxL % i === 0);
         timerMultiple = minL * maxL / divisor;
-        counter.innerText = `/ ${timerMultiple / standingCircleCircumference}周`;
+        counterGaugeContext.clearRect(0, 0, displaySize, gaugeHeight);
+        counterAnnouncer.innerText = `/ ${timerMultiple / standingCircleCircumference}周`;
       }
 
       const startExecution = () => {
@@ -383,7 +406,8 @@
         pauseButton.innerText = "停止";
         pauseButton.disabled = false;
         deleteButton.disabled = false;
-        counter.innerText = `0 / ${timerMultiple / standingCircleCircumference}周`;
+        counterGaugeContext.clearRect(0, 0, displaySize, gaugeHeight);
+        counterAnnouncer.innerText = `0 / ${timerMultiple / standingCircleCircumference}周`;
       };
 
       const endExecution = () => {
@@ -399,6 +423,7 @@
         meterElements["focal-length"].input.disabled = false;
         meterElements["focal-length"].submit.disabled = false;
         executeButton.disabled = false;
+        pauseButton.disabled = true;
       };
 
       const pause = () => {
@@ -416,8 +441,10 @@
         displayContext.setTransform(1, 0, 0, 1, 0, 0);
         displayContext.clearRect(0, 0, displaySize, displaySize);
         output();
+        pauseButton.disabled = true;
         deleteButton.disabled = true;
-        counter.innerText = `/ ${timerMultiple / standingCircleCircumference}周`;
+        counterGaugeContext.clearRect(0, 0, displaySize, gaugeHeight);
+        counterAnnouncer.innerText = `/ ${timerMultiple / standingCircleCircumference}周`;
       };
 
       meterElements["standing-circle-circumference"].meter.onpointerdown = (event) => {
