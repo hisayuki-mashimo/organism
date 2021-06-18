@@ -261,6 +261,8 @@
       const animate = () => {
         output();
         timer ++;
+        counterGaugeContext.setTransform(1, 0, 0, 1, 0, 0);
+        counterGaugeContext.clearRect(0, 0, displaySize, gaugeHeight);
         counterGaugeContext.fillRect(0, 0, displaySize * timer / timerMultiple, gaugeHeight);
         if (!(timer % standingCircleCircumference)) {
           counterAnnouncer.innerText = `${timer / standingCircleCircumference} / ${timerMultiple / standingCircleCircumference}周`;
