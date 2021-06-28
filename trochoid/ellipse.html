@@ -125,6 +125,9 @@
       #color-balance-wrapper canvas {
         position: absolute;
       }
+      #tangent-type-wrapper {
+        display: flex;
+      }
       #counter {
         position: relative;
         box-sizing: border-box;
@@ -205,6 +208,10 @@
             <canvas id="color-balance-operator" width="270" height="70"></canvas>
           </div>
         </div>
+        <div class="row" id="tangent-type-wrapper">
+          <input type="radio" name="tangent-type" id="tangent-type-I" checked /><label for="tangent-type-I">内接</label>
+          <input type="radio" name="tangent-type" id="tangent-type-O" /><label for="tangent-type-O">外接</label>
+        </div>
         <div class="submit-row">
           <button id="execute">描画開始</button>
           <button id="pause">停止</button>
@@ -213,10 +220,8 @@
       </form>
       <div id="display-counter-wrapper">
         <div id="display-wrapper">
-          <canvas id="auxiliary">
-          </canvas>
-          <canvas id="display">
-          </canvas>
+          <canvas id="auxiliary"></canvas>
+          <canvas id="display"></canvas>
         </div>
         <div id="counter">
           <canvas id="gauge"></canvas>
@@ -250,6 +255,8 @@
       const counterAnnouncer = document.getElementById("announcer");
       const counterGauge = document.getElementById("gauge");
       const form = document.getElementById("form");
+      const tangentTypeInputI = document.getElementById("tangent-type-I");
+      const tangentTypeInputO = document.getElementById("tangent-type-O");
 
       const displayContext = display.getContext("2d");
       const auxiliaryContext = auxiliary.getContext("2d");
@@ -305,6 +312,7 @@
       let focalTheta = 60 / 180 * Math.PI;
       let focalLength = 0;
       let focalAngle = 0;
+      let tangentType = "I";
       let meterHandleDiffX = 0;
       let meterSwitch = false;
       let animationSwitch = false;
@@ -386,7 +394,7 @@
         const KX = KB !== Infinity ? (PY / (KB + 1 / KB)) : rolingCircleRadiusS * -1;
         const KY = KB !== Infinity ? (KB !== 0 ? (1 / KB * PY / (KB + 1 / KB)) : WY) : 0;
         const KLX = Math.pow(Math.pow(WX - KX, 2) + Math.pow(WY - KY, 2), 1 / 2) * ([1, 3].includes(phase) ? 1 : -1);
-        const KLY = Math.min(Math.pow(KX * KX + KY * KY, 1 / 2), Math.abs(PY)) * -1; // 1で外接 -1で内接
+        const KLY = Math.min(Math.pow(KX * KX + KY * KY, 1 / 2), Math.abs(PY)) * (tangentType === "I" ? -1 : 1);
         const KLT = Math.acos(KLY / PY) * ([0, 1].includes(phase) ? 1 : -1);
         const KL = Math.pow(KLX * KLX + KLY * KLY, 1 / 2);
         const KT = Math.acos(KLY / KL) * (KLX >= 0 ? 1 : -1);
@@ -786,6 +794,8 @@
           meterElements[meterKey].input.disabled = true;
           meterElements[meterKey].submit.disabled = true;
         });
+        tangentTypeInputI.disabled = true;
+        tangentTypeInputO.disabled = true;
         executeButton.disabled = true;
         pauseButton.innerText = "停止";
         pauseButton.disabled = false;
@@ -804,6 +814,8 @@
           meterElements[meterKey].input.disabled = false;
           meterElements[meterKey].submit.disabled = false;
         });
+        tangentTypeInputI.disabled = false;
+        tangentTypeInputO.disabled = false;
         executeButton.disabled = false;
         pauseButton.disabled = true;
       };
@@ -849,6 +861,12 @@
         };
         meterElements[meterKey].submit.onclick = () => submitMeter(meterKey);
       });
+
+      const setTangentType = (operate) => {
+        tangentType = operate;
+        initEllipseApproximationWidthes();
+        output();
+      };
 
       const documentMousemove = (event) => {
         switch (meterSwitch) {
@@ -908,6 +926,14 @@
         if (meterSwitch) return;
         meterSwitch = "color-balance";
         setColorBalance(event, "set");
+      };
+
+      tangentTypeInputI.onchange = (event) => {
+        setTangentType(event.target.checked ? "I" : "O");
+      };
+
+      tangentTypeInputO.onchange = (event) => {
+        setTangentType(event.target.checked ? "O" : "I");
       };
 
       form.onsubmit = () => false;
