@@ -398,12 +398,10 @@
       const startExecution = () => {
         startedSwitch = true;
         startAnimation();
-        meterElements["standing-circle-circumference"].input.disabled = true;
-        meterElements["standing-circle-circumference"].submit.disabled = true;
-        meterElements["roling-circle-circumference"].input.disabled = true;
-        meterElements["roling-circle-circumference"].submit.disabled = true;
-        meterElements["focal-length"].input.disabled = true;
-        meterElements["focal-length"].submit.disabled = true;
+        Object.keys(meterElements).forEach((meterKey) => {
+          meterElements[meterKey].input.disabled = true;
+          meterElements[meterKey].submit.disabled = true;
+        });
         executeButton.disabled = true;
         pauseButton.innerText = "停止";
         pauseButton.disabled = false;
@@ -418,12 +416,10 @@
         auxiliaryContext.setTransform(1, 0, 0, 1, 0, 0);
         auxiliaryContext.clearRect(0, 0, displaySize, displaySize);
         timer = 0;
-        meterElements["standing-circle-circumference"].input.disabled = false;
-        meterElements["standing-circle-circumference"].submit.disabled = false;
-        meterElements["roling-circle-circumference"].input.disabled = false;
-        meterElements["roling-circle-circumference"].submit.disabled = false;
-        meterElements["focal-length"].input.disabled = false;
-        meterElements["focal-length"].submit.disabled = false;
+        Object.keys(meterElements).forEach((meterKey) => {
+          meterElements[meterKey].input.disabled = false;
+          meterElements[meterKey].submit.disabled = false;
+        });
         executeButton.disabled = false;
         pauseButton.disabled = true;
       };
@@ -449,15 +445,11 @@
         counterAnnouncer.innerText = `/ ${timerMultiple / standingCircleCircumference}周`;
       };
 
-      meterElements["standing-circle-circumference"].meter.onpointerdown = (event) => {
-        setMeterSwitch("standing-circle-circumference", getClientPosition(event).X);
-      };
-      meterElements["roling-circle-circumference"].meter.onpointerdown = (event) => {
-        setMeterSwitch("roling-circle-circumference", getClientPosition(event).X);
-      };
-      meterElements["focal-length"].meter.onpointerdown = (event) => {
-        setMeterSwitch("focal-length", getClientPosition(event).X);
-      };
+      Object.keys(meterElements).forEach((meterKey) => {
+        meterElements[meterKey].meter.onpointerdown = (event) => {
+          setMeterSwitch(meterKey, getClientPosition(event).X);
+        };
+      });
 
       document.onkeydown = (event) => {
         if (event.code !== "Enter") return;
