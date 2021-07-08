@@ -236,7 +236,6 @@
       const displaySize = 500;
       const displayRadius = displaySize / 2;
       const gaugeHeight = 30;
-
       const displayWrapper = document.getElementById("display-wrapper");
       const display = document.getElementById("display");
       const auxiliary = document.getElementById("auxiliary");
@@ -257,7 +256,6 @@
       const form = document.getElementById("form");
       const tangentTypeInputI = document.getElementById("tangent-type-I");
       const tangentTypeInputO = document.getElementById("tangent-type-O");
-
       const displayContext = display.getContext("2d");
       const auxiliaryContext = auxiliary.getContext("2d");
       const focalLengthScreenContext = focalLengthScreen.getContext("2d");
@@ -267,7 +265,6 @@
       const colorBaseOperatorContext = colorBaseOperator.getContext("2d");
       const colorBalanceScreenContext = colorBalanceScreen.getContext("2d");
       const colorBalanceOperatorContext = colorBalanceOperator.getContext("2d");
-
       const meterElements = ["standing-circle-circumference", "roling-circle-circumference", "roling-circle-length"].reduce((elements, meterType) => ({
         ...elements, [meterType]: {
           input: document.getElementById(`${meterType}`),
@@ -276,6 +273,7 @@
           submit: document.getElementById(`${meterType}-submit`),
         },
       }), {});
+
       displayWrapper.style.width = `${displaySize}px`;
       displayWrapper.style.height = `${displaySize}px`;
       counterGauge.style.width = `${displaySize}px`;
@@ -288,6 +286,11 @@
       counterGauge.setAttribute("height", gaugeHeight);
       counterGaugeContext.fillStyle = "#66cc66";
       focalLengthScreenContext.strokeStyle = "#880000";
+      focalLengthScreenContext.beginPath();
+      focalLengthScreenContext.arc(60, 60, 25, 0, Math.PI * 2);
+      focalLengthScreenContext.closePath();
+      focalLengthScreenContext.stroke();
+      focalLengthScreenContext.strokeStyle = "#dd7777";
       focalLengthScreenContext.beginPath();
       focalLengthScreenContext.arc(60, 60, 50, 0, Math.PI * 2);
       focalLengthScreenContext.closePath();
@@ -353,22 +356,24 @@
           const PL = (timer + rolingCircleCircumference / rolingCircleLength / 2) % (rolingCircleCircumference / rolingCircleLength);
           const PC = PL / rolingCircleCircumference * rolingCircleLength;
           baseT = Math.PI * 2 / standingCircleCircumference * timer;
-          P0X = Math.sin(baseT) * (standingCircleRadius - rolingCircleRadiusS) - Math.cos(baseT) * Math.sin(Math.PI / rolingCircleLength) * rolingCircleRadiusL * 2 * (PC - 1 / 2);
-          P0Y = Math.cos(baseT) * (standingCircleRadius - rolingCircleRadiusS) + Math.sin(baseT) * Math.sin(Math.PI / rolingCircleLength) * rolingCircleRadiusL * 2 * (PC - 1 / 2);
+          P0X = Math.sin(baseT) * (standingCircleRadius - rolingCircleRadiusS * (tangentType === 'I' ? 1 : -1)) - Math.cos(baseT) * Math.sin(Math.PI / rolingCircleLength) * rolingCircleRadiusL * 2 * (PC - 1 / 2);
+          P0Y = Math.cos(baseT) * (standingCircleRadius - rolingCircleRadiusS * (tangentType === 'I' ? 1 : -1)) + Math.sin(baseT) * Math.sin(Math.PI / rolingCircleLength) * rolingCircleRadiusL * 2 * (PC - 1 / 2);
         } else {
-          const BT = rolingCircleCircumference * (rolingPhase / rolingCircleLength - 1 / rolingCircleLength / 2) / standingCircleCircumference * Math.PI * 2;
           baseT = Math.PI * 2 * (rolingCircleCircumference / rolingCircleLength * (rolingPhase - 1 / 2)) / standingCircleCircumference;
           RT = rolingCircleTheta * rolingTimer / rolingCircleArc;
-          P0X = Math.sin(baseT) * standingCircleRadius + Math.sin(RT - Math.PI / rolingCircleLength - baseT) * rolingCircleRadiusL;
-          P0Y = Math.cos(baseT) * standingCircleRadius - Math.cos(RT - Math.PI / rolingCircleLength - baseT) * rolingCircleRadiusL;
+          const KT = tangentType === 'I'
+            ? baseT + Math.PI - (RT - Math.PI / rolingCircleLength)
+            : baseT + (RT - Math.PI / rolingCircleLength);
+          P0X = Math.sin(baseT) * standingCircleRadius + Math.sin(KT) * rolingCircleRadiusL;
+          P0Y = Math.cos(baseT) * standingCircleRadius + Math.cos(KT) * rolingCircleRadiusL;
         }
 
         RT += rolingCircleLength % 2 ? 0 : Math.PI / rolingCircleLength;
 
         const SX = Math.sin(baseT) * standingCircleRadius;
         const SY = Math.cos(baseT) * standingCircleRadius;
-        const X = P0X - Math.sin(baseT - RT + focalTheta - Math.PI * 2 / rolingCircleLength * (rolingPhase - (rolingMode === 'C' ? 0 : 1))) * rolingCircleRadiusL * focalLengthPercentage;
-        const Y = P0Y - Math.cos(baseT - RT + focalTheta - Math.PI * 2 / rolingCircleLength * (rolingPhase - (rolingMode === 'C' ? 0 : 1))) * rolingCircleRadiusL * focalLengthPercentage;
+        const X = P0X - Math.sin(baseT - RT * (tangentType === 'I' ? 1 : -1) + focalTheta - Math.PI * 2 / rolingCircleLength * (rolingPhase - (rolingMode === 'C' ? 0 : 1)) * (tangentType === 'I' ? 1 : -1)) * rolingCircleRadiusL * focalLengthPercentage;
+        const Y = P0Y - Math.cos(baseT - RT * (tangentType === 'I' ? 1 : -1) + focalTheta - Math.PI * 2 / rolingCircleLength * (rolingPhase - (rolingMode === 'C' ? 0 : 1)) * (tangentType === 'I' ? 1 : -1)) * rolingCircleRadiusL * focalLengthPercentage;
 
         auxiliaryContext.setTransform(1, 0, 0, 1, 0, 0);
         auxiliaryContext.clearRect(0, 0, displaySize, displaySize);
@@ -384,8 +389,8 @@
         auxiliaryContext.strokeStyle = '#ddddff';
         auxiliaryContext.beginPath();
         Array(rolingCircleLength).fill(null).forEach((_, i) => {
-          const RX = P0X - Math.sin(baseT - RT - Math.PI * 2 / rolingCircleLength * i) * rolingCircleRadiusL;
-          const RY = P0Y - Math.cos(baseT - RT - Math.PI * 2 / rolingCircleLength * i) * rolingCircleRadiusL;
+          const RX = P0X - Math.sin(baseT - RT * (tangentType === 'I' ? 1 : -1) - Math.PI * 2 / rolingCircleLength * i) * (tangentType === 'I' ? 1 : -1) * rolingCircleRadiusL;
+          const RY = P0Y - Math.cos(baseT - RT * (tangentType === 'I' ? 1 : -1) - Math.PI * 2 / rolingCircleLength * i) * (tangentType === 'I' ? 1 : -1) * rolingCircleRadiusL;
           if (i === 0) {
             auxiliaryContext.moveTo(displayRadius + RX, displayRadius - RY);
           } else {
@@ -395,8 +400,8 @@
         auxiliaryContext.closePath();
         auxiliaryContext.stroke();
         Array(rolingCircleLength).fill(null).forEach((_, i) => {
-          const ARX = P0X - Math.sin(baseT - RT + Math.PI * 2 / rolingCircleLength * i) * rolingCircleRadiusL * 0.7;
-          const ARY = P0Y - Math.cos(baseT - RT + Math.PI * 2 / rolingCircleLength * i) * rolingCircleRadiusL * 0.7;
+          const ARX = P0X - Math.sin(baseT - RT * (tangentType === 'I' ? 1 : -1) + Math.PI * 2 / rolingCircleLength * i) * (tangentType === 'I' ? 1 : -1) * rolingCircleRadiusL * 0.7;
+          const ARY = P0Y - Math.cos(baseT - RT * (tangentType === 'I' ? 1 : -1) + Math.PI * 2 / rolingCircleLength * i) * (tangentType === 'I' ? 1 : -1) * rolingCircleRadiusL * 0.7;
           auxiliaryContext.beginPath();
           auxiliaryContext.arc(displayRadius + ARX, displayRadius - ARY, rolingCircleRadiusL * 0.1, 0, Math.PI * 2);
           auxiliaryContext.closePath();
@@ -519,7 +524,7 @@
             meterElements[meterType].input.value = rolingCircleCircumference;
             break;
           case "roling-circle-length":
-            rolingCircleLength = Math.floor(3 + percentage * 7);
+            rolingCircleLength = Math.floor(2 + percentage * 8);
             initRolingCircleLengthes();
             setTimerMultiple();
             meterElements[meterType].input.value = rolingCircleLength;
@@ -564,7 +569,7 @@
             rolingCircleLength = inputValue;
             if (rolingCircleLength < 3) rolingCircleLength = 3;
             if (rolingCircleLength > 10) rolingCircleLength = 10;
-            setMeterPosition(meterType, (rolingCircleLength - 3) / 7);
+            setMeterPosition(meterType, (rolingCircleLength - 2) / 8);
             initRolingCircleLengthes();
             meterElements[meterType].input.value = rolingCircleLength;
             setTimerMultiple();
@@ -582,15 +587,15 @@
         const R = Math.pow(X * X + Y * Y, 1 / 2);
         if (R > 50 && operate !== "move") return;
         focalTheta = Math.acos(Y * -1 / R) * (X >= 0 ? 1 : -1);
-        focalLengthPercentage = Math.min(R / 50, 1);
+        focalLengthPercentage = Math.min(R / 25, 2);
 
         displayFocalLength();
         output();
       };
 
       const displayFocalLength = () => {
-        const X = Math.sin(focalTheta) * focalLengthPercentage * 50;
-        const Y = Math.cos(focalTheta) * focalLengthPercentage * -50;
+        const X = Math.sin(focalTheta) * focalLengthPercentage * 25;
+        const Y = Math.cos(focalTheta) * focalLengthPercentage * -25;
         focalLengthOperatorContext.clearRect(0, 0, 120, 120);
         focalLengthOperatorContext.setTransform(1, 0, 0, 1, 0, 0);
         focalLengthOperatorContext.beginPath();
@@ -785,6 +790,7 @@
         auxiliaryContext.setTransform(1, 0, 0, 1, 0, 0);
         auxiliaryContext.clearRect(0, 0, displaySize, displaySize);
         timer = 0;
+        rolingTimer = 0;
         rolingPhase = 0;
         rolingMode = 'C';
         Object.keys(meterElements).forEach((meterKey) => {
@@ -916,7 +922,7 @@
 
       setMeterPosition("standing-circle-circumference", (standingCircleCircumference - baseCircleCircumference / 10) / (baseCircleCircumference - baseCircleCircumference / 10));
       setMeterPosition("roling-circle-circumference", (rolingCircleCircumference - baseCircleCircumference / 10) / (baseCircleCircumference - baseCircleCircumference / 10));
-      setMeterPosition("roling-circle-length", (rolingCircleLength - 3) / 7);
+      setMeterPosition("roling-circle-length", (rolingCircleLength - 2) / 8);
       meterElements["standing-circle-circumference"].input.value = standingCircleCircumference;
       meterElements["roling-circle-circumference"].input.value = rolingCircleCircumference;
       meterElements["roling-circle-length"].input.value = rolingCircleLength;

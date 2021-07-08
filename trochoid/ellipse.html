@@ -289,6 +289,11 @@
       counterGaugeContext.fillStyle = "#66cc66";
       focalLengthScreenContext.strokeStyle = "#880000";
       focalLengthScreenContext.beginPath();
+      focalLengthScreenContext.arc(60, 60, 25, 0, Math.PI * 2);
+      focalLengthScreenContext.closePath();
+      focalLengthScreenContext.stroke();
+      focalLengthScreenContext.strokeStyle = "#dd7777";
+      focalLengthScreenContext.beginPath();
       focalLengthScreenContext.arc(60, 60, 50, 0, Math.PI * 2);
       focalLengthScreenContext.closePath();
       focalLengthScreenContext.stroke();
@@ -606,7 +611,7 @@
         const R = Math.pow(X * X + Y * Y, 1 / 2);
         if (R > 50 && operate !== "move") return;
         focalTheta = Math.acos(Y * -1 / R) * (X >= 0 ? 1 : -1);
-        focalLengthPercentage = Math.min(R / 50, 1);
+        focalLengthPercentage = Math.min(R / 25, 2);
 
         displayFocalLength();
         initEllipseApproximationWidthes();
@@ -614,8 +619,8 @@
       };
 
       const displayFocalLength = () => {
-        const X = Math.sin(focalTheta) * focalLengthPercentage * 50;
-        const Y = Math.cos(focalTheta) * focalLengthPercentage * -50;
+        const X = Math.sin(focalTheta) * focalLengthPercentage * 25;
+        const Y = Math.cos(focalTheta) * focalLengthPercentage * -25;
         focalLengthOperatorContext.clearRect(0, 0, 120, 120);
         focalLengthOperatorContext.setTransform(1, 0, 0, 1, 0, 0);
         focalLengthOperatorContext.beginPath();

@@ -758,6 +758,7 @@
         auxiliaryContext.setTransform(1, 0, 0, 1, 0, 0);
         auxiliaryContext.clearRect(0, 0, displaySize, displaySize);
         timer = 0;
+        rolingTimer = 0;
         rolingPhase = 0;
         rolingMode = 'C';
         Object.keys(meterElements).forEach((meterKey) => {
