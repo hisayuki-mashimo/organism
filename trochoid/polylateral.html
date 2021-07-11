@@ -31,7 +31,7 @@
         align-items: center;
       }
       #form .row .input {
-        margin-right: 5px;
+        margin: 0 5px;
         width: 50px;
       }
       #form .submit-row {
@@ -44,6 +44,14 @@
       }
       #form .submit-row button {
         margin: 0 5px;
+      }
+      .canvas-wrapper {
+        position: relative;
+      }
+      .canvas-wrapper canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
       }
       .meter {
         position: relative;
@@ -68,50 +76,34 @@
         background-color: #ffffff;
       }
       #display-wrapper {
-        position: relative;
         border: solid 1px #aaaaaa;
       }
-      #display,
-      #auxiliary-line,
-      #focal-length-screen,
-      #focal-length-operator {
-        position: absolute;
-        top: 0;
-        left: 0;
+      #focal-length-wrapper,
+      #tangent-type-wrapper {
+        display: flex;
       }
-      #focal-length-wrapper {
+      #focal-length-input-wrapper {
         display: grid;
-        grid-template-columns: 35% 1fr;
         grid-template-rows: auto 1fr;
-        margin: 0;
-        padding: 0;
       }
-      #focal-length-wrapper .title {
-        grid-column: 1;
+      #focal-length-operator-wrapper {
+        margin-left: 5px;
+        width: 120px;
+        height: 120px;
       }
-      #focal-length-announcer-wrapper {
-        grid-column: 1;
-        grid-row: 2;
+      #focal-length-input {
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: flex-start;
-        line-height: 24px;
+        line-height: 32px;
         padding-left: 5px;
       }
-      #focal-length-operator-wrapper {
-        grid-column: 2;
-        grid-row: 1 / 3;
-        position: relative;
-        width: 120px;
-        height: 120px;
-      }
-      #focal-length-announcer-wrapper div {
-        white-space: nowrap;
+      #focal-length-input-wrapper input {
+        width: 40px !important;
       }
       #color-base-wrapper,
       #color-balance-wrapper {
-        position: relative;
         margin: 5px auto 0;
         width: 270px;
       }
@@ -121,15 +113,10 @@
       #color-balance-wrapper {
         height: 70px;
       }
-      #color-base-wrapper canvas,
-      #color-balance-wrapper canvas {
-        position: absolute;
-      }
-      #tangent-type-wrapper {
-        display: flex;
+      #color {
+        width: 70px !important;
       }
       #counter {
-        position: relative;
         box-sizing: border-box;
         height: 30px;
         padding: 0;
@@ -146,10 +133,6 @@
         padding: 0 5px;
         text-align: right;
       }
-      #gauge {
-        position: absolute;
-        left: 0;
-      }
     </style>
   </head>
   <body>
@@ -157,7 +140,7 @@
       <form id="form">
         <div class="row">
           <div class="operator">
-            <span class="title">静止円</span>：<input type="text" class="input" id="standing-circle-circumference" />
+            <span class="title">静止円</span><input type="text" class="input" id="standing-circle-circumference" />
             <button id="standing-circle-circumference-submit">指定</button>
           </div>
           <div class="meter" id="standing-circle-circumference-meter">
@@ -166,7 +149,7 @@
         </div>
         <div class="row">
           <div class="operator">
-            <span class="title">回転円</span>：<input type="text" class="input" id="roling-circle-circumference" />
+            <span class="title">回転円</span><input type="text" class="input" id="roling-circle-circumference" />
             <button id="roling-circle-circumference-submit">指定</button>
           </div>
           <div class="meter" id="roling-circle-circumference-meter">
@@ -175,35 +158,42 @@
         </div>
         <div class="row">
           <div class="operator">
-            <span class="title">角の数</span>：<input type="text" class="input" id="roling-circle-length" />
+            <span class="title">角の数</span><input type="text" class="input" id="roling-circle-length" />
             <button id="roling-circle-length-submit">指定</button>
           </div>
           <div class="meter" id="roling-circle-length-meter">
             <div class="meter-handle" id="roling-circle-length-meter-handle"></div>
           </div>
         </div>
-        <div class="row">
-          <div id="focal-length-wrapper">
-            <div class="title">描画点：</div>
-            <div id="focal-length-announcer-wrapper">
-              <div>長さ：<span id="focal-length-announcer-P"></span>%</div>
-              <div>角度：<span id="focal-length-announcer-T"></span>°</div>
+        <div class="row" id="focal-length-wrapper">
+          <div id="focal-length-input-wrapper">
+            <div class="title">描画点</div>
+            <div id="focal-length-input">
+              <div class="operator">
+                長さ<input type="text" class="input" id="focal-length-P" placeholder="％" />
+                <button id="focal-length-P-submit">指定</button>
+              </div>
+              <div class="operator">
+                角度<input type="text" class="input" id="focal-length-T" placeholder="°" />
+                <button id="focal-length-T-submit">指定</button>
+              </div>
             </div>
-            <div id="focal-length-operator-wrapper">
-              <canvas id="focal-length-screen" width="120" height="120"></canvas>
-              <canvas id="focal-length-operator" width="120" height="120"></canvas>
-            </div>
+          </div>
+          <div id="focal-length-operator-wrapper" class="canvas-wrapper">
+            <canvas id="focal-length-screen" width="120" height="120"></canvas>
+            <canvas id="focal-length-operator" width="120" height="120"></canvas>
           </div>
         </div>
         <div class="row">
           <div class="operator">
-            <span class="title">線の色</span>：<span id="color-announcer"></span>
+            <span class="title">線の色</span><input type="text" class="input" id="color" />
+            <button id="color-submit">指定</button>
           </div>
-          <div id="color-base-wrapper">
+          <div id="color-base-wrapper" class="canvas-wrapper">
             <canvas id="color-base-screen" width="270" height="20"></canvas>
             <canvas id="color-base-operator" width="270" height="20"></canvas>
           </div>
-          <div id="color-balance-wrapper">
+          <div id="color-balance-wrapper" class="canvas-wrapper">
             <canvas id="color-balance-screen" width="270" height="70"></canvas>
             <canvas id="color-balance-operator" width="270" height="70"></canvas>
           </div>
@@ -219,11 +209,11 @@
         </div>
       </form>
       <div id="display-counter-wrapper">
-        <div id="display-wrapper">
+        <div id="display-wrapper" class="canvas-wrapper">
           <canvas id="auxiliary"></canvas>
           <canvas id="display"></canvas>
         </div>
-        <div id="counter">
+        <div id="counter" class="canvas-wrapper">
           <canvas id="gauge"></canvas>
           <div id="announcer"></div>
         </div>
@@ -267,10 +257,14 @@
       const colorBalanceOperatorContext = colorBalanceOperator.getContext("2d");
       const meterElements = ["standing-circle-circumference", "roling-circle-circumference", "roling-circle-length"].reduce((elements, meterType) => ({
         ...elements, [meterType]: {
-          input: document.getElementById(`${meterType}`),
           meter: document.getElementById(`${meterType}-meter`),
           handle: document.getElementById(`${meterType}-meter-handle`),
-          submit: document.getElementById(`${meterType}-submit`),
+        },
+      }), {});
+      const formElements = ["standing-circle-circumference", "roling-circle-circumference", "roling-circle-length", "focal-length-P", "focal-length-T", "color"].reduce((elements, inputType) => ({
+        ...elements, [inputType]: {
+          input: document.getElementById(`${inputType}`),
+          submit: document.getElementById(`${inputType}-submit`),
         },
       }), {});
 
@@ -314,7 +308,7 @@
       let focalTheta = 60 / 180 * Math.PI;
       let focalLength = 0;
       let focalAngle = 0;
-      let tangentType = "I";
+      let tangentVector = 1;
       let meterHandleDiffX = 0;
       let meterSwitch = false;
       let animationSwitch = false;
@@ -333,7 +327,9 @@
       let strokeColor = "#000000";
 
       const initRolingCircleLengthes = () => {
-        rolingCircleRadiusL = baseCircleRadius * rolingCircleCircumference / baseCircleCircumference;
+        rolingCircleRadiusL =  rolingCircleCircumference / baseCircleCircumference * baseCircleRadius
+          * (baseCircleCircumference / rolingCircleLength / 2 / Math.sin(Math.PI / rolingCircleLength))
+          / (baseCircleCircumference / 2 / Math.PI);
         rolingCircleRadiusS = rolingCircleRadiusL * Math.cos(Math.PI / rolingCircleLength);
         // 傾き転換する角度(∵直線上で多角形が1回転がる角)(rolingCircleTheta): 180° - (((180° - (360° / 角数)) / 2) * 2)
         //   = 180° - (180° - 360° / 角数) / 2 * 2
@@ -348,78 +344,75 @@
         rolingCircleArc = rolingCircleCircumference / Math.pow(rolingCircleLength, 2) * Math.PI * 2;
       };
 
+      const drawStroke = (context, poses, strokeStyle = null) => {
+        if (strokeStyle) {
+          context.strokeStyle = strokeStyle;
+        }
+        context.beginPath();
+        poses.forEach(([X, Y], i) => {
+          i === 0
+            ? context.moveTo(displayRadius + X, displayRadius - Y)
+            : context.lineTo(displayRadius + X, displayRadius - Y);
+        });
+        context.closePath();
+        context.stroke();
+      };
+
+      const drawArc = (context, X, Y, R, BT, LT, strokeStyle = null) => {
+        if (strokeStyle) {
+          context.strokeStyle = strokeStyle;
+        }
+        context.beginPath();
+        context.arc(displayRadius + X, displayRadius - Y, R, BT - Math.PI, BT + LT - Math.PI);
+        context.closePath();
+        context.stroke();
+      };
+
       const output = () => {
         let baseT = 0;
-        let [P0X, P0Y, RT] = [0, 0, 0];
+        let [OX, OY, RT] = [0, 0, 0];
 
         if (rolingMode === 'C') {
           const PL = (timer + rolingCircleCircumference / rolingCircleLength / 2) % (rolingCircleCircumference / rolingCircleLength);
           const PC = PL / rolingCircleCircumference * rolingCircleLength;
           baseT = Math.PI * 2 / standingCircleCircumference * timer;
-          P0X = Math.sin(baseT) * (standingCircleRadius - rolingCircleRadiusS * (tangentType === 'I' ? 1 : -1)) - Math.cos(baseT) * Math.sin(Math.PI / rolingCircleLength) * rolingCircleRadiusL * 2 * (PC - 1 / 2);
-          P0Y = Math.cos(baseT) * (standingCircleRadius - rolingCircleRadiusS * (tangentType === 'I' ? 1 : -1)) + Math.sin(baseT) * Math.sin(Math.PI / rolingCircleLength) * rolingCircleRadiusL * 2 * (PC - 1 / 2);
+          OX = Math.sin(baseT) * (standingCircleRadius - rolingCircleRadiusS * tangentVector) - Math.cos(baseT) * Math.sin(Math.PI / rolingCircleLength) * rolingCircleRadiusL * 2 * (PC - 1 / 2);
+          OY = Math.cos(baseT) * (standingCircleRadius - rolingCircleRadiusS * tangentVector) + Math.sin(baseT) * Math.sin(Math.PI / rolingCircleLength) * rolingCircleRadiusL * 2 * (PC - 1 / 2);
         } else {
           baseT = Math.PI * 2 * (rolingCircleCircumference / rolingCircleLength * (rolingPhase - 1 / 2)) / standingCircleCircumference;
           RT = rolingCircleTheta * rolingTimer / rolingCircleArc;
-          const KT = tangentType === 'I'
+          const KT = tangentVector === 1
             ? baseT + Math.PI - (RT - Math.PI / rolingCircleLength)
-            : baseT + (RT - Math.PI / rolingCircleLength);
-          P0X = Math.sin(baseT) * standingCircleRadius + Math.sin(KT) * rolingCircleRadiusL;
-          P0Y = Math.cos(baseT) * standingCircleRadius + Math.cos(KT) * rolingCircleRadiusL;
+            : baseT +           (RT - Math.PI / rolingCircleLength);
+          OX = Math.sin(baseT) * standingCircleRadius + Math.sin(KT) * rolingCircleRadiusL;
+          OY = Math.cos(baseT) * standingCircleRadius + Math.cos(KT) * rolingCircleRadiusL;
         }
 
         RT += rolingCircleLength % 2 ? 0 : Math.PI / rolingCircleLength;
 
         const SX = Math.sin(baseT) * standingCircleRadius;
         const SY = Math.cos(baseT) * standingCircleRadius;
-        const X = P0X - Math.sin(baseT - RT * (tangentType === 'I' ? 1 : -1) + focalTheta - Math.PI * 2 / rolingCircleLength * (rolingPhase - (rolingMode === 'C' ? 0 : 1)) * (tangentType === 'I' ? 1 : -1)) * rolingCircleRadiusL * focalLengthPercentage;
-        const Y = P0Y - Math.cos(baseT - RT * (tangentType === 'I' ? 1 : -1) + focalTheta - Math.PI * 2 / rolingCircleLength * (rolingPhase - (rolingMode === 'C' ? 0 : 1)) * (tangentType === 'I' ? 1 : -1)) * rolingCircleRadiusL * focalLengthPercentage;
+        const X = OX - Math.sin(baseT - RT * tangentVector + focalTheta - Math.PI * 2 / rolingCircleLength * (rolingPhase - (rolingMode === 'C' ? 0 : 1)) * tangentVector) * rolingCircleRadiusL * focalLengthPercentage;
+        const Y = OY - Math.cos(baseT - RT * tangentVector + focalTheta - Math.PI * 2 / rolingCircleLength * (rolingPhase - (rolingMode === 'C' ? 0 : 1)) * tangentVector) * rolingCircleRadiusL * focalLengthPercentage;
 
         auxiliaryContext.setTransform(1, 0, 0, 1, 0, 0);
         auxiliaryContext.clearRect(0, 0, displaySize, displaySize);
-        auxiliaryContext.strokeStyle = '#dddddd';
-        auxiliaryContext.beginPath();
-        auxiliaryContext.arc(displayRadius - 0.5, displayRadius - 0.5, standingCircleRadius, 0, Math.PI * 2);
-        auxiliaryContext.stroke();
-        auxiliaryContext.beginPath();
-        auxiliaryContext.moveTo(displayRadius, displayRadius);
-        auxiliaryContext.lineTo(displayRadius + SX, displayRadius - SY);
-        auxiliaryContext.closePath();
-        auxiliaryContext.stroke();
+        drawArc(auxiliaryContext, 0, 0, standingCircleRadius, 0, Math.PI * 2, '#dddddd');
+        drawStroke(auxiliaryContext, [[0, 0], [SX, SY]], '#dddddd');
         auxiliaryContext.strokeStyle = '#ddddff';
-        auxiliaryContext.beginPath();
+        drawStroke(auxiliaryContext, Array(rolingCircleLength).fill(null).map((_, i) => [
+          OX - Math.sin(baseT - RT * tangentVector - Math.PI * 2 / rolingCircleLength * i) * tangentVector * rolingCircleRadiusL,
+          OY - Math.cos(baseT - RT * tangentVector - Math.PI * 2 / rolingCircleLength * i) * tangentVector * rolingCircleRadiusL,
+        ]));
         Array(rolingCircleLength).fill(null).forEach((_, i) => {
-          const RX = P0X - Math.sin(baseT - RT * (tangentType === 'I' ? 1 : -1) - Math.PI * 2 / rolingCircleLength * i) * (tangentType === 'I' ? 1 : -1) * rolingCircleRadiusL;
-          const RY = P0Y - Math.cos(baseT - RT * (tangentType === 'I' ? 1 : -1) - Math.PI * 2 / rolingCircleLength * i) * (tangentType === 'I' ? 1 : -1) * rolingCircleRadiusL;
-          if (i === 0) {
-            auxiliaryContext.moveTo(displayRadius + RX, displayRadius - RY);
-          } else {
-            auxiliaryContext.lineTo(displayRadius + RX, displayRadius - RY);
-          }
+          const ARX = OX - Math.sin(baseT - RT * tangentVector + Math.PI * 2 / rolingCircleLength * i) * tangentVector * rolingCircleRadiusL * 0.7;
+          const ARY = OY - Math.cos(baseT - RT * tangentVector + Math.PI * 2 / rolingCircleLength * i) * tangentVector * rolingCircleRadiusL * 0.7;
+          drawArc(auxiliaryContext, ARX, ARY, rolingCircleRadiusL * 0.1, 0, Math.PI * 2, '#ddddff');
         });
-        auxiliaryContext.closePath();
-        auxiliaryContext.stroke();
-        Array(rolingCircleLength).fill(null).forEach((_, i) => {
-          const ARX = P0X - Math.sin(baseT - RT * (tangentType === 'I' ? 1 : -1) + Math.PI * 2 / rolingCircleLength * i) * (tangentType === 'I' ? 1 : -1) * rolingCircleRadiusL * 0.7;
-          const ARY = P0Y - Math.cos(baseT - RT * (tangentType === 'I' ? 1 : -1) + Math.PI * 2 / rolingCircleLength * i) * (tangentType === 'I' ? 1 : -1) * rolingCircleRadiusL * 0.7;
-          auxiliaryContext.beginPath();
-          auxiliaryContext.arc(displayRadius + ARX, displayRadius - ARY, rolingCircleRadiusL * 0.1, 0, Math.PI * 2);
-          auxiliaryContext.closePath();
-          auxiliaryContext.stroke();
-        });
-        auxiliaryContext.strokeStyle = '#ccccff';
-        auxiliaryContext.beginPath();
-        auxiliaryContext.moveTo(displayRadius + P0X, displayRadius - P0Y);
-        auxiliaryContext.lineTo(displayRadius + X, displayRadius - Y);
-        auxiliaryContext.closePath();
-        auxiliaryContext.stroke();
+        drawStroke(auxiliaryContext, [[OX, OY], [X, Y]], '#ccccff');
         if (timer > 0) {
           displayContext.strokeStyle = strokeColor;
-          displayContext.beginPath();
-          displayContext.moveTo(displayRadius + latestX, displayRadius - latestY);
-          displayContext.lineTo(displayRadius + X, displayRadius - Y);
-          displayContext.closePath();
-          displayContext.stroke();
+          drawStroke(displayContext, [[latestX, latestY], [X, Y]]);
         }
 
         latestX = X;
@@ -441,11 +434,9 @@
 
         output();
 
-        if (rolingMode === 'C') {
-          timer ++;
-        } else {
-          rolingTimer ++;
-        }
+        rolingMode === 'C'
+          ? timer ++
+          : rolingTimer ++;
 
         const D = timer + rolingCircleArc * (rolingPhase - (rolingMode === 'C' ? 0 : 1)) + rolingTimer;
         const M = timerMultiple + timerMultiple / rolingCircleCircumference * rolingCircleArc * rolingCircleLength;
@@ -514,23 +505,21 @@
           case "standing-circle-circumference":
             standingCircleCircumference = Math.floor(baseCircleCircumference / 10 + percentage * (baseCircleCircumference - baseCircleCircumference / 10));
             standingCircleRadius = baseCircleRadius * standingCircleCircumference / baseCircleCircumference;
-            setTimerMultiple();
-            meterElements[meterType].input.value = standingCircleCircumference;
+            formElements[meterType].input.value = standingCircleCircumference;
             break;
           case "roling-circle-circumference":
             rolingCircleCircumference = Math.floor(baseCircleCircumference / 10 + percentage * (baseCircleCircumference - baseCircleCircumference / 10));
             initRolingCircleLengthes();
-            setTimerMultiple();
-            meterElements[meterType].input.value = rolingCircleCircumference;
+            formElements[meterType].input.value = rolingCircleCircumference;
             break;
           case "roling-circle-length":
             rolingCircleLength = Math.floor(2 + percentage * 8);
             initRolingCircleLengthes();
-            setTimerMultiple();
-            meterElements[meterType].input.value = rolingCircleLength;
+            formElements[meterType].input.value = rolingCircleLength;
             break;
           default:
         }
+        setTimerMultiple();
         output();
       };
 
@@ -541,42 +530,86 @@
         setMeterPercentage(meterType, percentage);
       };
 
-      const submitMeter = (meterType) => {
+      const submitParam = (inputType) => {
         if (animationSwitch) return;
-        const inputValue = parseInt(meterElements[meterType].input.value);
-        switch (meterType) {
+
+        if (inputType === "color") {
+          const matched = formElements[inputType].input.value.match(/#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})/i);
+          const [_, DR, DG, DB] = matched || ["", "00", "00", "00"];
+          formElements[inputType].input.value = `#${DR}${DG}${DB}`;
+          const realColors = [
+            { C: "R", V: parseInt(DR, 16) / 255 },
+            { C: "G", V: parseInt(DG, 16) / 255 },
+            { C: "B", V: parseInt(DB, 16) / 255 },
+          ].sort((P1, P2) => P2.V - P1.V);
+          strokeColorBalance = realColors[0].V;
+          strokeColorSaturation = 1 - (realColors[2].V / (strokeColorBalance || 1));
+          strokeColorBase = (() => {
+            const P = 1 - (1 - realColors[1].V / (strokeColorBalance || 1)) / (strokeColorSaturation || 1);
+            switch (true) {
+              case realColors[0].C === "R" && realColors[1].C === "B":
+                return 1 / 6 * (0 + P);
+              case realColors[0].C === "B" && realColors[1].C === "R":
+                return 1 / 6 * (2 - P);
+              case realColors[0].C === "B" && realColors[1].C === "G":
+                return 1 / 6 * (2 + P);
+              case realColors[0].C === "G" && realColors[1].C === "B":
+                return 1 / 6 * (4 - P);
+              case realColors[0].C === "G" && realColors[1].C === "R":
+                return 1 / 6 * (4 + P);
+              default:
+                return 1 / 6 * (6 - P);
+            }
+          })();
+          displayColorBase();
+          displayColorBalance();
+
+          return;
+        }
+
+        let inputValue = parseInt(formElements[inputType].input.value);
+        if (Number.isNaN(inputValue)) inputValue = 0;
+
+        switch (inputType) {
           case "standing-circle-circumference":
-            standingCircleCircumference = inputValue;
-            if (standingCircleCircumference < baseCircleCircumference / 10) standingCircleCircumference = baseCircleCircumference / 10;
-            if (standingCircleCircumference > baseCircleCircumference) standingCircleCircumference = baseCircleCircumference;
-            setMeterPosition(meterType, (standingCircleCircumference - baseCircleCircumference / 10) / (baseCircleCircumference - baseCircleCircumference / 10));
-            standingCircleRadius = baseCircleRadius * standingCircleCircumference / baseCircleCircumference;
-            meterElements[meterType].input.value = standingCircleCircumference;
-            setTimerMultiple();
-            output();
-            break;
           case "roling-circle-circumference":
-            rolingCircleCircumference = inputValue;
-            if (rolingCircleCircumference < baseCircleCircumference / 10) rolingCircleCircumference = baseCircleCircumference / 10;
-            if (rolingCircleCircumference > baseCircleCircumference) rolingCircleCircumference = baseCircleCircumference;
-            setMeterPosition(meterType, (rolingCircleCircumference - baseCircleCircumference / 10) / (baseCircleCircumference - baseCircleCircumference / 10));
-            initRolingCircleLengthes();
-            meterElements[meterType].input.value = rolingCircleCircumference;
+            if (inputValue < baseCircleCircumference / 10) inputValue = baseCircleCircumference / 10;
+            if (inputValue > baseCircleCircumference) inputValue = baseCircleCircumference;
+            setMeterPosition(inputType, (inputValue - baseCircleCircumference / 10) / (baseCircleCircumference - baseCircleCircumference / 10));
+            if (inputType === "standing-circle-circumference") {
+              standingCircleCircumference = inputValue;
+              standingCircleRadius = baseCircleRadius * standingCircleCircumference / baseCircleCircumference;
+            } else {
+              rolingCircleCircumference = inputValue;
+              initRolingCircleLengthes();
+            }
             setTimerMultiple();
-            output();
             break;
           case "roling-circle-length":
+            if (inputValue < 2) inputValue = 2;
+            if (inputValue > 10) inputValue = 10;
             rolingCircleLength = inputValue;
-            if (rolingCircleLength < 3) rolingCircleLength = 3;
-            if (rolingCircleLength > 10) rolingCircleLength = 10;
-            setMeterPosition(meterType, (rolingCircleLength - 2) / 8);
+            setMeterPosition(inputType, (rolingCircleLength - 2) / 8);
             initRolingCircleLengthes();
-            meterElements[meterType].input.value = rolingCircleLength;
             setTimerMultiple();
-            output();
+            break;
+          case "focal-length-P":
+            if (inputValue < 0) rolingCircleLength = 0;
+            if (inputValue > 200) rolingCircleLength = 200;
+            focalLengthPercentage = inputValue / 100;
+            displayFocalLength();
+            break;
+          case "focal-length-T":
+            inputValue = focalThetaD % 360;
+            focalThetaD = inputValue;
+            focalTheta = focalThetaD / 180 * Math.PI;
+            displayFocalLength();
             break;
           default:
         }
+
+        formElements[inputType].input.value = inputValue;
+        output();
       };
 
       const setFocalLength = (event, operate) => {
@@ -588,7 +621,6 @@
         if (R > 50 && operate !== "move") return;
         focalTheta = Math.acos(Y * -1 / R) * (X >= 0 ? 1 : -1);
         focalLengthPercentage = Math.min(R / 25, 2);
-
         displayFocalLength();
         output();
       };
@@ -602,19 +634,12 @@
         focalLengthOperatorContext.arc(60 - X, 60 - Y, 5, 0, Math.PI * 2);
         focalLengthOperatorContext.closePath();
         focalLengthOperatorContext.fill();
-        focalLengthAnnouncerT.innerText = Math.round(focalTheta / Math.PI * 180);
-        focalLengthAnnouncerP.innerText = Math.round(focalLengthPercentage * 100);
+        formElements["focal-length-P"].input.value = Math.round(focalLengthPercentage * 100);
+        formElements["focal-length-T"].input.value = Math.round(focalTheta / Math.PI * 180);
       };
 
       const initColor = () => {
-        const colors = [
-          "#ff0000",
-          "#ff00ff",
-          "#0000ff",
-          "#00ffff",
-          "#00ff00",
-          "#ffff00",
-        ];
+        const colors = ["#ff0000", "#ff00ff", "#0000ff", "#00ffff", "#00ff00", "#ffff00"];
         colors.forEach((color, i) => {
           const XS = 45 * i;
           const XE = 45 * (i + 1);
@@ -658,7 +683,6 @@
         if (PX > 1) PX = 1;
         if (PY < 0) PY = 0;
         if (PY > 1) PY = 1;
-
         strokeColorSaturation = PX;
         strokeColorBalance = 1 - PY;
 
@@ -679,32 +703,30 @@
         B = (B < 16 ? "0" : "") + B.toString(16);
 
         strokeColor = `#${R}${G}${B}`;
-        colorAnnouncer.innerText = strokeColor;
+        formElements["color"].input.value = strokeColor;
       };
 
       const displayColorBase = () => {
+        const drawColorBase = (poses, drawType) => {
+          colorBaseOperatorContext.beginPath();
+          poses.forEach(([X, Y], i) => {
+            i === 0
+              ? colorBaseOperatorContext.moveTo(X, Y)
+              : colorBaseOperatorContext.lineTo(X, Y);
+          });
+          colorBaseOperatorContext.closePath();
+          drawType === 'S'
+            ? colorBaseOperatorContext.stroke()
+            : colorBaseOperatorContext.fill();
+        };
+
         colorBaseOperatorContext.clearRect(0, 0, 270, 20);
         colorBaseOperatorContext.setTransform(1, 0, 0, 1, 0, 0);
-        colorBaseOperatorContext.beginPath();
-        colorBaseOperatorContext.moveTo(270 * strokeColorBase, 0);
-        colorBaseOperatorContext.lineTo(270 * strokeColorBase, 20);
-        colorBaseOperatorContext.closePath();
-        colorBaseOperatorContext.stroke();
-        colorBaseOperatorContext.beginPath();
-        colorBaseOperatorContext.moveTo(270 * strokeColorBase - 5, 8);
-        colorBaseOperatorContext.lineTo(270 * strokeColorBase - 5, 12);
-        colorBaseOperatorContext.lineTo(270 * strokeColorBase - 2, 10);
-        colorBaseOperatorContext.closePath();
-        colorBaseOperatorContext.fill();
-        colorBaseOperatorContext.beginPath();
-        colorBaseOperatorContext.moveTo(270 * strokeColorBase + 5, 8);
-        colorBaseOperatorContext.lineTo(270 * strokeColorBase + 5, 12);
-        colorBaseOperatorContext.lineTo(270 * strokeColorBase + 2, 10);
-        colorBaseOperatorContext.closePath();
-        colorBaseOperatorContext.fill();
+        drawColorBase([[270 * strokeColorBase, 0], [270 * strokeColorBase, 20]], 'S');
+        drawColorBase([[270 * strokeColorBase - 5, 8], [270 * strokeColorBase - 5, 12], [270 * strokeColorBase - 2, 10]], 'F');
+        drawColorBase([[270 * strokeColorBase + 5, 8], [270 * strokeColorBase + 5, 12], [270 * strokeColorBase + 2, 10]], 'F');
 
         const [R, G, B] = getColorElements();
-
         const paletC = colorBalanceScreenContext.createLinearGradient(0, 0, 270, 0);
         paletC.addColorStop(0.0, "#ffffff");
         paletC.addColorStop(1.0, `rgb(${Math.floor(R * 255)}, ${Math.floor(G * 255)}, ${Math.floor(B * 255)})`);
@@ -748,8 +770,10 @@
             return [0, 1, 1 - PB];
           case 4:
             return [PB, 1, 0];
-          default:
+          case 5:
             return [1, 1 - PB, 0];
+          default:
+            return [1, 0, 0];
         }
       };
 
@@ -770,9 +794,9 @@
       const startExecution = () => {
         startedSwitch = true;
         startAnimation();
-        Object.keys(meterElements).forEach((meterKey) => {
-          meterElements[meterKey].input.disabled = true;
-          meterElements[meterKey].submit.disabled = true;
+        Object.keys(formElements).forEach((meterKey) => {
+          formElements[meterKey].input.disabled = true;
+          formElements[meterKey].submit.disabled = true;
         });
         tangentTypeInputI.disabled = true;
         tangentTypeInputO.disabled = true;
@@ -793,9 +817,9 @@
         rolingTimer = 0;
         rolingPhase = 0;
         rolingMode = 'C';
-        Object.keys(meterElements).forEach((meterKey) => {
-          meterElements[meterKey].input.disabled = false;
-          meterElements[meterKey].submit.disabled = false;
+        Object.keys(formElements).forEach((meterKey) => {
+          formElements[meterKey].input.disabled = false;
+          formElements[meterKey].submit.disabled = false;
         });
         tangentTypeInputI.disabled = false;
         tangentTypeInputO.disabled = false;
@@ -828,8 +852,8 @@
         if (event.code !== "Enter") return;
         if (document.activeElement.tagName === "INPUT") {
           const elementId = document.activeElement.id;
-          if (Object.keys(meterElements).includes(elementId)) {
-            submitMeter(elementId);
+          if (Object.keys(formElements).includes(elementId)) {
+            submitParam(elementId);
           }
         } else if (!startedSwitch && !animationSwitch) {
           startExecution();
@@ -838,15 +862,17 @@
         }
       };
 
-      Object.keys(meterElements).forEach((meterKey) => {
-        meterElements[meterKey].meter.onpointerdown = (event) => {
-          setMeterSwitch(meterKey, getClientPosition(event).X);
-        };
-        meterElements[meterKey].submit.onclick = () => submitMeter(meterKey);
+      Object.keys(formElements).forEach((inputKey) => {
+        if (meterElements[inputKey]) {
+          meterElements[inputKey].meter.onpointerdown = (event) => {
+            setMeterSwitch(inputKey, getClientPosition(event).X);
+          };
+        }
+        formElements[inputKey].submit.onclick = () => submitParam(inputKey);
       });
 
-      const setTangentType = (operate) => {
-        tangentType = operate;
+      const setTangentVector = (operate) => {
+        tangentVector = operate;
         output();
       };
 
@@ -911,21 +937,22 @@
       };
 
       tangentTypeInputI.onchange = (event) => {
-        setTangentType(event.target.checked ? "I" : "O");
+        setTangentVector(event.target.checked ? 1 : -1);
       };
 
       tangentTypeInputO.onchange = (event) => {
-        setTangentType(event.target.checked ? "O" : "I");
+        setTangentVector(event.target.checked ? -1 : 1);
       };
 
       form.onsubmit = () => false;
-
       setMeterPosition("standing-circle-circumference", (standingCircleCircumference - baseCircleCircumference / 10) / (baseCircleCircumference - baseCircleCircumference / 10));
       setMeterPosition("roling-circle-circumference", (rolingCircleCircumference - baseCircleCircumference / 10) / (baseCircleCircumference - baseCircleCircumference / 10));
       setMeterPosition("roling-circle-length", (rolingCircleLength - 2) / 8);
-      meterElements["standing-circle-circumference"].input.value = standingCircleCircumference;
-      meterElements["roling-circle-circumference"].input.value = rolingCircleCircumference;
-      meterElements["roling-circle-length"].input.value = rolingCircleLength;
+      formElements["standing-circle-circumference"].input.value = standingCircleCircumference;
+      formElements["roling-circle-circumference"].input.value = rolingCircleCircumference;
+      formElements["roling-circle-length"].input.value = rolingCircleLength;
+      formElements["focal-length-P"].input.value = focalLengthPercentage;
+      formElements["focal-length-T"].input.value = focalTheta;
       displayFocalLength();
       initColor();
       displayColorBase();
