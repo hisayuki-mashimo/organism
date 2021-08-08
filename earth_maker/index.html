@@ -10,20 +10,27 @@
       }
       #contents {
         display: grid;
-        grid-template-columns: auto;
+        grid-template-columns: auto 1fr;
         grid-template-rows: auto auto;
+        margin: 10px 0 0 10px;
+      }
+      .wrapper {
+        box-sizing: border-box;
+        border: solid 1px #aaaaaa;
+        margin: 0 10px 10px 0;
+        display: flex;
+        align-items: center;
       }
       #form {
         grid-column: 1;
         grid-row: 1;
-        box-sizing: border-box;
-        margin: 10px 10px 0 10px;
         padding: 5px;
-        border: solid 1px #aaaaaa;
+        justify-content: space-between;
       }
       #focal-length-meter {
         position: relative;
         height: 24px;
+        width: 80%;
       }
       #focal-length-meter::before {
         content: "";
@@ -39,16 +46,13 @@
         top: 0;
         width: 10px;
         height: calc(100% - 2px);
-        border: solid 1px #888888;
         background-color: #ffffff;
+        border: solid 1px #888888;
       }
       #display-wrapper {
-        box-sizing: border-box;
         grid-column: 1;
         grid-row: 2;
         position: relative;
-        margin: 10px 0 0 10px;
-        border: solid 1px #aaaaaa;
       }
       #display,
       #auxiliary-line {
@@ -56,21 +60,39 @@
         top: 0;
         left: 0;
       }
+      #map-form {
+        grid-column: 2;
+        grid-row: 1;
+      }
+      #map-form input {
+        margin: 0 2px 0 10px;
+      }
+      #map-display-wrapper {
+        grid-column: 2;
+        grid-row: 2;
+        overflow: hidden;
+      }
     </style>
   </head>
   <body>
     <div id="contents">
-      <div id="form">
+      <div class="wrapper left" id="form">
         <div id="title">中心点距離</div>
         <div id="focal-length-meter">
           <div id="focal-length-meter-handle"></div>
         </div>
       </div>
-      <div id="display-wrapper">
-        <canvas id="auxiliary-line">
-        </canvas>
-        <canvas id="display">
-        </canvas>
+      <div class="wrapper canvas-wrapper left" id="display-wrapper">
+        <canvas class="left-canvas" id="auxiliary-line"></canvas>
+        <canvas class="left-canvas" id="display"></canvas>
+      </div>
+      <form class="wrapper right" id="map-form">
+        <input type="radio" name="map_type" value="A" id="map_type_A" checked /><label for="map_type_A">正積円筒</label>
+        <input type="radio" name="map_type" value="B" id="map_type_B" /><label for="map_type_B">正距円筒</label>
+        <input type="radio" name="map_type" value="C" id="map_type_C" /><label for="map_type_C">モルワイデ</label>
+      </form>
+      <div class="wrapper canvas-wrapper right" id="map-display-wrapper">
+        <canvas class="right-canvas" id="map-display"></canvas>
       </div>
     </div>
     <script>
@@ -86,7 +108,8 @@
       };
       const positions = {};
       const terrainParams = { N: [], S: [] };
-      const equators = {};
+      const lines = {};
+      const axises = {};
 
       let surfaces = {};
 
@@ -102,61 +125,59 @@
           terrainParams.N[i + 1] = [];
         }
 
-        Array(longitudeL).fill(null).forEach((_2, k2) => {
-          const Y = Math.PI * 2 / longitudeL * k2;
-          const k1 = k2 > 0 ? k2 - 1 : longitudeL - 1;
+        Array(longitudeL).fill(null).forEach((_2, k1) => {
+          const Y = Math.PI * (1 + 2 / longitudeL * k1);
+          const k2 = k1 < longitudeL - 1 ? k1 + 1 : 0;
 
           ['N', 'S'].forEach((v) => {
-            positionsBase[`${v}.I${i + 1}.K${k2}.1`] = { R, X: (v === 'N' ? X1 : Math.PI - X1), Y };
-            positionsBase[`${v}.I${i + 1}.K${k2}.2`] = { R, X: (v === 'N' ? X2 : Math.PI - X2), Y };
+            positionsBase[`${v}.I${i}.K${k1}.1`] = { R, X: (v === 'N' ? X1 : Math.PI - X1), Y };
+            positionsBase[`${v}.I${i}.K${k1}.2`] = { R, X: (v === 'N' ? X2 : Math.PI - X2), Y };
 
             if (i === 0) {
-              terrainParams[v][i][k2] = { S: 0, C: [v, `${v}.I${i + 1}.K${k1}.2`, `${v}.I${i + 1}.K${k2}.2`] };
+              terrainParams[v][i][k1] = { S: 0, C: [v, `${v}.I${i}.K${k1}.2`, `${v}.I${i}.K${k2}.2`] };
             } else {
-              terrainParams[v][i][k2] = { S: 0, C: [`${v}.I${i + 1}.K${k1}.1`, `${v}.I${i + 1}.K${k1}.2`, `${v}.I${i + 1}.K${k2}.2`, `${v}.I${i + 1}.K${k2}.1`] };
+              terrainParams[v][i][k1] = { S: 0, C: [`${v}.I${i}.K${k1}.1`, `${v}.I${i}.K${k1}.2`, `${v}.I${i}.K${k2}.2`, `${v}.I${i}.K${k2}.1`] };
             }
           });
           if (latitudeL % 2 && i + 2 > latitudeL / 2) {
-            terrainParams.N[i + 1][k2] = { S: 0, C: [`N.I${i + 1}.K${k1}.2`, `S.I${i + 1}.K${k1}.2`, `S.I${i + 1}.K${k2}.2`, `N.I${i + 1}.K${k2}.2`] };
-          }
-          if (i === latitudeL / 2 - 1) {
-            positions[`N.I${i + 1}.K${k1}.2`] = positionsBase[`N.I${i + 1}.K${k1}.2`];
-            positions[`N.I${i + 1}.K${k2}.2`] = positionsBase[`N.I${i + 1}.K${k2}.2`];
-            equators[`R.${k2}`] = [`N.I${i + 1}.K${k1}.2`, `N.I${i + 1}.K${k2}.2`];
+            terrainParams.N[i + 1][k1] = { S: 0, C: [`N.I${i}.K${k1}.2`, `S.I${i}.K${k1}.2`, `S.I${i}.K${k2}.2`, `N.I${i}.K${k2}.2`] };
           }
         });
       });
 
+      Array(latitudeL * 2).fill(null).forEach((_, i) => {
+        const T = Math.PI / latitudeL * i;
+
+        positions[`R.${i}`] = { R, X: Math.PI / 2, Y: T };
+        positions[`K.${i}`] = { R, X: T, Y: 0 };
+        positions[`M.${i}`] = { R, X: T, Y: Math.PI / 2 };
+      });
+
+      ['M', 'K', 'R'].forEach((code) => {
+        Array(latitudeL * 2).fill(null).forEach((_, i) => {
+          const prevI = (i - 1 + latitudeL * 2) % (latitudeL * 2);
+
+          lines[`${code}.${i}`] = (() => {
+            switch (code) {
+              case 'R':
+                return [`R.${prevI}`, `R.${i}`];
+              case 'K':
+                return [`K.${prevI}`, `K.${i}`];
+              case 'M':
+                return [`M.${prevI}`, `M.${i}`];
+            }
+          })();
+        });
+      });
+
+      positions['Z.N0'] = { R, X: 0, Y: 0 };
+      positions['Z.N1'] = { R: R * 2, X: 0, Y: 0 };
+      positions['Z.S0'] = { R, X: Math.PI, Y: 0 };
+      positions['Z.S1'] = { R: R * 2, X: Math.PI, Y: 0 };
+      axises['Z.N'] = ['Z.N0', 'Z.N1'];
+      axises['Z.S'] = ['Z.S0', 'Z.S1'];
+
       const params = terrainParams.N.concat(terrainParams.S.reverse());
-
-      const getCoordinate = (latitude, longitude, T, surfaceL) => {
-        const TI = Math.PI * latitude;
-        const TK = Math.PI * longitude * 2;
-        const TL = Math.PI / latitudeL * surfaceL;
-        const RL = Math.sin(TL);
-        const ZL = Math.cos(TL);
-        const I = Math.cos(T) * RL;
-        const K = Math.sin(T) * RL;
-        const ZL2 = Math.pow(I * I + ZL * ZL, 1 / 2);
-        const TI2 = TI - Math.asin(I / ZL2);
-        const Z = Math.sin(TI2) * ZL2;
-        const Y = Math.cos(TI2) * ZL2;
-        const TI3 = (Math.acos(Y) * (Z >= 0 ? 1 : -1)) % Math.PI;
-        const TK2 = (TK + (K !== 0 ? Math.atan(K / Z) : 0)) % (Math.PI * 2);
-        let I2 = TI3 / Math.PI;
-        let K2 = TK2 / Math.PI / 2;
-        if (I2 < 0) {
-          I2 = I2 * -1;
-          K2 += 1 / 2;
-        }
-        if (K2 < 0) {
-          K2 += 1;
-        } else if (K2 > 1) {
-          K2 -= 1;
-        }
-
-        return [I2, K2];
-      };
 
       const startResolution = 9;
       const landPer = 0.3;
@@ -193,7 +214,7 @@
 
       // 解像度による陸地の再計算
       const expandGradual = () => {
-        const aroundLength = 0.1;
+        const aroundLength = 0.3;
 
         grounds = [];
 
@@ -217,12 +238,17 @@
             let groundW = 0;
 
             Array(prevI_2 - prevI_1 + 1).fill(null).forEach((_, pi) => {
-              const prevK_1 = Math.floor((prevGrounds[prevI_1 + pi].length * k - aroundLength) / longitudeL);
-              const prevK_2 = Math.ceil((prevGrounds[prevI_1 + pi].length * (k + 1) + aroundLength) / longitudeL) - 1;
+              const prevK_1 = ((i === 0 && pi === 0) || (i === resolution - 1 && pi === prevI_2 - prevI_1))
+                ? 0
+                : Math.floor((prevGrounds[prevI_1 + pi].length * k - aroundLength) / longitudeL);
+              const prevK_2 = ((i === 0 && pi === 0) || (i === resolution - 1 && pi === prevI_2 - prevI_1))
+                ? prevGrounds[0].length - 1
+                : Math.ceil((prevGrounds[prevI_1 + pi].length * (k + 1) + aroundLength) / longitudeL) - 1;
               Array(prevK_2 - prevK_1 + 1).fill(null).forEach((_, pk) => {
                 const prevK = (prevK_1 + pk + prevGrounds[prevI_1 + pi].length) % prevGrounds[prevI_1 + pi].length;
+
                 groundL += 1;
-                groundW += prevGrounds[prevI_1 + pi][prevK_1 + pk];
+                groundW += prevGrounds[prevI_1 + pi][prevK];
               });
             });
 
@@ -278,9 +304,6 @@
 
           iparams.forEach((param, k) => {
               Array(i_2 - i_1 + 1).fill(null).forEach((_, pi) => {
-                if (grounds[i_1 + pi] === undefined) {
-                  console.log(`${i} ${k} --- ${i_1} + ${pi}`, grounds);
-                }
                 const k_1 = Math.floor(grounds[i_1 + pi].length * k / iparams.length);
                 const k_2 = Math.ceil(grounds[i_1 + pi].length * (k + 1) / iparams.length) - 1;
                 Array(k_2 - k_1 + 1).fill(null).forEach((_, pk) => {
@@ -302,21 +325,23 @@
       const makeLand = () => {
         expandGradual();
         displayLands();
-        surfaceCodes = Object.keys(surfaces).concat(Object.keys(equators));
-        console.log(`resolution: ${resolution}`);
+        surfaceCodes = Object.keys(surfaces)
+          .concat(Object.keys(lines))
+          .concat(Object.keys(axises));
         output();
+        outputMap();
         if (resolution < latitudeL) {
-          resolution = Math.min(resolution + 2, latitudeL);
-          setTimeout(makeLand, 100);
+          resolution = Math.min(resolution + 4, latitudeL);
+          setTimeout(makeLand, 50);
         }
       };
 
-      let displaySize = 700;
-      let focalLengthPercentage = 1;
+      const displaySize = 500;
+      const displayRadius = displaySize / 2;
+      const vectorSlideRadius = displaySize / 8 * 3;
 
       // 内部変数
-      let displayRadius = displaySize / 2;
-      let vectorSlideRadius = displaySize / 8 * 3;
+      let focalLengthPercentage = 1;
       let moveSwitch = false;
       let latestMoveX = 0;
       let latestMoveY = 0;
@@ -325,11 +350,11 @@
       let moveType = "vector";
       let animationSwitch = false;
       let animationStartSwitch = false;
-      let animation = null;
       let animationTimeout = null;
       let momentPoses = {};
-      let momentSurfaces = [];
-      let momentEquators = [];
+      let momentLines = [];
+      let momentAxises = [];
+      let momentMeridians = [];
       let focalLengthSwitch = false;
       let horizonDepth =  R * R / displaySize / focalLengthPercentage;
       let meterHandleDiffX = 0;
@@ -345,26 +370,45 @@
       let axisX = Math.PI / 2;
       let axisY = 0;
       let axisL = 0;
+      let mapType = 'A';
 
-      const displayWrapper = document.getElementById("display-wrapper");
-      const display = document.getElementById("display");
-      const displayContext = display.getContext("2d");
-      const auxiliaryLine = document.getElementById("auxiliary-line");
-      const auxiliaryLineContext = auxiliaryLine.getContext("2d");
+      const displayContext = document.getElementById("display").getContext("2d");
+      const auxiliaryLineContext =  document.getElementById("auxiliary-line").getContext("2d");
+      const mapDisplayContext = document.getElementById("map-display").getContext("2d");
       const meter = document.getElementById("focal-length-meter");
       const meterHandle = document.getElementById("focal-length-meter-handle");
-      const form = document.getElementById("form");
 
-      let surfaceCodes = Object.keys(surfaces).concat(Object.keys(equators));
+      Array.prototype.forEach.call(document.getElementsByClassName('left'), (elem) => {
+        elem.style.width = `${displaySize}px`;
+      });
+      Array.prototype.forEach.call(document.getElementsByClassName('left-canvas'), (elem) => {
+        elem.setAttribute('width', displaySize);
+        elem.setAttribute('height', displaySize);
+      });
+      Array.prototype.forEach.call(document.getElementsByClassName('right'), (elem) => {
+        elem.style.width = `${R * 4}px`;
+      });
+      Array.prototype.forEach.call(document.getElementsByClassName('right-canvas'), (elem) => {
+        elem.setAttribute('width', R * 4);
+        elem.setAttribute('height', displaySize);
+      });
+      Array.prototype.forEach.call(document.getElementsByClassName('canvas-wrapper'), (elem) => {
+        elem.style.height = `${displaySize}px`;
+      });
+
+      let surfaceCodes = Object.keys(surfaces)
+        .concat(Object.keys(lines))
+        .concat(Object.keys(axises));
 
       const output = () => {
         momentSurfaces = [];
-        momentEquators = [];
+        momentLines = [];
+        momentAxises = [];
 
         surfaceCodes.forEach((surfaceCode) => {
           let zIndex = 0;
 
-          surfaceParams = equators[surfaceCode] || surfaces[surfaceCode];
+          surfaceParams = lines[surfaceCode] || axises[surfaceCode] || surfaces[surfaceCode];
           surfaceParams.forEach((posCode) => {
             let X = 0;
             let Y = 0;
@@ -402,21 +446,44 @@
             zIndex += Z;
           });
 
-          if (zIndex / surfaceParams.length < horizonDepth) return;
+          if (!axises[surfaceCode] && zIndex / surfaceParams.length < horizonDepth) return;
 
           const surfaceParam = { code: surfaceCode, z_index: zIndex / surfaceParams.length };
 
-          if (equators[surfaceCode]) {
-            momentEquators.push(surfaceParam);
+          if (lines[surfaceCode]) {
+            momentLines.push(surfaceParam);
+          } else if (axises[surfaceCode]) {
+            momentAxises.push(surfaceParam);
           } else {
             momentSurfaces.push(surfaceParam);
           }
         });
 
-        momentSurfaces.sort((A, B) => A.z_index - B.z_index);
+        const [PZ1s, PZ2s] = ['Z.N', 'Z.S'].reduce(([_PZ1s, _PZ2s], code) => (
+          momentPoses[`${code}0`].Z > horizonDepth
+            ? [[..._PZ1s, code], _PZ2s]
+            : [_PZ1s, [..._PZ2s, code]]
+        ), [[], []]);
+
+        const focalLength = displaySize * focalLengthPercentage;
+        const Z2 = Math.pow(focalLength * focalLength - R * R, 1 / 2);
+        const ER = R / Z2 * focalLength;
 
         displayContext.setTransform(1, 0, 0, 1, 0, 0);
         displayContext.clearRect(0, 0, displaySize, displaySize);
+        displayContext.strokeStyle = '#000000';
+        PZ2s.forEach((code) => {
+          displayContext.beginPath();
+          displayContext.moveTo(displayRadius + momentPoses[`${code}0`].X, displayRadius + momentPoses[`${code}0`].Y);
+          displayContext.lineTo(displayRadius + momentPoses[`${code}1`].X, displayRadius + momentPoses[`${code}1`].Y);
+          displayContext.closePath();
+          displayContext.stroke();
+        });
+        displayContext.beginPath();
+        displayContext.fillStyle = '#0066ff';
+        displayContext.arc(displayRadius, displayRadius, ER, 0, Math.PI * 2);
+        displayContext.closePath();
+        displayContext.fill();
 
         momentSurfaces.forEach((momentSurface) => {
           displayContext.beginPath();
@@ -438,10 +505,19 @@
           displayContext.stroke();
         });
 
-        displayContext.strokeStyle = '#ff0000';
+        momentLines.forEach((momentSurface) => {
+          displayContext.strokeStyle = (() => {
+            switch (momentSurface.code[0]) {
+              case 'R':
+                return '#ff0000';
+              case 'K':
+                return '#ffffff';
+              default:
+                return '#8888ff';
+            }
+          })();
 
-        momentEquators.forEach((momentSurface) => {
-          const [code1, code2] = equators[momentSurface.code];
+          const [code1, code2] = lines[momentSurface.code];
 
           displayContext.beginPath();
           displayContext.moveTo(displayRadius + momentPoses[code1].X, displayRadius + momentPoses[code1].Y);
@@ -450,13 +526,18 @@
           displayContext.stroke();
         });
 
-        const focalLength = displaySize * focalLengthPercentage;
-        const Z2 = Math.pow(focalLength * focalLength - R * R, 1 / 2);
-        const ER = R / Z2 * focalLength;
         displayContext.beginPath();
         displayContext.strokeStyle = '#000000';
         displayContext.arc(displayRadius, displayRadius, ER, 0, Math.PI * 2);
+        displayContext.closePath();
         displayContext.stroke();
+        PZ1s.forEach((code) => {
+          displayContext.beginPath();
+          displayContext.moveTo(displayRadius + momentPoses[`${code}0`].X, displayRadius + momentPoses[`${code}0`].Y);
+          displayContext.lineTo(displayRadius + momentPoses[`${code}1`].X, displayRadius + momentPoses[`${code}1`].Y);
+          displayContext.closePath();
+          displayContext.stroke();
+        });
       };
 
       const outputAuxiliaryLine = () => {
@@ -469,20 +550,146 @@
         auxiliaryLineContext.strokeStyle = '#aaaaaa';
         auxiliaryLineContext.beginPath();
         auxiliaryLineContext.moveTo(0, displayRadius + 0.5);
-        auxiliaryLineContext.lineTo(displaySize, displayRadius + 0.5);
+        auxiliaryLineContext.lineTo(displaySize - 1, displayRadius + 0.5);
+        auxiliaryLineContext.closePath();
         auxiliaryLineContext.stroke();
         auxiliaryLineContext.beginPath();
         auxiliaryLineContext.moveTo(displayRadius + 0.5, 0);
-        auxiliaryLineContext.lineTo(displayRadius + 0.5, displaySize);
+        auxiliaryLineContext.lineTo(displayRadius + 0.5, displaySize - 1);
+        auxiliaryLineContext.closePath();
         auxiliaryLineContext.stroke();
         auxiliaryLineContext.strokeStyle = '#eeeeee';
         auxiliaryLineContext.beginPath();
         auxiliaryLineContext.arc(displayRadius + 0.5, displayRadius + 0.5, vectorSlideRadius, 0, Math.PI * 2);
+        auxiliaryLineContext.closePath();
         auxiliaryLineContext.stroke();
-        auxiliaryLineContext.beginPath();
-        auxiliaryLineContext.fillStyle = '#0066ff';
-        auxiliaryLineContext.arc(displayRadius, displayRadius, ER, 0, Math.PI * 2);
-        auxiliaryLineContext.fill();
+      };
+
+      const outputMap = () => {
+        mapDisplayContext.setTransform(1, 0, 0, 1, 0, 0);
+        mapDisplayContext.clearRect(0, 0, R * 4, displaySize);
+        mapDisplayContext.fillStyle = '#0066ff';
+        if (mapType === 'C') {
+          mapDisplayContext.beginPath();
+          mapDisplayContext.ellipse(R * 2, displaySize / 2, R * 2, R, 0, 0, Math.PI * 2);
+          mapDisplayContext.closePath();
+          mapDisplayContext.fill();
+        } else {
+          mapDisplayContext.fillRect(0, displaySize / 2 - R, R * 4, R * 2);
+        }
+        mapDisplayContext.strokeStyle = '#88ff88';
+        mapDisplayContext.fillStyle = '#88ff88';
+
+        const KM = Math.PI * 4;
+        const EM = Math.PI;
+
+        const [yws, ywt] = grounds.reduce(([_yws, _ywt], ig, i) => {
+          const [yu, yd] = _yws[_yws.length - 1] || [0, 0];
+
+          switch (mapType) {
+            case 'A':
+              return [[..._yws, [yd, yd + ig.length]], _ywt + ig.length];
+            case 'B':
+              return [[..._yws, [yd, yd + 1]], _ywt + 1];
+            case 'C':
+              const MT = Math.PI / resolution * (i + 1);
+              const MM = Math.PI * 2 * (1 - Math.cos(MT));
+              const MP = MM / KM;
+              const TL = 960;
+              const TU = Math.PI / TL;
+              let H = 0;
+              let T = 0;
+              try {
+                Array(TL).fill(null).forEach((_, n) => {
+                  const _T = TU * n;
+                  const _M = _T - Math.sin(_T) * Math.cos(_T);
+                  if (_M / EM > MP) throw 'break';
+                  H = 1 - Math.cos(_T);
+                  T = _T;
+                });
+              } catch (_e) {
+              }
+
+              return [[..._yws, [yd, H, T]], H];
+            default:
+              return [[..._yws, [0, 0]], 0];
+          }
+        }, [[], 0]);
+
+        grounds.forEach((igrounds, i) => {
+          const [y1, y2] = [
+            displaySize / 2 + R - R * 2 * yws[i][0] / ywt,
+            displaySize / 2 + R - R * 2 * yws[i][1] / ywt,
+          ];
+
+          igrounds.forEach((ground, k) => {
+            if (ground === 1) {
+              const [xu1, xu2, xd1, xd2] = (() => {
+                switch (mapType) {
+                  case 'A':
+                  case 'B':
+                    const x1 = R * 4 * (1 - 1 / igrounds.length * ((k + igrounds.length / 2) % igrounds.length));
+                    const x2 = R * 4 * (1 - 1 / igrounds.length * ((k + igrounds.length / 2) % igrounds.length + 1));
+
+                    return [x1, x2, x1, x2];
+                  case 'C':
+                    const RI1 = Math.sin(yws[i - 1] ? yws[i - 1][2] : 0);
+                    const RI2 = Math.sin(yws[i][2]);
+
+                    return [
+                      1 + RI1 * (1 - 2 / igrounds.length * ((k + igrounds.length / 2) % igrounds.length)),
+                      1 + RI1 * (1 - 2 / igrounds.length * ((k + igrounds.length / 2) % igrounds.length + 1)),
+                      1 + RI2 * (1 - 2 / igrounds.length * ((k + igrounds.length / 2) % igrounds.length)),
+                      1 + RI2 * (1 - 2 / igrounds.length * ((k + igrounds.length / 2) % igrounds.length + 1)),
+                    ].map((w) => w * R * 2);
+                    
+                  default:
+                    return [0, 0, 0, 0];
+                }
+              })(); 
+
+              mapDisplayContext.beginPath();
+              mapDisplayContext.moveTo(xu1, y1);
+              mapDisplayContext.lineTo(xu2, y1);
+              mapDisplayContext.lineTo(xd2, y2);
+              mapDisplayContext.lineTo(xd1, y2);
+              mapDisplayContext.closePath();
+              mapDisplayContext.fill();
+              mapDisplayContext.stroke();
+            }
+          });
+        });
+
+        mapDisplayContext.strokeStyle = '#8888ff';
+        if (mapType === 'C') {
+          mapDisplayContext.beginPath();
+          mapDisplayContext.ellipse(R * 2, displaySize / 2, R, R, 0, 0, Math.PI * 2);
+          mapDisplayContext.closePath();
+          mapDisplayContext.stroke();
+        } else {
+          mapDisplayContext.beginPath();
+          mapDisplayContext.moveTo(R + 0.5, displaySize / 2 - R);
+          mapDisplayContext.lineTo(R + 0.5, displaySize / 2 + R);
+          mapDisplayContext.closePath();
+          mapDisplayContext.stroke();
+          mapDisplayContext.beginPath();
+          mapDisplayContext.moveTo(R * 3 + 0.5, displaySize / 2 - R);
+          mapDisplayContext.lineTo(R * 3 + 0.5, displaySize / 2 + R);
+          mapDisplayContext.closePath();
+          mapDisplayContext.stroke();
+        }
+        mapDisplayContext.strokeStyle = '#ffffff';
+        mapDisplayContext.beginPath();
+        mapDisplayContext.moveTo(R * 2 + 0.5, displaySize / 2 - R);
+        mapDisplayContext.lineTo(R * 2 + 0.5, displaySize / 2 + R);
+        mapDisplayContext.closePath();
+        mapDisplayContext.stroke();
+        mapDisplayContext.strokeStyle = '#ff0000';
+        mapDisplayContext.beginPath();
+        mapDisplayContext.moveTo(0, displaySize / 2 + 0.5);
+        mapDisplayContext.lineTo(R * 4, displaySize / 2 + 0.5);
+        mapDisplayContext.closePath();
+        mapDisplayContext.stroke();
       };
 
       const move = () => {
@@ -595,34 +802,24 @@
         if (moveSwitch === true) move();
         slide();
         output();
+
+        if (animationSwitch) {
+          setTimeout(animate, 25);
+        }
       };
 
       const startAnimation = () => {
-        if (animation) clearInterval(animation);
-
         animationSwitch = true;
-        animation = setInterval(animate, 50);
+        animate();
       };
 
       const stopAnimation = () => {
-        if (animation) clearInterval(animation);
-
         animationSwitch = false;
         animationStartSwitch = false;
       };
 
       const moveStopCheck = (clientX, clientY) => {
         animationStartSwitch = latestMoveX !== clientX || latestMoveY !== clientY;
-      };
-
-      const resize = () => {
-        displayWrapper.style.width = `${displaySize}px`;
-        displayWrapper.style.height = `${displaySize}px`;
-        display.setAttribute("width", displaySize);
-        display.setAttribute("height", displaySize);
-        auxiliaryLine.setAttribute("width", displaySize);
-        auxiliaryLine.setAttribute("height", displaySize);
-        form.style.width = `${displaySize}px`;
       };
 
       const getMeterParams = () => {
@@ -710,6 +907,13 @@
         } 
       };
 
+      document.getElementsByName('map_type').forEach((elem) => {
+        elem.onchange = (event) => {
+          mapType = event.target.value;
+          outputMap();
+        };
+      });
+
       document.onpointerup = (event) => {
         if (moveSwitch === true) {
           moveSwitch = false;
@@ -747,7 +951,6 @@
         document.onmousemove = documentMousemove;
       }
 
-      resize();
       outputAuxiliaryLine();
       setMeterPosition(focalLengthPercentage / 2 - (1 / 4));
       makeLand();
