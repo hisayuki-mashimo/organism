@@ -71,6 +71,21 @@
         grid-row: 2;
         overflow: hidden;
       }
+      @media screen and (max-width: 1000px) {
+        #contents {
+          grid-template-columns: auto;
+          grid-template-rows: auto auto auto auto;
+        }
+        #map-form {
+          grid-column: 1;
+          grid-row: 3;
+        }
+        #map-display-wrapper {
+          grid-column: 1;
+          grid-row: 4;
+          overflow: hidden;
+        }
+      }
     </style>
   </head>
   <body>
@@ -787,8 +802,10 @@
           const diffL = Math.pow(diffX * diffX + diffY * diffY, 1 / 2);
           const diffR = Math.max(diffL, displayRadius / 100);
 
+          if (diffL > 0) {
+            momentAxisY = Math.acos(diffY / diffL) * (diffX >= 0 ? 1 : -1) + Math.PI / 2;
+          }
           momentAxisX = Math.PI / 2;
-          momentAxisY = (diffL > 0 ? Math.acos(diffY / diffL) * (diffX >= 0 ? 1 : -1) : 0) + Math.PI / 2;
           momentAxisL = 0;
           diffAxisL = diffR > 0 ? Math.asin(diffR / displayRadius) : 0;
         } else {
