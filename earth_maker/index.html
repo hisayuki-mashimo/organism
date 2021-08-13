@@ -15,11 +15,17 @@
         margin: 10px 0 0 10px;
       }
       .wrapper {
+        position: relative;
         box-sizing: border-box;
         border: solid 1px #aaaaaa;
         margin: 0 10px 10px 0;
         display: flex;
         align-items: center;
+      }
+      .wrapper canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
       }
       #form {
         grid-column: 1;
@@ -52,13 +58,6 @@
       #display-wrapper {
         grid-column: 1;
         grid-row: 2;
-        position: relative;
-      }
-      #display,
-      #auxiliary-line {
-        position: absolute;
-        top: 0;
-        left: 0;
       }
       #map-form {
         grid-column: 2;
@@ -87,12 +86,13 @@
         <canvas class="left-canvas" id="display"></canvas>
       </div>
       <form class="wrapper right" id="map-form">
-        <input type="radio" name="map_type" value="A" id="map_type_A" checked /><label for="map_type_A">正積円筒</label>
-        <input type="radio" name="map_type" value="B" id="map_type_B" /><label for="map_type_B">正距円筒</label>
+        <input type="radio" name="map_type" value="A" id="map_type_A" /><label for="map_type_A">正距円筒</label>
+        <input type="radio" name="map_type" value="B" id="map_type_B" checked /><label for="map_type_B">正積円筒</label>
         <input type="radio" name="map_type" value="C" id="map_type_C" /><label for="map_type_C">モルワイデ</label>
       </form>
       <div class="wrapper canvas-wrapper right" id="map-display-wrapper">
         <canvas class="right-canvas" id="map-display"></canvas>
+        <canvas class="right-canvas" id="map-display-position"></canvas>
       </div>
     </div>
     <script>
@@ -370,11 +370,12 @@
       let axisX = Math.PI / 2;
       let axisY = 0;
       let axisL = 0;
-      let mapType = 'A';
+      let mapType = 'B';
 
       const displayContext = document.getElementById("display").getContext("2d");
       const auxiliaryLineContext =  document.getElementById("auxiliary-line").getContext("2d");
       const mapDisplayContext = document.getElementById("map-display").getContext("2d");
+      const mapDisplayPositionContext = document.getElementById("map-display-position").getContext("2d");
       const meter = document.getElementById("focal-length-meter");
       const meterHandle = document.getElementById("focal-length-meter-handle");
 
@@ -399,6 +400,75 @@
       let surfaceCodes = Object.keys(surfaces)
         .concat(Object.keys(lines))
         .concat(Object.keys(axises));
+
+      const outputMapPosition = () => {
+        const [AX, AY, AL] = [axisX, axisY, axisL].map((T) => {
+          const pai2 = Math.PI * 2;
+          const T2 = (T % pai2 + pai2) % pai2;
+
+          return T2 - (T2 < Math.PI ? 0 : Math.PI * 2);
+        });
+
+        const [X, Y, T] = (() => {
+          const pai = Math.PI;
+
+          switch (mapType) {
+            case 'A':
+              return [AL / pai, (pai - AX * 2) / pai, AY];
+            case 'B':
+              return [AL / pai, Math.cos(AX), AY];
+            case 'C':
+              const KM = Math.PI * 4;
+              const EM = Math.PI;
+              const MM = Math.PI * 2 * (1 - Math.cos(AX));
+              const MP = MM / KM;
+              const TL = 960;
+              const TU = Math.PI / TL;
+              let [W, H, D] = [0, 0, 0];
+              try {
+                Array(TL).fill(null).forEach((_, n) => {
+                  const _T = TU * n;
+                  const _M = _T - Math.sin(_T) * Math.cos(_T);
+                  if (_M / EM > MP) throw n;
+                });
+              } catch (N) {
+                if (N > 0) {
+                  W = Math.sin(TU * (N - 1)) * AL / pai;
+                  H = Math.cos(TU * (N - 1));
+                }
+              }
+
+              // 楕円比率
+              const EA = AL / Math.PI * 2;
+              const EX = Math.pow((1 - H * H) * EA * EA, 1 / 2) * (AL >= 0 ? 1 : -1);
+              // 接線の傾き
+              const EK = EA * H !== 0 ? EX / (EA * EA * H) : null;
+              const W0 = EK ? (Math.abs(AY) <= Math.PI / 2 ? 1 : -1) / EK : 0;
+              const W1 = Math.pow(Math.pow(1 / Math.cos(AY), 2) - 1, 1 / 2) * (AY >= 0 ? 1 : -1);
+              const W2 = W0 + W1;
+              const S2 = Math.pow(1 + W2 * W2, 1 / 2);
+              const H2 = Math.abs(AY) <= Math.PI / 2 ? 1 : -1;
+              D = Math.acos(H2 / S2) * (W2 >= 0 ? 1 : -1);
+
+              return [W, H, D];
+            default:
+              return [0, 0, 0];
+          }
+        })();
+
+        mapDisplayPositionContext.clearRect(0, 0, R * 4, displaySize);
+        mapDisplayPositionContext.strokeStyle = '#ffffff';
+        mapDisplayPositionContext.fillStyle = '#ffffff';
+        mapDisplayPositionContext.beginPath();
+        mapDisplayPositionContext.arc(R * 2 * (1 + X), displaySize / 2 + R * Y, 10, 0, Math.PI * 2);
+        mapDisplayPositionContext.closePath();
+        mapDisplayPositionContext.stroke();
+        mapDisplayPositionContext.beginPath();
+        mapDisplayPositionContext.arc(R * 2 * (1 + X), displaySize / 2 + R * Y, 10, T - Math.PI / 2 - Math.PI / 5, T - Math.PI / 2 + Math.PI / 5);
+        mapDisplayPositionContext.lineTo(R * 2 * (1 + X) - Math.sin(T + Math.PI) * 20, displaySize / 2 + R * Y + Math.cos(T + Math.PI) * 17);
+        mapDisplayPositionContext.closePath();
+        mapDisplayPositionContext.fill();
+      };
 
       const output = () => {
         momentSurfaces = [];
@@ -538,6 +608,20 @@
           displayContext.closePath();
           displayContext.stroke();
         });
+
+        displayContext.beginPath();
+        displayContext.strokeStyle = '#ffffff';
+        displayContext.fillStyle = '#ffffff';
+        displayContext.arc(displaySize / 2, displaySize / 2, 10, 0, Math.PI * 2);
+        displayContext.closePath();
+        displayContext.stroke();
+        displayContext.beginPath();
+        displayContext.arc(displaySize / 2, displaySize / 2, 10, Math.PI / -2 - Math.PI / 5, Math.PI / -2 + Math.PI / 5);
+        displayContext.lineTo(displaySize / 2, displaySize / 2 - 18);
+        displayContext.closePath();
+        displayContext.fill();
+
+        outputMapPosition();
       };
 
       const outputAuxiliaryLine = () => {
@@ -588,9 +672,9 @@
 
           switch (mapType) {
             case 'A':
-              return [[..._yws, [yd, yd + ig.length]], _ywt + ig.length];
-            case 'B':
               return [[..._yws, [yd, yd + 1]], _ywt + 1];
+            case 'B':
+              return [[..._yws, [yd, yd + ig.length]], _ywt + ig.length];
             case 'C':
               const MT = Math.PI / resolution * (i + 1);
               const MM = Math.PI * 2 * (1 - Math.cos(MT));
@@ -911,6 +995,7 @@
         elem.onchange = (event) => {
           mapType = event.target.value;
           outputMap();
+          outputMapPosition();
         };
       });
 
@@ -921,9 +1006,12 @@
           const { X, Y } = getClientPosition(event);
           latestMoveX = X;
           latestMoveY = Y;
+
+          if (!animationSwitch && animationStartSwitch) {
+            startAnimation();
+          }
         }
 
-        if (animationStartSwitch) startAnimation();
         setFocalLengthSwitch(false);
       };
 
