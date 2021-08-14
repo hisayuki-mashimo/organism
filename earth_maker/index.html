@@ -115,6 +115,8 @@
       const latitudeL = 60;
       const landL = 5;
       const landS = 10;
+      const startResolution = 9;
+      const landPer = 0.3;
 
       const latitudeW = R * Math.PI / latitudeL;
       const positionsBase = {
@@ -185,17 +187,15 @@
         });
       });
 
-      positions['Z.N0'] = { R, X: 0, Y: 0 };
-      positions['Z.N1'] = { R: R * 2, X: 0, Y: 0 };
-      positions['Z.S0'] = { R, X: Math.PI, Y: 0 };
-      positions['Z.S1'] = { R: R * 2, X: Math.PI, Y: 0 };
+      positions['Z.S0'] = { R, X: 0, Y: 0 };
+      positions['Z.S1'] = { R: R * 2, X: 0, Y: 0 };
+      positions['Z.N0'] = { R, X: Math.PI, Y: 0 };
+      positions['Z.N1'] = { R: R * 2, X: Math.PI, Y: 0 };
       axises['Z.N'] = ['Z.N0', 'Z.N1'];
       axises['Z.S'] = ['Z.S0', 'Z.S1'];
 
       const params = terrainParams.N.concat(terrainParams.S.reverse());
 
-      const startResolution = 9;
-      const landPer = 0.3;
       let prevResolution = startResolution;
       let resolution = startResolution + 4;
       let prevGrounds = [];
@@ -416,75 +416,6 @@
         .concat(Object.keys(lines))
         .concat(Object.keys(axises));
 
-      const outputMapPosition = () => {
-        const [AX, AY, AL] = [axisX, axisY, axisL].map((T) => {
-          const pai2 = Math.PI * 2;
-          const T2 = (T % pai2 + pai2) % pai2;
-
-          return T2 - (T2 < Math.PI ? 0 : Math.PI * 2);
-        });
-
-        const [X, Y, T] = (() => {
-          const pai = Math.PI;
-
-          switch (mapType) {
-            case 'A':
-              return [AL / pai, (pai - AX * 2) / pai, AY];
-            case 'B':
-              return [AL / pai, Math.cos(AX), AY];
-            case 'C':
-              const KM = Math.PI * 4;
-              const EM = Math.PI;
-              const MM = Math.PI * 2 * (1 - Math.cos(AX));
-              const MP = MM / KM;
-              const TL = 960;
-              const TU = Math.PI / TL;
-              let [W, H, D] = [0, 0, 0];
-              try {
-                Array(TL).fill(null).forEach((_, n) => {
-                  const _T = TU * n;
-                  const _M = _T - Math.sin(_T) * Math.cos(_T);
-                  if (_M / EM > MP) throw n;
-                });
-              } catch (N) {
-                if (N > 0) {
-                  W = Math.sin(TU * (N - 1)) * AL / pai;
-                  H = Math.cos(TU * (N - 1));
-                }
-              }
-
-              // 楕円比率
-              const EA = AL / Math.PI * 2;
-              const EX = Math.pow((1 - H * H) * EA * EA, 1 / 2) * (AL >= 0 ? 1 : -1);
-              // 接線の傾き
-              const EK = EA * H !== 0 ? EX / (EA * EA * H) : null;
-              const W0 = EK ? (Math.abs(AY) <= Math.PI / 2 ? 1 : -1) / EK : 0;
-              const W1 = Math.pow(Math.pow(1 / Math.cos(AY), 2) - 1, 1 / 2) * (AY >= 0 ? 1 : -1);
-              const W2 = W0 + W1;
-              const S2 = Math.pow(1 + W2 * W2, 1 / 2);
-              const H2 = Math.abs(AY) <= Math.PI / 2 ? 1 : -1;
-              D = Math.acos(H2 / S2) * (W2 >= 0 ? 1 : -1);
-
-              return [W, H, D];
-            default:
-              return [0, 0, 0];
-          }
-        })();
-
-        mapDisplayPositionContext.clearRect(0, 0, R * 4, displaySize);
-        mapDisplayPositionContext.strokeStyle = '#ffffff';
-        mapDisplayPositionContext.fillStyle = '#ffffff';
-        mapDisplayPositionContext.beginPath();
-        mapDisplayPositionContext.arc(R * 2 * (1 + X), displaySize / 2 + R * Y, 10, 0, Math.PI * 2);
-        mapDisplayPositionContext.closePath();
-        mapDisplayPositionContext.stroke();
-        mapDisplayPositionContext.beginPath();
-        mapDisplayPositionContext.arc(R * 2 * (1 + X), displaySize / 2 + R * Y, 10, T - Math.PI / 2 - Math.PI / 5, T - Math.PI / 2 + Math.PI / 5);
-        mapDisplayPositionContext.lineTo(R * 2 * (1 + X) - Math.sin(T + Math.PI) * 20, displaySize / 2 + R * Y + Math.cos(T + Math.PI) * 17);
-        mapDisplayPositionContext.closePath();
-        mapDisplayPositionContext.fill();
-      };
-
       const output = () => {
         momentSurfaces = [];
         momentLines = [];
@@ -499,7 +430,7 @@
             let Y = 0;
             let Z = 0;
 
-            if (posCode !== "O") {
+            if (posCode !== 'O') {
               const RZ0 = Math.sin(positions[posCode].X); // Z面上の半径
               const LZ0 = Math.cos(positions[posCode].X); // Z軸上の中心点との距離
               const TZ1 = positions[posCode].Y + axisL; // 回転角度の加算
@@ -556,8 +487,10 @@
 
         displayContext.setTransform(1, 0, 0, 1, 0, 0);
         displayContext.clearRect(0, 0, displaySize, displaySize);
-        displayContext.strokeStyle = '#000000';
         PZ2s.forEach((code) => {
+          displayContext.strokeStyle = code === 'Z.N'
+            ? '#aa0000'
+            : '#0000aa';
           displayContext.beginPath();
           displayContext.moveTo(displayRadius + momentPoses[`${code}0`].X, displayRadius + momentPoses[`${code}0`].Y);
           displayContext.lineTo(displayRadius + momentPoses[`${code}1`].X, displayRadius + momentPoses[`${code}1`].Y);
@@ -617,6 +550,9 @@
         displayContext.closePath();
         displayContext.stroke();
         PZ1s.forEach((code) => {
+          displayContext.strokeStyle = code === 'Z.N'
+            ? '#aa0000'
+            : '#0000aa';
           displayContext.beginPath();
           displayContext.moveTo(displayRadius + momentPoses[`${code}0`].X, displayRadius + momentPoses[`${code}0`].Y);
           displayContext.lineTo(displayRadius + momentPoses[`${code}1`].X, displayRadius + momentPoses[`${code}1`].Y);
@@ -684,15 +620,15 @@
 
         const [yws, ywt] = grounds.reduce(([_yws, _ywt], ig, i) => {
           const [yu, yd] = _yws[_yws.length - 1] || [0, 0];
+          const MT = Math.PI / resolution * (i + 1);
+          const MM = Math.PI * 2 * (1 - Math.cos(MT));
 
           switch (mapType) {
             case 'A':
               return [[..._yws, [yd, yd + 1]], _ywt + 1];
             case 'B':
-              return [[..._yws, [yd, yd + ig.length]], _ywt + ig.length];
+              return [[..._yws, [yd, MM]], MM];
             case 'C':
-              const MT = Math.PI / resolution * (i + 1);
-              const MM = Math.PI * 2 * (1 - Math.cos(MT));
               const MP = MM / KM;
               const TL = 960;
               const TU = Math.PI / TL;
@@ -789,6 +725,80 @@
         mapDisplayContext.lineTo(R * 4, displaySize / 2 + 0.5);
         mapDisplayContext.closePath();
         mapDisplayContext.stroke();
+      };
+
+      const outputMapPosition = () => {
+        const [AX, AY, AL] = [axisX, axisY, axisL].map((T) => {
+          const pai2 = Math.PI * 2;
+          const T2 = (T % pai2 + pai2) % pai2;
+
+          return T2 - (T2 < Math.PI ? 0 : Math.PI * 2);
+        });
+
+        const [X, Y, T] = (() => {
+          const pai = Math.PI;
+
+          switch (mapType) {
+            case 'A':
+              return [AL / pai, (pai - AX * 2) / pai, AY];
+            case 'B':
+              const KW = Math.sin(AY);
+              const KH = Math.cos(AY) * Math.sin(AX);
+              const KL = Math.pow(KW * KW + KH * KH, 1 / 2);
+              const KD = Math.acos(KH / KL) * (KW >= 0 ? 1 : -1);
+
+              return [AL / pai, Math.cos(AX), KD];
+            case 'C':
+              const KM = Math.PI * 4;
+              const EM = Math.PI;
+              const MM = Math.PI * 2 * (1 - Math.cos(AX));
+              const MP = MM / KM;
+              const TL = 960;
+              const TU = Math.PI / TL;
+              let [W, H, D] = [0, 0, 0];
+              try {
+                Array(TL).fill(null).forEach((_, n) => {
+                  const _T = TU * n;
+                  const _M = _T - Math.sin(_T) * Math.cos(_T);
+                  if (_M / EM > MP) throw n;
+                });
+              } catch (N) {
+                if (N > 0) {
+                  W = Math.sin(TU * (N - 1)) * AL / pai;
+                  H = Math.cos(TU * (N - 1));
+                }
+              }
+
+              // 楕円比率
+              const EA = AL / Math.PI * 2;
+              const EX = Math.pow((1 - H * H) * EA * EA, 1 / 2) * (AL >= 0 ? 1 : -1);
+              // 接線の傾き
+              const EK = EA * H !== 0 ? EX / (EA * EA * H) : null;
+              const W0 = EK ? (Math.abs(AY) <= Math.PI / 2 ? 1 : -1) / EK : 0;
+              const W1 = Math.pow(Math.pow(1 / Math.cos(AY), 2) - 1, 1 / 2) * (AY >= 0 ? 1 : -1);
+              const W2 = W0 + W1;
+              const S2 = Math.pow(1 + W2 * W2, 1 / 2);
+              const H2 = Math.abs(AY) <= Math.PI / 2 ? 1 : -1;
+              D = Math.acos(H2 / S2) * (W2 >= 0 ? 1 : -1);
+
+              return [W, H, D];
+            default:
+              return [0, 0, 0];
+          }
+        })();
+
+        mapDisplayPositionContext.clearRect(0, 0, R * 4, displaySize);
+        mapDisplayPositionContext.strokeStyle = '#ffffff';
+        mapDisplayPositionContext.fillStyle = '#ffffff';
+        mapDisplayPositionContext.beginPath();
+        mapDisplayPositionContext.arc(R * 2 * (1 + X), displaySize / 2 + R * Y, 10, 0, Math.PI * 2);
+        mapDisplayPositionContext.closePath();
+        mapDisplayPositionContext.stroke();
+        mapDisplayPositionContext.beginPath();
+        mapDisplayPositionContext.arc(R * 2 * (1 + X), displaySize / 2 + R * Y, 10, T - Math.PI / 2 - Math.PI / 5, T - Math.PI / 2 + Math.PI / 5);
+        mapDisplayPositionContext.lineTo(R * 2 * (1 + X) - Math.sin(T + Math.PI) * 20, displaySize / 2 + R * Y + Math.cos(T + Math.PI) * 17);
+        mapDisplayPositionContext.closePath();
+        mapDisplayPositionContext.fill();
       };
 
       const move = () => {
