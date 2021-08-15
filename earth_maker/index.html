@@ -117,10 +117,12 @@
       const landS = 10;
       const startResolution = 9;
       const landPer = 0.3;
-
+      const displaySize = 500;
+      const displayRadius = displaySize / 2;
+      const vectorSlideRadius = displaySize / 8 * 3;
       const latitudeW = R * Math.PI / latitudeL;
       const positionsBase = {
-        N: { R, X: 0,       Y: 0 },
+        N: { R, X: 0, Y: 0 },
         S: { R, X: Math.PI, Y: 0 },
       };
       const positions = {};
@@ -128,7 +130,64 @@
       const lines = {};
       const axises = {};
 
+      const displayContext = document.getElementById('display').getContext('2d');
+      const auxiliaryLineContext =  document.getElementById('auxiliary-line').getContext('2d');
+      const mapDisplayContext = document.getElementById('map-display').getContext('2d');
+      const mapDisplayPositionContext = document.getElementById('map-display-position').getContext('2d');
+      const meter = document.getElementById('focal-length-meter');
+      const meterHandle = document.getElementById('focal-length-meter-handle');
+
+      // 内部変数
+      let focalLengthPercentage = 1;
+      let moveSwitch = false;
+      let latestMoveX = 0;
+      let latestMoveY = 0;
+      let latestBaseX = 0;
+      let latestBaseY = 0;
+      let moveType = 'vector';
+      let animationSwitch = false;
+      let animationStartSwitch = false;
+      let animationTimeout = null;
       let surfaces = {};
+      let surfaceCodes = [];
+      let momentPoses = {};
+      let momentLines = [];
+      let momentAxises = [];
+      let momentMeridians = [];
+      let focalLengthSwitch = false;
+      let horizonDepth =  R * R / displaySize / focalLengthPercentage;
+      let meterHandleDiffX = 0;
+      // 位置軸: 静止状態の対象物の基本姿勢からの傾きを表す軸
+      let positionAxisX = Math.PI / 2; // 位置軸のZ軸(正面方向軸)に対する角度(0 ~ π)
+      let positionAxisY = 0; // 位置軸のY軸(上下方向軸)に対する角度(-π ~ π)
+      let positionAxisL = 0; // 位置軸に対する回転角度(-π ~ π)
+      // 回転軸: 自転するベースとなる軸
+      let momentAxisX = 0; // 位置軸のZ軸(正面方向軸)に対する角度(0 ~ π)
+      let momentAxisY = 0; // 位置軸のY軸(上下方向軸)に対する角度(-π ~ π)
+      let momentAxisL = 0; // 位置軸に対する回転角度(-π ~ π)
+      let diffAxisL = 0;
+      let axisX = Math.PI / 2;
+      let axisY = 0;
+      let axisL = 0;
+      let mapType = 'B';
+
+      Array.prototype.forEach.call(document.getElementsByClassName('left'), (elem) => {
+        elem.style.width = `${displaySize}px`;
+      });
+      Array.prototype.forEach.call(document.getElementsByClassName('left-canvas'), (elem) => {
+        elem.setAttribute('width', displaySize);
+        elem.setAttribute('height', displaySize);
+      });
+      Array.prototype.forEach.call(document.getElementsByClassName('right'), (elem) => {
+        elem.style.width = `${R * 4}px`;
+      });
+      Array.prototype.forEach.call(document.getElementsByClassName('right-canvas'), (elem) => {
+        elem.setAttribute('width', R * 4);
+        elem.setAttribute('height', displaySize);
+      });
+      Array.prototype.forEach.call(document.getElementsByClassName('canvas-wrapper'), (elem) => {
+        elem.style.height = `${displaySize}px`;
+      });
 
       Array(Math.ceil(latitudeL / 2)).fill(null).forEach((_1, i) => {
         const X1 = Math.PI / latitudeL * i;
@@ -173,17 +232,7 @@
       ['M', 'K', 'R'].forEach((code) => {
         Array(latitudeL * 2).fill(null).forEach((_, i) => {
           const prevI = (i - 1 + latitudeL * 2) % (latitudeL * 2);
-
-          lines[`${code}.${i}`] = (() => {
-            switch (code) {
-              case 'R':
-                return [`R.${prevI}`, `R.${i}`];
-              case 'K':
-                return [`K.${prevI}`, `K.${i}`];
-              case 'M':
-                return [`M.${prevI}`, `M.${i}`];
-            }
-          })();
+          lines[`${code}.${i}`] = [`${code}.${prevI}`, `${code}.${i}`];
         });
       });
 
@@ -310,6 +359,30 @@
         prevGrounds = grounds;
       };
 
+      const drawStroke = (context, poses, centerLength = displayRadius, strokeStyle = null) => {
+        if (strokeStyle) {
+          context.strokeStyle = strokeStyle;
+        }
+        context.beginPath();
+        poses.forEach(([X, Y], i) => {
+          i === 0
+            ? context.moveTo(centerLength + X, centerLength + Y)
+            : context.lineTo(centerLength + X, centerLength + Y);
+        });
+        context.closePath();
+        context.stroke();
+      };
+
+      const drawArc = (context, X, Y, R, BT, LT, centerLength = displayRadius, strokeStyle = null) => {
+        if (strokeStyle) {
+          context.strokeStyle = strokeStyle;
+        }
+        context.beginPath();
+        context.arc(centerLength + X, centerLength + Y, R, BT - Math.PI, BT + LT - Math.PI);
+        context.closePath();
+        context.stroke();
+      };
+
       const displayLands = () => {
         surfaces = {};
 
@@ -351,71 +424,6 @@
         }
       };
 
-      const displaySize = 500;
-      const displayRadius = displaySize / 2;
-      const vectorSlideRadius = displaySize / 8 * 3;
-
-      // 内部変数
-      let focalLengthPercentage = 1;
-      let moveSwitch = false;
-      let latestMoveX = 0;
-      let latestMoveY = 0;
-      let latestBaseX = 0;
-      let latestBaseY = 0;
-      let moveType = "vector";
-      let animationSwitch = false;
-      let animationStartSwitch = false;
-      let animationTimeout = null;
-      let momentPoses = {};
-      let momentLines = [];
-      let momentAxises = [];
-      let momentMeridians = [];
-      let focalLengthSwitch = false;
-      let horizonDepth =  R * R / displaySize / focalLengthPercentage;
-      let meterHandleDiffX = 0;
-      // 位置軸: 静止状態の対象物の基本姿勢からの傾きを表す軸
-      let positionAxisX = Math.PI / 2; // 位置軸のZ軸(正面方向軸)に対する角度(0 ~ π)
-      let positionAxisY = 0; // 位置軸のY軸(上下方向軸)に対する角度(-π ~ π)
-      let positionAxisL = 0; // 位置軸に対する回転角度(-π ~ π)
-      // 回転軸: 自転するベースとなる軸
-      let momentAxisX = 0; // 位置軸のZ軸(正面方向軸)に対する角度(0 ~ π)
-      let momentAxisY = 0; // 位置軸のY軸(上下方向軸)に対する角度(-π ~ π)
-      let momentAxisL = 0; // 位置軸に対する回転角度(-π ~ π)
-      let diffAxisL = 0;
-      let axisX = Math.PI / 2;
-      let axisY = 0;
-      let axisL = 0;
-      let mapType = 'B';
-
-      const displayContext = document.getElementById("display").getContext("2d");
-      const auxiliaryLineContext =  document.getElementById("auxiliary-line").getContext("2d");
-      const mapDisplayContext = document.getElementById("map-display").getContext("2d");
-      const mapDisplayPositionContext = document.getElementById("map-display-position").getContext("2d");
-      const meter = document.getElementById("focal-length-meter");
-      const meterHandle = document.getElementById("focal-length-meter-handle");
-
-      Array.prototype.forEach.call(document.getElementsByClassName('left'), (elem) => {
-        elem.style.width = `${displaySize}px`;
-      });
-      Array.prototype.forEach.call(document.getElementsByClassName('left-canvas'), (elem) => {
-        elem.setAttribute('width', displaySize);
-        elem.setAttribute('height', displaySize);
-      });
-      Array.prototype.forEach.call(document.getElementsByClassName('right'), (elem) => {
-        elem.style.width = `${R * 4}px`;
-      });
-      Array.prototype.forEach.call(document.getElementsByClassName('right-canvas'), (elem) => {
-        elem.setAttribute('width', R * 4);
-        elem.setAttribute('height', displaySize);
-      });
-      Array.prototype.forEach.call(document.getElementsByClassName('canvas-wrapper'), (elem) => {
-        elem.style.height = `${displaySize}px`;
-      });
-
-      let surfaceCodes = Object.keys(surfaces)
-        .concat(Object.keys(lines))
-        .concat(Object.keys(axises));
-
       const output = () => {
         momentSurfaces = [];
         momentLines = [];
@@ -426,9 +434,7 @@
 
           surfaceParams = lines[surfaceCode] || axises[surfaceCode] || surfaces[surfaceCode];
           surfaceParams.forEach((posCode) => {
-            let X = 0;
-            let Y = 0;
-            let Z = 0;
+            let [X, Y, Z] = [0, 0, 0];
 
             if (posCode !== 'O') {
               const RZ0 = Math.sin(positions[posCode].X); // Z面上の半径
@@ -488,14 +494,8 @@
         displayContext.setTransform(1, 0, 0, 1, 0, 0);
         displayContext.clearRect(0, 0, displaySize, displaySize);
         PZ2s.forEach((code) => {
-          displayContext.strokeStyle = code === 'Z.N'
-            ? '#aa0000'
-            : '#0000aa';
-          displayContext.beginPath();
-          displayContext.moveTo(displayRadius + momentPoses[`${code}0`].X, displayRadius + momentPoses[`${code}0`].Y);
-          displayContext.lineTo(displayRadius + momentPoses[`${code}1`].X, displayRadius + momentPoses[`${code}1`].Y);
-          displayContext.closePath();
-          displayContext.stroke();
+          displayContext.strokeStyle = code === 'Z.N' ? '#aa0000' : '#0000aa';
+          drawStroke(displayContext, [[momentPoses[`${code}0`].X, momentPoses[`${code}0`].Y], [momentPoses[`${code}1`].X, momentPoses[`${code}1`].Y]]);
         });
         displayContext.beginPath();
         displayContext.fillStyle = '#0066ff';
@@ -537,35 +537,17 @@
 
           const [code1, code2] = lines[momentSurface.code];
 
-          displayContext.beginPath();
-          displayContext.moveTo(displayRadius + momentPoses[code1].X, displayRadius + momentPoses[code1].Y);
-          displayContext.lineTo(displayRadius + momentPoses[code2].X, displayRadius + momentPoses[code2].Y);
-          displayContext.closePath();
-          displayContext.stroke();
+          drawStroke(displayContext, [[momentPoses[code1].X, momentPoses[code1].Y], [momentPoses[code2].X, momentPoses[code2].Y]]);
         });
 
-        displayContext.beginPath();
-        displayContext.strokeStyle = '#000000';
-        displayContext.arc(displayRadius, displayRadius, ER, 0, Math.PI * 2);
-        displayContext.closePath();
-        displayContext.stroke();
+        drawArc(displayContext, 0, 0, ER, 0, Math.PI * 2, displayRadius, '#000000');
         PZ1s.forEach((code) => {
-          displayContext.strokeStyle = code === 'Z.N'
-            ? '#aa0000'
-            : '#0000aa';
-          displayContext.beginPath();
-          displayContext.moveTo(displayRadius + momentPoses[`${code}0`].X, displayRadius + momentPoses[`${code}0`].Y);
-          displayContext.lineTo(displayRadius + momentPoses[`${code}1`].X, displayRadius + momentPoses[`${code}1`].Y);
-          displayContext.closePath();
-          displayContext.stroke();
+          displayContext.strokeStyle = code === 'Z.N' ? '#aa0000' : '#0000aa';
+          drawStroke(displayContext, [[momentPoses[`${code}0`].X, momentPoses[`${code}0`].Y], [momentPoses[`${code}1`].X, momentPoses[`${code}1`].Y]]);
         });
 
-        displayContext.beginPath();
-        displayContext.strokeStyle = '#ffffff';
+        drawArc(displayContext, 0, 0, 10, 0, Math.PI * 2, displayRadius, '#ffffff');
         displayContext.fillStyle = '#ffffff';
-        displayContext.arc(displaySize / 2, displaySize / 2, 10, 0, Math.PI * 2);
-        displayContext.closePath();
-        displayContext.stroke();
         displayContext.beginPath();
         displayContext.arc(displaySize / 2, displaySize / 2, 10, Math.PI / -2 - Math.PI / 5, Math.PI / -2 + Math.PI / 5);
         displayContext.lineTo(displaySize / 2, displaySize / 2 - 18);
@@ -582,22 +564,9 @@
 
         auxiliaryLineContext.setTransform(1, 0, 0, 1, 0, 0);
         auxiliaryLineContext.clearRect(0, 0, displaySize, displaySize);
-        auxiliaryLineContext.strokeStyle = '#aaaaaa';
-        auxiliaryLineContext.beginPath();
-        auxiliaryLineContext.moveTo(0, displayRadius + 0.5);
-        auxiliaryLineContext.lineTo(displaySize - 1, displayRadius + 0.5);
-        auxiliaryLineContext.closePath();
-        auxiliaryLineContext.stroke();
-        auxiliaryLineContext.beginPath();
-        auxiliaryLineContext.moveTo(displayRadius + 0.5, 0);
-        auxiliaryLineContext.lineTo(displayRadius + 0.5, displaySize - 1);
-        auxiliaryLineContext.closePath();
-        auxiliaryLineContext.stroke();
-        auxiliaryLineContext.strokeStyle = '#eeeeee';
-        auxiliaryLineContext.beginPath();
-        auxiliaryLineContext.arc(displayRadius + 0.5, displayRadius + 0.5, vectorSlideRadius, 0, Math.PI * 2);
-        auxiliaryLineContext.closePath();
-        auxiliaryLineContext.stroke();
+        drawArc(auxiliaryLineContext, 0.5, 0.5, vectorSlideRadius, 0, Math.PI * 2, displayRadius, '#eeeeee');
+        drawStroke(auxiliaryLineContext, [[displayRadius * -1, 0.5], [displayRadius, 0.5]], displayRadius, '#aaaaaa');
+        drawStroke(auxiliaryLineContext, [[0.5, displayRadius * -1], [0.5, displayRadius]], displayRadius, '#aaaaaa');
       };
 
       const outputMap = () => {
@@ -632,8 +601,7 @@
               const MP = MM / KM;
               const TL = 960;
               const TU = Math.PI / TL;
-              let H = 0;
-              let T = 0;
+              let [H, T] = [0, 0];
               try {
                 Array(TL).fill(null).forEach((_, n) => {
                   const _T = TU * n;
@@ -677,11 +645,10 @@
                       1 + RI2 * (1 - 2 / igrounds.length * ((k + igrounds.length / 2) % igrounds.length)),
                       1 + RI2 * (1 - 2 / igrounds.length * ((k + igrounds.length / 2) % igrounds.length + 1)),
                     ].map((w) => w * R * 2);
-                    
                   default:
                     return [0, 0, 0, 0];
                 }
-              })(); 
+              })();
 
               mapDisplayContext.beginPath();
               mapDisplayContext.moveTo(xu1, y1);
@@ -702,29 +669,11 @@
           mapDisplayContext.closePath();
           mapDisplayContext.stroke();
         } else {
-          mapDisplayContext.beginPath();
-          mapDisplayContext.moveTo(R + 0.5, displaySize / 2 - R);
-          mapDisplayContext.lineTo(R + 0.5, displaySize / 2 + R);
-          mapDisplayContext.closePath();
-          mapDisplayContext.stroke();
-          mapDisplayContext.beginPath();
-          mapDisplayContext.moveTo(R * 3 + 0.5, displaySize / 2 - R);
-          mapDisplayContext.lineTo(R * 3 + 0.5, displaySize / 2 + R);
-          mapDisplayContext.closePath();
-          mapDisplayContext.stroke();
+          drawStroke(mapDisplayContext, [[R, displaySize / 2 - R], [R, displaySize / 2 + R]], 0.5);
+          drawStroke(mapDisplayContext, [[R * 3, displaySize / 2 - R], [R * 3, displaySize / 2 + R]], 0.5);
         }
-        mapDisplayContext.strokeStyle = '#ffffff';
-        mapDisplayContext.beginPath();
-        mapDisplayContext.moveTo(R * 2 + 0.5, displaySize / 2 - R);
-        mapDisplayContext.lineTo(R * 2 + 0.5, displaySize / 2 + R);
-        mapDisplayContext.closePath();
-        mapDisplayContext.stroke();
-        mapDisplayContext.strokeStyle = '#ff0000';
-        mapDisplayContext.beginPath();
-        mapDisplayContext.moveTo(0, displaySize / 2 + 0.5);
-        mapDisplayContext.lineTo(R * 4, displaySize / 2 + 0.5);
-        mapDisplayContext.closePath();
-        mapDisplayContext.stroke();
+        drawStroke(mapDisplayContext, [[R * 2, displaySize / 2 - R], [R * 2, displaySize / 2 + R]], 0.5, '#ffffff');
+        drawStroke(mapDisplayContext, [[0, displaySize / 2], [R * 4, displaySize / 2]], 0.5, '#ff0000');
       };
 
       const outputMapPosition = () => {
@@ -788,12 +737,8 @@
         })();
 
         mapDisplayPositionContext.clearRect(0, 0, R * 4, displaySize);
-        mapDisplayPositionContext.strokeStyle = '#ffffff';
+        drawArc(mapDisplayPositionContext, R * 2 * (1 + X), displaySize / 2 + R * Y, 10, 0, Math.PI * 2, 0, '#ffffff');
         mapDisplayPositionContext.fillStyle = '#ffffff';
-        mapDisplayPositionContext.beginPath();
-        mapDisplayPositionContext.arc(R * 2 * (1 + X), displaySize / 2 + R * Y, 10, 0, Math.PI * 2);
-        mapDisplayPositionContext.closePath();
-        mapDisplayPositionContext.stroke();
         mapDisplayPositionContext.beginPath();
         mapDisplayPositionContext.arc(R * 2 * (1 + X), displaySize / 2 + R * Y, 10, T - Math.PI / 2 - Math.PI / 5, T - Math.PI / 2 + Math.PI / 5);
         mapDisplayPositionContext.lineTo(R * 2 * (1 + X) - Math.sin(T + Math.PI) * 20, displaySize / 2 + R * Y + Math.cos(T + Math.PI) * 17);
@@ -806,7 +751,7 @@
         positionAxisY = axisY;
         positionAxisL = axisL;
 
-        if (moveType === "vector") {
+        if (moveType === 'vector') {
           const diffX = latestMoveX - latestBaseX;
           const diffY = latestMoveY - latestBaseY;
           const diffL = Math.pow(diffX * diffX + diffY * diffY, 1 / 2);
@@ -998,7 +943,7 @@
         const relativeDiffX = X - displayRect.left - displayRadius;
         const relativeDiffY = Y - displayRect.top - displayRadius;
         const relativeDiffRadius = Math.pow(relativeDiffX * relativeDiffX + relativeDiffY * relativeDiffY, 1 / 2);
-        moveType = relativeDiffRadius <= vectorSlideRadius ? "vector" : "rotate";
+        moveType = relativeDiffRadius <= vectorSlideRadius ? 'vector' : 'rotate';
       };
 
       const documentMousemove = (event) => {
@@ -1015,7 +960,7 @@
           animate();
         } else if (focalLengthSwitch === true) {
           setFocalLength(X);
-        } 
+        }
       };
 
       document.getElementsByName('map_type').forEach((elem) => {
@@ -1043,7 +988,7 @@
       };
 
       document.onkeydown = (event) => {
-        if (event.code !== "Enter") return;
+        if (event.code !== 'Enter') return;
         if (animationSwitch === false) {
           startAnimation();
         } else {
@@ -1072,3 +1017,4 @@
     </script>
   </body>
 </html>
+<!-- 1074 -->
