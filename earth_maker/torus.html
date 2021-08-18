@@ -104,12 +104,11 @@
         <canvas class="right-canvas" id="map-display-position"></canvas>
       </div>
     </div>
-    <script src="./debug.js"></script>
     <script>
       const RO = 150;
       const RI = 50;
-      const latitudeL = 30;
-      const longitudeL = 60;
+      const latitudeL = 40;
+      const longitudeL = 80;
       const startResolution = 9;
       const landPer = 0.3;
       const displaySize = 500;
@@ -131,7 +130,7 @@
       const meterHandle = document.getElementById('focal-length-meter-handle');
 
       // 内部変数
-      let focalLengthPercentage = 1;
+      let focalLengthPercentage = 1.5;
       let moveSwitch = false;
       let latestMoveX = 0;
       let latestMoveY = 0;
@@ -291,8 +290,8 @@
 
             Array(prevI_2 - prevI_1 + 1).fill(null).forEach((_, pi) => {
               const prevI = (prevI_1 + pi + prevGrounds.length) % prevGrounds.length;
-              const prevK_1 = Math.floor((prevGrounds[prevI].length * k - aroundLength) / longitudeL);
-              const prevK_2 = Math.ceil((prevGrounds[prevI].length * (k + 1) + aroundLength) / longitudeL) - 1;
+              const prevK_1 = Math.floor((prevGrounds[prevI].length * k - aroundLength) / longitudeR);
+              const prevK_2 = Math.ceil((prevGrounds[prevI].length * (k + 1) + aroundLength) / longitudeR) - 1;
               Array(prevK_2 - prevK_1 + 1).fill(null).forEach((_, pk) => {
                 const prevK = (prevK_1 + pk + prevGrounds[prevI].length) % prevGrounds[prevI].length;
 
@@ -422,9 +421,9 @@
         if (focalLengthPercentage) {
           const focalLength = displaySize * focalLengthPercentage;
           const focalCofficient = 1 / Math.abs((focalLength - Z) / focalLength);
-          [X, Y] = [X * focalCofficient, Y * focalCofficient];
           // 法線角度計算用(視点からの距離の2乗)
           L = Math.pow(focalLength - Z, 2) + X * X + Y * Y;
+          [X, Y] = [X * focalCofficient, Y * focalCofficient];
         }
 
         return { X, Y, Z, L };
