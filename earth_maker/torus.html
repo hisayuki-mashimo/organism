@@ -1,0 +1,881 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overscroll-behavior-x: none;
+        overscroll-behavior-y: none;
+      }
+      #contents {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto auto;
+        margin: 10px 0 0 10px;
+      }
+      .wrapper {
+        position: relative;
+        box-sizing: border-box;
+        border: solid 1px #aaaaaa;
+        margin: 0 10px 10px 0;
+        display: flex;
+        align-items: center;
+      }
+      .wrapper canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      #form {
+        grid-column: 1;
+        grid-row: 1;
+        padding: 5px;
+        justify-content: space-between;
+      }
+      #focal-length-meter {
+        position: relative;
+        height: 24px;
+        width: 80%;
+      }
+      #focal-length-meter::before {
+        content: "";
+        position: absolute;
+        display: block;
+        width: 100%;
+        height: 1px;
+        top: 50%;
+        border-top: solid 1px #aaaaaa;
+      }
+      #focal-length-meter-handle {
+        position: absolute;
+        top: 0;
+        width: 10px;
+        height: calc(100% - 2px);
+        background-color: #ffffff;
+        border: solid 1px #888888;
+      }
+      #display-wrapper {
+        grid-column: 1;
+        grid-row: 2;
+      }
+      #map-form {
+        grid-column: 2;
+        grid-row: 1;
+      }
+      #map-display-wrapper {
+        grid-column: 2;
+        grid-row: 2;
+        overflow: hidden;
+      }
+      @media screen and (max-width: 1000px) {
+        #contents {
+          grid-template-columns: auto;
+          grid-template-rows: auto auto auto auto;
+        }
+        #map-form {
+          grid-column: 1;
+          grid-row: 3;
+        }
+        #map-display-wrapper {
+          grid-column: 1;
+          grid-row: 4;
+          overflow: hidden;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="contents">
+      <div class="wrapper left" id="form">
+        <div id="title">中心点距離</div>
+        <div id="focal-length-meter">
+          <div id="focal-length-meter-handle"></div>
+        </div>
+      </div>
+      <div class="wrapper canvas-wrapper left" id="display-wrapper">
+        <canvas class="left-canvas" id="auxiliary-line"></canvas>
+        <canvas class="left-canvas" id="display"></canvas>
+      </div>
+      <form class="wrapper right" id="map-form">
+      </form>
+      <div class="wrapper canvas-wrapper right" id="map-display-wrapper">
+        <canvas class="right-canvas" id="map-display"></canvas>
+        <canvas class="right-canvas" id="map-display-position"></canvas>
+      </div>
+    </div>
+    <script src="./debug.js"></script>
+    <script>
+      const RO = 150;
+      const RI = 50;
+      const latitudeL = 30;
+      const longitudeL = 60;
+      const startResolution = 9;
+      const landPer = 0.3;
+      const displaySize = 500;
+      const displayRadius = displaySize / 2;
+      const vectorSlideRadius = displaySize / 8 * 3;
+      const positionsBase = {};
+      const positions = {};
+      const params = [];
+      const surfaces = {};
+      const cores = {};
+      const lines = {};
+      const axises = {};
+
+      const displayContext = document.getElementById('display').getContext('2d');
+      const auxiliaryLineContext =  document.getElementById('auxiliary-line').getContext('2d');
+      const mapDisplayContext = document.getElementById('map-display').getContext('2d');
+      const mapDisplayPositionContext = document.getElementById('map-display-position').getContext('2d');
+      const meter = document.getElementById('focal-length-meter');
+      const meterHandle = document.getElementById('focal-length-meter-handle');
+
+      // 内部変数
+      let focalLengthPercentage = 1;
+      let moveSwitch = false;
+      let latestMoveX = 0;
+      let latestMoveY = 0;
+      let latestBaseX = 0;
+      let latestBaseY = 0;
+      let moveType = 'vector';
+      let animationSwitch = false;
+      let animationStartSwitch = false;
+      let animationTimeout = null;
+      // let surfaces = {};
+      // let surfaceCodes = [];
+      let momentPoses = {};
+      let momentLines = [];
+      let momentAxises = [];
+      let momentMeridians = [];
+      let focalLengthSwitch = false;
+      let horizonDepth =  RO * RO / displaySize / focalLengthPercentage;
+      let meterHandleDiffX = 0;
+      // 位置軸: 静止状態の対象物の基本姿勢からの傾きを表す軸
+      let positionAxisX = 0; // 位置軸のZ軸(正面方向軸)に対する角度(0 ~ π)
+      let positionAxisY = 0; // 位置軸のY軸(上下方向軸)に対する角度(-π ~ π)
+      let positionAxisL = 0; // 位置軸に対する回転角度(-π ~ π)
+      // 回転軸: 自転するベースとなる軸
+      let momentAxisX = 0; // 位置軸のZ軸(正面方向軸)に対する角度(0 ~ π)
+      let momentAxisY = 0; // 位置軸のY軸(上下方向軸)に対する角度(-π ~ π)
+      let momentAxisL = 0; // 位置軸に対する回転角度(-π ~ π)
+      let diffAxisL = 0;
+      let axisX = 0;
+      let axisY = 0;
+      let axisL = 0;
+
+      Array.prototype.forEach.call(document.getElementsByClassName('left'), (elem) => {
+        elem.style.width = `${displaySize}px`;
+      });
+      Array.prototype.forEach.call(document.getElementsByClassName('left-canvas'), (elem) => {
+        elem.setAttribute('width', displaySize);
+        elem.setAttribute('height', displaySize);
+      });
+      Array.prototype.forEach.call(document.getElementsByClassName('right'), (elem) => {
+        elem.style.width = `${RO * 4}px`;
+      });
+      Array.prototype.forEach.call(document.getElementsByClassName('right-canvas'), (elem) => {
+        elem.setAttribute('width', RO * 4);
+        elem.setAttribute('height', displaySize);
+      });
+      Array.prototype.forEach.call(document.getElementsByClassName('canvas-wrapper'), (elem) => {
+        elem.style.height = `${displaySize}px`;
+      });
+
+      Array(latitudeL).fill(null).forEach((_1, i1) => {
+        const T = Math.PI * 2 / latitudeL * i1;
+        const W = Math.sin(T) * (RO - RI) / 2 + RI + (RO - RI) / 2;
+        const H = Math.cos(T) * (RO - RI) / 2;
+        const R = Math.pow(W * W + H * H, 1 / 2);
+        const X = Math.acos(H / R);
+        const ST = Math.PI * 2 / latitudeL * (i1 + 1 / 2);
+        const SL = Math.cos(Math.PI / latitudeL) * (RO - RI) / 2;
+        const SW = Math.sin(ST) * SL + RO - (RO - RI) / 2;
+        const SH = Math.cos(ST) * SL * -1;
+        const SR = Math.pow(SW * SW + SH * SH, 1 / 2);
+        const SX = Math.asin(SH / SR) * (SW >= 0 ? 1 : -1) + Math.PI / 2;
+        const i2 = i1 < latitudeL - 1 ? i1 + 1 : 0;
+        params[i1] = [];
+
+        Array(longitudeL).fill(null).forEach((_2, k1) => {
+          const Y = Math.PI * 2 / longitudeL * k1;
+          const SY = Math.PI * 2 / longitudeL * (k1 + 1 / 2);
+          const k2 = k1 < longitudeL - 1 ? k1 + 1 : 0;
+
+          if (i1 === 0) {
+            positions[`C${k1}`] = {
+              R: RI + (RO - RI) / 2,
+              X: Math.PI / 2,
+              Y: Math.PI * 2 / longitudeL * (k1 + 1 / 2),
+            };
+          }
+
+          positions[`I${i1}.K${k1}`] = { R, X, Y };
+          positions[`S${i1}.${k1}`] = { R: SR, X: SX, Y: SY };
+          params[i1][k1] = { S: 0 };
+          surfaces[`${i1}.${k1}`] = {
+            C: [`I${i1}.K${k1}`, `I${i1}.K${k2}`, `I${i2}.K${k2}`, `I${i2}.K${k1}`],
+            S: `S${i1}.${k1}`,
+            B: `C${k1}`,
+          };
+        });
+      });
+
+      // Array(longitudeL).fill(null).forEach((_, i) => {
+      //   const T = Math.PI / longitudeL * i;
+
+      //   positions[`R.${i}`] = { R, X: Math.PI / 2, Y: T };
+      //   positions[`K.${i}`] = { R, X: T, Y: 0 };
+      //   positions[`M.${i}`] = { R, X: T, Y: Math.PI / 2 };
+      // });
+
+      // ['M', 'K', 'R'].forEach((code) => {
+      //   Array(latitudeL * 2).fill(null).forEach((_, i) => {
+      //     const prevI = (i - 1 + latitudeL * 2) % (latitudeL * 2);
+      //     lines[`${code}.${i}`] = [`${code}.${prevI}`, `${code}.${i}`];
+      //   });
+      // });
+
+      // positions['Z.S0'] = { R, X: 0, Y: 0 };
+      // positions['Z.S1'] = { R: R * 2, X: 0, Y: 0 };
+      // positions['Z.N0'] = { R, X: Math.PI, Y: 0 };
+      // positions['Z.N1'] = { R: R * 2, X: Math.PI, Y: 0 };
+      // axises['Z.N'] = ['Z.N0', 'Z.N1'];
+      // axises['Z.S'] = ['Z.S0', 'Z.S1'];
+
+      let prevResolution = startResolution;
+      let resolution = startResolution + 4;
+      let prevGrounds = [];
+      let grounds = [];
+      let groundCodes = [];
+
+      // 初期設定
+      Array(startResolution).fill(null).forEach((_1, i) => {
+        prevGrounds[i] = [];
+
+        const longitudeR = Math.round(longitudeL * startResolution / latitudeL);
+
+        Array(longitudeR).fill(null).forEach((_2, k) => {
+          prevGrounds[i][k] = 0;
+          groundCodes.push([i, k]);
+        });
+      });
+      Array(groundCodes.length - 1).fill(null).forEach((_, i) => {
+        const i1 = groundCodes.length - i - 1;
+        const i2 = Math.floor(Math.random() * (i1 + 1));
+        [groundCodes[i1], groundCodes[i2]] = [groundCodes[i2], groundCodes[i1]];
+      });
+      Array(Math.round(groundCodes.length * landPer)).fill(null).forEach((_, n) => {
+        const [i, k] = groundCodes[n];
+        prevGrounds[i][k] = 1;
+      });
+
+      // 解像度による陸地の再計算
+      const expandGradual = () => {
+        const aroundLength = 0.3;
+
+        grounds = [];
+
+        let groundLength = 0;
+        let landLength = 0;
+        let groundValues = [];
+
+        Array(resolution).fill(null).forEach((_1, i) => {
+          grounds[i] = [];
+          const prevI_1 = Math.floor((prevGrounds.length * i - aroundLength) / resolution);
+          const prevI_2 = Math.ceil((prevGrounds.length * (i + 1) + aroundLength) / resolution) - 1;
+          const longitudeR = Math.round(longitudeL * resolution / latitudeL);
+
+          Array(longitudeR).fill(null).forEach((_2, k) => {
+            let groundL = 0;
+            let groundW = 0;
+
+            Array(prevI_2 - prevI_1 + 1).fill(null).forEach((_, pi) => {
+              const prevI = (prevI_1 + pi + prevGrounds.length) % prevGrounds.length;
+              const prevK_1 = Math.floor((prevGrounds[prevI].length * k - aroundLength) / longitudeL);
+              const prevK_2 = Math.ceil((prevGrounds[prevI].length * (k + 1) + aroundLength) / longitudeL) - 1;
+              Array(prevK_2 - prevK_1 + 1).fill(null).forEach((_, pk) => {
+                const prevK = (prevK_1 + pk + prevGrounds[prevI].length) % prevGrounds[prevI].length;
+
+                groundL += 1;
+                groundW += prevGrounds[prevI][prevK];
+              });
+            });
+
+            grounds[i][k] = Math.random() <= groundW / groundL ? 1 : 0;
+            groundLength ++;
+            landLength += grounds[i][k];
+            groundValues.push({ i, k, land: grounds[i][k] });
+          });
+        });
+
+        Array(groundValues.length - 1).fill(null).forEach((_, i) => {
+          const i1 = groundValues.length - i - 1;
+          const i2 = Math.floor(Math.random() * (i1 + 1));
+          [groundValues[i1], groundValues[i2]] = [groundValues[i2], groundValues[i1]];
+        });
+
+        groundValues.forEach((groundValue) => {
+          if (Math.round() < 0.1) {
+            return;
+          }
+
+          const { i, k, land } = groundValue;
+          const iu = Math.max(0, i - 1);
+          const id = Math.min(resolution - 1, i + 1);
+          const ku1 = Math.floor(k * grounds[iu].length / grounds[i].length);
+          const ku2 = Math.ceil((k + 1) * grounds[iu].length / grounds[i].length) - 1;
+          const kd1 = Math.floor(k * grounds[id].length / grounds[i].length);
+          const kd2 = Math.ceil((k + 1) * grounds[id].length / grounds[i].length) - 1;
+          const aroundLands =
+            Array(ku2 - ku1 + 1).fill(null).reduce((l, _, _k) => l + grounds[iu][ku1 + _k], 0) +
+            Array(kd2 - kd1 + 1).fill(null).reduce((l, _, _k) => l + grounds[id][kd1 + _k], 0) +
+            grounds[i][(k - 1 + grounds[i].length) % grounds[i].length] +
+            grounds[i][(k + 1 + grounds[i].length) % grounds[i].length];
+          const aroundLandLength = ku2 - ku1 + kd2 - kd1 + 4;
+          if (grounds[i][k] === 1 && aroundLands / aroundLandLength <= 1 / 6 && landLength / groundLength > landPer) {
+            grounds[i][k] = 0;
+            landLength --;
+          } else if (grounds[i][k] === 0 && aroundLands / aroundLandLength >= 5 / 6 && landLength / groundLength < landPer) {
+            grounds[i][k] = 1;
+            landLength ++;
+          }
+        });
+
+        prevGrounds = grounds;
+      };
+
+      const drawStroke = (context, poses, centerLength = displayRadius, strokeStyle = null) => {
+        if (strokeStyle) {
+          context.strokeStyle = strokeStyle;
+        }
+        context.beginPath();
+        poses.forEach(([X, Y], i) => {
+          i === 0
+            ? context.moveTo(centerLength + X, centerLength + Y)
+            : context.lineTo(centerLength + X, centerLength + Y);
+        });
+        context.closePath();
+        context.stroke();
+      };
+
+      const drawArc = (context, X, Y, R, BT, LT, centerLength = displayRadius, strokeStyle = null) => {
+        if (strokeStyle) {
+          context.strokeStyle = strokeStyle;
+        }
+        context.beginPath();
+        context.arc(centerLength + X, centerLength + Y, R, BT - Math.PI, BT + LT - Math.PI);
+        context.closePath();
+        context.stroke();
+      };
+
+      const displayLands = () => {
+        params.forEach((iparams, i) => {
+          const i_1 = Math.floor(grounds.length * i / params.length);
+          const i_2 = Math.ceil(grounds.length * (i + 1) / params.length) - 1;
+
+          iparams.forEach((param, k) => {
+              Array(i_2 - i_1 + 1).fill(null).forEach((_, pi) => {
+                const k_1 = Math.floor(grounds[i_1 + pi].length * k / iparams.length);
+                const k_2 = Math.ceil(grounds[i_1 + pi].length * (k + 1) / iparams.length) - 1;
+                Array(k_2 - k_1 + 1).fill(null).forEach((_, pk) => {
+                  surfaces[`${i}.${k}`].P = grounds[i_1 + pi][k_1 + pk];
+                });
+              });
+          });
+        });
+      };
+
+      const makeLand = () => {
+        expandGradual();
+        displayLands();
+        output();
+        outputMap();
+        if (resolution < latitudeL) {
+          resolution = Math.min(resolution + 4, latitudeL);
+          setTimeout(makeLand, 50);
+        }
+      };
+
+      const calculatePosition = (posCode) => {
+        let [X, Y, Z] = [0, 0, 0];
+
+        const RZ0 = Math.sin(positions[posCode].X); // Z面上の半径
+        const LZ0 = Math.cos(positions[posCode].X); // Z軸上の中心点との距離
+        const TZ1 = positions[posCode].Y + axisL; // 回転角度の加算
+        const LX1 = Math.sin(TZ1) * RZ0; // 回転軸に対するX軸上の相対距離
+        const LY1 = Math.cos(TZ1) * RZ0; // 回転軸に対するY軸上の相対距離
+        const RX1 = Math.pow(LY1 * LY1 + LZ0 * LZ0, 1 / 2);
+        const TX1 = RX1 > 0 ? (Math.acos(LZ0 / RX1) * (LY1 >= 0 ? 1 : -1)) : 0;
+        const TX2 = TX1 + axisX;
+        const LY2 = Math.sin(TX2) * RX1;
+        const LZ2 = Math.cos(TX2) * RX1;
+        const RZ2 = Math.pow(LX1 * LX1 + LY2 * LY2, 1 / 2);
+        const TZ2 = RZ2 > 0 ? (Math.acos(LY2 / RZ2) * (LX1 > 0 ? 1 : -1)) : 0;
+        const TZ3 = TZ2 + axisY;
+        const LX3 = Math.sin(TZ3) * RZ2;
+        const LY3 = Math.cos(TZ3) * RZ2;
+
+        X = LX3 * positions[posCode].R;
+        Y = LY3 * positions[posCode].R;
+        Z = LZ2 * positions[posCode].R;
+        L = 0;
+        if (focalLengthPercentage) {
+          const focalLength = displaySize * focalLengthPercentage;
+          const focalCofficient = 1 / Math.abs((focalLength - Z) / focalLength);
+          [X, Y] = [X * focalCofficient, Y * focalCofficient];
+          // 法線角度計算用(視点からの距離の2乗)
+          L = Math.pow(focalLength - Z, 2) + X * X + Y * Y;
+        }
+
+        return { X, Y, Z, L };
+      };
+
+      const output = () => {
+        momentSurfaces = [];
+        momentLines = [];
+        momentAxises = [];
+
+        Object.keys(lines).forEach((surfaceCode) => {
+          lines[surfaceCode].forEach((posCode) => {
+            momentPoses[posCode] = calculatePosition(posCode);
+          });
+
+          momentLines.push({ code: surfaceCode });
+        });
+        Object.keys(axises).forEach((surfaceCode) => {
+          axises[surfaceCode].forEach((posCode) => {
+            momentPoses[posCode] = calculatePosition(posCode);
+          });
+
+          momentAxises.push({ code: surfaceCode });
+        });
+        Object.keys(surfaces).forEach((surfaceCode) => {
+          momentPoses[surfaces[surfaceCode].S] = calculatePosition(surfaces[surfaceCode].S);
+          momentPoses[surfaces[surfaceCode].B] = calculatePosition(surfaces[surfaceCode].B);
+
+          let zIndex = 0;
+
+          surfaces[surfaceCode].C.forEach((posCode) => {
+            momentPoses[posCode] = calculatePosition(posCode);
+
+            zIndex += momentPoses[posCode].Z;
+          });
+
+          momentSurfaces.push({ code: surfaceCode, zIndex: zIndex / surfaces[surfaceCode].C.length });
+        });
+
+        momentSurfaces.sort((A, B) => A.zIndex - B.zIndex);
+
+        params.forEach((iparams, i) => {
+          iparams.forEach((param, k) => {
+            const surface = surfaces[`${i}.${k}`];
+
+            // 視点(O)~ドーナツ断面中心点(B)の距離の2乗がポリゴン中心点(S)~(B)・(O)~(S)の合計の2乗より小さい(∠(OSB)が直角より狭い)場合は、ポリゴンが視界に背いていると判断
+            surface.D = momentPoses[surface.S].L + Math.pow((RO - RI) / 2, 2) <= momentPoses[surface.B].L;
+            surface.AD = [
+              [i > 0 ? i - 1 : params.length - 1, k],
+              [i, k < iparams.length - 1 ? k + 1 : 0],
+              [i < params.length - 1 ? i + 1 : 0, k],
+              [i, k > 0 ? k - 1 : iparams.length - 1],
+            ].map(([ai, ak]) => {
+              const asurface = surfaces[`${ai}.${ak}`];
+
+              return momentPoses[asurface.S].L + Math.pow((RO - RI) / 2, 2) <= momentPoses[asurface.B].L;
+            });
+          });
+        });
+
+        // const [PZ1s, PZ2s] = ['Z.N', 'Z.S'].reduce(([_PZ1s, _PZ2s], code) => (
+        //   momentPoses[`${code}0`].Z > horizonDepth
+        //     ? [[..._PZ1s, code], _PZ2s]
+        //     : [_PZ1s, [..._PZ2s, code]]
+        // ), [[], []]);
+
+        const focalLength = displaySize * focalLengthPercentage;
+        const Z2 = Math.pow(focalLength * focalLength - RO * RO, 1 / 2);
+        const ER = RO / Z2 * focalLength;
+
+        displayContext.setTransform(1, 0, 0, 1, 0, 0);
+        displayContext.clearRect(0, 0, displaySize, displaySize);
+        // PZ2s.forEach((code) => {
+        //   displayContext.strokeStyle = code === 'Z.N' ? '#aa0000' : '#0000aa';
+        //   drawStroke(displayContext, [[momentPoses[`${code}0`].X, momentPoses[`${code}0`].Y], [momentPoses[`${code}1`].X, momentPoses[`${code}1`].Y]]);
+        // });
+
+        momentSurfaces.forEach((momentSurface) => {
+          if (surfaces[momentSurface.code].D) {
+            const colorStyle = surfaces[momentSurface.code].P === 1 ? '#88ff88' : '#0066ff';
+
+            displayContext.beginPath();
+
+            surfaces[momentSurface.code].C.forEach((posCode, j) => {
+              const pos = momentPoses[posCode];
+
+              if (j === 0) {
+                displayContext.moveTo(displayRadius + pos.X, displayRadius + pos.Y);
+              } else {
+                displayContext.lineTo(displayRadius + pos.X, displayRadius + pos.Y);
+              }
+            });
+
+            displayContext.closePath();
+            displayContext.fillStyle = colorStyle;
+            displayContext.fill();
+            surfaces[momentSurface.code].AD.forEach((status, direction) => {
+              if (status) return;
+              const pos1 = momentPoses[surfaces[momentSurface.code].C[direction]];
+              const pos2 = momentPoses[surfaces[momentSurface.code].C[(direction + 1) % 4]];
+              drawStroke(displayContext, [
+                [pos1.X, pos1.Y],
+                [pos2.X, pos2.Y],
+              ], displayRadius, '#000000');
+            });
+          }
+        });
+
+        momentLines.forEach((momentSurface) => {
+          displayContext.strokeStyle = (() => {
+            switch (momentSurface.code[0]) {
+              case 'R':
+                return '#ff0000';
+              case 'K':
+                return '#ffffff';
+              default:
+                return '#8888ff';
+            }
+          })();
+
+          const [code1, code2] = lines[momentSurface.code];
+
+          drawStroke(displayContext, [[momentPoses[code1].X, momentPoses[code1].Y], [momentPoses[code2].X, momentPoses[code2].Y]]);
+        });
+
+        // PZ1s.forEach((code) => {
+        //   displayContext.strokeStyle = code === 'Z.N' ? '#aa0000' : '#0000aa';
+        //   drawStroke(displayContext, [[momentPoses[`${code}0`].X, momentPoses[`${code}0`].Y], [momentPoses[`${code}1`].X, momentPoses[`${code}1`].Y]]);
+        // });
+      };
+
+      const outputAuxiliaryLine = () => {
+        const focalLength = displaySize * focalLengthPercentage;
+        const Z2 = Math.pow(focalLength * focalLength - RO * RO, 1 / 2);
+        const ER = RO / Z2 * focalLength;
+
+        auxiliaryLineContext.setTransform(1, 0, 0, 1, 0, 0);
+        auxiliaryLineContext.clearRect(0, 0, displaySize, displaySize);
+        drawArc(auxiliaryLineContext, 0.5, 0.5, vectorSlideRadius, 0, Math.PI * 2, displayRadius, '#eeeeee');
+        drawStroke(auxiliaryLineContext, [[displayRadius * -1, 0.5], [displayRadius, 0.5]], displayRadius, '#aaaaaa');
+        drawStroke(auxiliaryLineContext, [[0.5, displayRadius * -1], [0.5, displayRadius]], displayRadius, '#aaaaaa');
+      };
+
+      const outputMap = () => {
+        mapDisplayContext.setTransform(1, 0, 0, 1, 0, 0);
+        mapDisplayContext.clearRect(0, 0, RO * 4, displaySize);
+        mapDisplayContext.fillStyle = '#0066ff';
+        mapDisplayContext.fillRect(0, displaySize / 2 - RO, RO * 4, RO * 2);
+        mapDisplayContext.strokeStyle = '#88ff88';
+        mapDisplayContext.fillStyle = '#88ff88';
+
+        const KM = Math.PI * 4;
+        const EM = Math.PI;
+
+        const [yws, ywt] = grounds.reduce(([_yws, _ywt], ig, i) => {
+          const [yu, yd] = _yws[_yws.length - 1] || [0, 0];
+          const MT = Math.PI / resolution * (i + 1);
+          const MM = Math.PI * 2 * (1 - Math.cos(MT));
+
+          return [[..._yws, [yd, yd + 1]], _ywt + 1];
+        }, [[], 0]);
+
+        grounds.forEach((igrounds, i) => {
+          const [y1, y2] = [
+            displaySize / 2 + RO - RO * 2 * yws[i][0] / ywt,
+            displaySize / 2 + RO - RO * 2 * yws[i][1] / ywt,
+          ];
+
+          igrounds.forEach((ground, k) => {
+            if (ground === 1) {
+              const x1 = RO * 4 * (1 - 1 / igrounds.length * ((k + igrounds.length / 2) % igrounds.length));
+              const x2 = RO * 4 * (1 - 1 / igrounds.length * ((k + igrounds.length / 2) % igrounds.length + 1));
+              mapDisplayContext.beginPath();
+              mapDisplayContext.moveTo(x1, y1);
+              mapDisplayContext.lineTo(x2, y1);
+              mapDisplayContext.lineTo(x2, y2);
+              mapDisplayContext.lineTo(x1, y2);
+              mapDisplayContext.closePath();
+              mapDisplayContext.fill();
+              mapDisplayContext.stroke();
+            }
+          });
+        });
+
+        mapDisplayContext.strokeStyle = '#8888ff';
+        drawStroke(mapDisplayContext, [[RO, displaySize / 2 - RO], [RO, displaySize / 2 + RO]], 0.5);
+        drawStroke(mapDisplayContext, [[RO * 3, displaySize / 2 - RO], [RO * 3, displaySize / 2 + RO]], 0.5);
+        drawStroke(mapDisplayContext, [[RO * 2, displaySize / 2 - RO], [RO * 2, displaySize / 2 + RO]], 0.5, '#ffffff');
+        drawStroke(mapDisplayContext, [[0, displaySize / 2], [RO * 4, displaySize / 2]], 0.5, '#ff0000');
+      };
+
+      const move = () => {
+        positionAxisX = axisX;
+        positionAxisY = axisY;
+        positionAxisL = axisL;
+
+        if (moveType === 'vector') {
+          const diffX = latestMoveX - latestBaseX;
+          const diffY = latestMoveY - latestBaseY;
+          const diffL = Math.pow(diffX * diffX + diffY * diffY, 1 / 2);
+          const diffR = Math.max(diffL, displayRadius / 100);
+
+          if (diffL > 0) {
+            momentAxisY = Math.acos(diffY / diffL) * (diffX >= 0 ? 1 : -1) + Math.PI / 2;
+          }
+          momentAxisX = Math.PI / 2;
+          momentAxisL = 0;
+          diffAxisL = diffR > 0 ? Math.asin(diffR / displayRadius) : 0;
+        } else {
+          const X1 = latestBaseX - displayRadius;
+          const Y1 = latestBaseY - displayRadius;
+          const X2 = latestMoveX - displayRadius;
+          const Y2 = latestMoveY - displayRadius;
+          const L1 = Math.pow(X1 * X1 + Y1 * Y1, 1 / 2);
+          const L2 = Math.pow(X2 * X2 + Y2 * Y2, 1 / 2);
+          const T1 = L1 > 0 ? Math.acos(Y1 / L1) * (X1 >= 0 ? 1 : -1) : 0;
+          const T2 = L2 > 0 ? Math.acos(Y2 / L2) * (X2 >= 0 ? 1 : -1) : 0;
+
+          momentAxisX = 0;
+          momentAxisY = 0;
+          momentAxisL = 0;
+          diffAxisL = T2 - T1;
+        }
+
+        outputAuxiliaryLine();
+
+        latestBaseX = latestMoveX;
+        latestBaseY = latestMoveY;
+      };
+
+      const slide = () => {
+        momentAxisL += diffAxisL;
+
+        const RZ0 = Math.sin(positionAxisX); // Z面上の半径
+        const LZ0 = Math.cos(positionAxisX); // Z軸上の中心点との距離
+        const TZ1 = positionAxisY - momentAxisY; // 回転軸に対するZ面上の相対角度
+        const LX1 = Math.sin(TZ1) * RZ0; // 回転軸に対するX軸上の相対距離
+        const LY1 = Math.cos(TZ1) * RZ0; // 回転軸に対するY軸上の相対距離
+        const RX1 = Math.pow(LY1 * LY1 + LZ0 * LZ0, 1 / 2);
+        const TX1 = RX1 > 0 ? Math.acos(LZ0 / RX1) * (LY1 >= 0 ? 1 : -1) : 0;
+        const TX2 = TX1 - momentAxisX; // 回転軸に対するX面上の相対角度
+        const LY2 = Math.sin(TX2) * RX1;
+        const LZ2 = Math.cos(TX2) * RX1;
+        const RZ2 = Math.pow(LX1 * LX1 + LY2 * LY2, 1 / 2);
+        const TZ2 = RZ2 > 0 ? Math.acos(LY2 / RZ2) * (LX1 >= 0 ? 1 : -1) : 0;
+        const TZ3 = TZ2 + momentAxisL; // 回転角度に対するZ面上の相対角度
+        const LX3 = Math.sin(TZ3) * RZ2;
+        const LY3 = Math.cos(TZ3) * RZ2;
+        const RX3 = Math.pow(LY3 * LY3 + LZ2 * LZ2, 1 / 2);
+        const TX3 = RX3 > 0 ? Math.acos(LZ2 / RX3) * (LY3 >= 0 ? 1 : -1) : 0;
+        const TX4 = TX3 + momentAxisX;
+        const LY4 = Math.sin(TX4) * RX3;
+        const LZ4 = Math.cos(TX4) * RX3;
+        const RZ4 = Math.pow(LX3 * LX3 + LY4 * LY4, 1 / 2);
+        const TZ4 = RZ4 > 0 ? Math.acos(LY4 / RZ4) * (LX3 >= 0 ? 1 : -1) : 0;
+        const TZ5 = TZ4 + momentAxisY;
+        const RX5 = Math.pow(RZ4 * RZ4 + LZ4 * LZ4, 1 / 2);
+        const TX5 = RX5 > 0 ? Math.acos(LZ4 / RX5) : 0;
+
+        const L_LX0 = Math.sin(positionAxisL);
+        const L_LY0 = Math.cos(positionAxisL) * Math.cos(positionAxisX);
+        const L_LZ0 = Math.cos(positionAxisL) * Math.sin(positionAxisX) * -1;
+        const L_RZ0 = Math.pow(L_LX0 * L_LX0 + L_LY0 * L_LY0, 1 / 2);
+        const L_TZ0 = L_RZ0 > 0 ? Math.acos(L_LY0 / L_RZ0) * (L_LX0 >= 0 ? 1 : -1) : 0;
+        const L_TZ1 = L_TZ0 + positionAxisY - momentAxisY;
+        const L_LX1 = Math.sin(L_TZ1) * L_RZ0;
+        const L_LY1 = Math.cos(L_TZ1) * L_RZ0;
+        const L_RX1 = Math.pow(L_LY1 * L_LY1 + L_LZ0 * L_LZ0, 1 / 2);
+        const L_TX1 = L_RX1 > 0 ? Math.acos(L_LZ0 / L_RX1) * (L_LY1 >= 0 ? 1 : -1) : 0;
+        const L_TX2 = L_TX1 - momentAxisX;
+        const L_LY2 = Math.sin(L_TX2) * L_RX1;
+        const L_LZ2 = Math.cos(L_TX2) * L_RX1;
+        const L_RZ2 = Math.pow(L_LX1 * L_LX1 + L_LY2 * L_LY2, 1 / 2);
+        const L_TZ2 = L_RZ2 > 0 ? Math.acos(L_LY2 / L_RZ2) * (L_LX1 >= 0 ? 1 : -1) : 0;
+        const L_TZ3 = L_TZ2 + momentAxisL;
+        const L_LX3 = Math.sin(L_TZ3) * L_RZ2;
+        const L_LY3 = Math.cos(L_TZ3) * L_RZ2;
+        const L_RX3 = Math.pow(L_LY3 * L_LY3 + L_LZ2 * L_LZ2, 1 / 2);
+        const L_TX3 = L_RX3 > 0 ? Math.acos(L_LZ2 / L_RX3) * (L_LY3 >= 0 ? 1 : -1) : 0;
+        const L_TX4 = L_TX3 + momentAxisX;
+        const L_LY4 = Math.sin(L_TX4) * L_RX3;
+        const L_LZ4 = Math.cos(L_TX4) * L_RX3;
+        const L_RZ4 = Math.pow(L_LX3 * L_LX3 + L_LY4 * L_LY4, 1 / 2);
+        const L_TZ4 = L_RZ4 > 0 ? Math.acos(L_LY4 / L_RZ4) * (L_LX3 >= 0 ? 1 : -1) : 0;
+        const L_TZ5 = L_TZ4 - TZ4;
+        const L_LX5 = Math.sin(L_TZ5) * L_RZ4;
+        const L_LY5 = Math.cos(L_TZ5) * L_RZ4;
+        const L_RX5 = Math.pow(L_LY5 * L_LY5 + L_LZ4 * L_LZ4, 1 / 2);
+        const L_TX5 = L_RX5 > 0 ? Math.acos(L_LZ4 / L_RX5) * (L_LY5 >= 0 ? 1 : -1) : 0;
+        const L_TX6 = L_TX5 - TX5;
+        const L_LY6 = Math.sin(L_TX6) * L_RX5;
+        const L_RZ6 = Math.pow(L_LX5 * L_LX5 + L_LY6 * L_LY6, 1 / 2);
+        const L_TZ6 = L_RZ6 > 0 ? Math.acos(L_LY6 / L_RZ6) * (L_LX5 >= 0 ? 1 : -1) : 0;
+
+        axisX = TX5;
+        axisY = TZ5;
+        axisL = L_TZ6;
+      };
+
+      const animate = () => {
+        if (moveSwitch === true) move();
+        slide();
+        output();
+
+        if (animationSwitch) {
+          setTimeout(animate, 25);
+        }
+      };
+
+      const startAnimation = () => {
+        animationSwitch = true;
+        animate();
+      };
+
+      const stopAnimation = () => {
+        animationSwitch = false;
+        animationStartSwitch = false;
+      };
+
+      const moveStopCheck = (clientX, clientY) => {
+        animationStartSwitch = latestMoveX !== clientX || latestMoveY !== clientY;
+      };
+
+      const getMeterParams = () => {
+        const meterRect = meter.getBoundingClientRect();
+        const meterHandleRect = meterHandle.getBoundingClientRect();
+
+        return {
+          left: meterRect.left + meterHandleRect.width / 2,
+          right: meterRect.left + meterRect.width - meterHandleRect.width / 2,
+        };
+      };
+
+      const setMeterPosition = (percentage) => {
+        const { left, right } = getMeterParams();
+        meterHandle.style.left = `${Math.floor((right - left) * percentage)}px`;
+      };
+
+      const setFocalLengthSwitch = (operate, clientX) => {
+        focalLengthSwitch = operate;
+        if (operate === false) return;
+
+        const meterHandleRect = meterHandle.getBoundingClientRect();
+        if (clientX >= meterHandleRect.left && clientX <= meterHandleRect.left + meterHandleRect.width) {
+          meterHandleDiffX = clientX - (meterHandleRect.left + meterHandleRect.width / 2);
+        } else {
+          meterHandleDiffX = 0;
+          setFocalLength(clientX);
+        }
+      };
+
+      const setFocalLength = (clientX) => {
+        const { left, right } = getMeterParams();
+        let percentage = (clientX - meterHandleDiffX - left) / (right - left);
+        if (percentage < 0) percentage = 0;
+        if (percentage > 1) percentage = 1;
+        setMeterPosition(percentage);
+        focalLengthPercentage = 1 / 2 + 2 * percentage;
+
+        const focalLength = displaySize * focalLengthPercentage;
+        horizonDepth = RO * RO / focalLength;
+
+        outputAuxiliaryLine();
+        if (!animationSwitch) output();
+      };
+
+      const getClientPosition = (event) => ({
+        X: event.clientX !== undefined ? event.clientX : event.changedTouches[0].clientX,
+        Y: event.clientY !== undefined ? event.clientY : event.changedTouches[0].clientY,
+      });
+
+      const displayOnpointerdown = (event) => {
+        if (moveSwitch === true || focalLengthSwitch === true) return;
+
+        stopAnimation();
+
+        const { X, Y } = getClientPosition(event);
+
+        moveSwitch = true;
+        latestMoveX = X;
+        latestMoveY = Y;
+        latestBaseX = X;
+        latestBaseY = Y;
+
+        const displayRect = display.getBoundingClientRect();
+        const relativeDiffX = X - displayRect.left - displayRadius;
+        const relativeDiffY = Y - displayRect.top - displayRadius;
+        const relativeDiffRadius = Math.pow(relativeDiffX * relativeDiffX + relativeDiffY * relativeDiffY, 1 / 2);
+        moveType = relativeDiffRadius <= vectorSlideRadius ? 'vector' : 'rotate';
+      };
+
+      const documentMousemove = (event) => {
+        const { X, Y } = getClientPosition(event);
+
+        if (moveSwitch === true) {
+          animationStartSwitch = true;
+          clearTimeout(animationTimeout);
+          animationTimeout = setTimeout(() => {
+            moveStopCheck(X, Y);
+          }, 100);
+          latestMoveX = X;
+          latestMoveY = Y;
+          animate();
+        } else if (focalLengthSwitch === true) {
+          setFocalLength(X);
+        }
+      };
+
+      document.onpointerup = (event) => {
+        if (moveSwitch === true) {
+          moveSwitch = false;
+
+          const { X, Y } = getClientPosition(event);
+          latestMoveX = X;
+          latestMoveY = Y;
+
+          if (!animationSwitch && animationStartSwitch) {
+            startAnimation();
+          }
+        }
+
+        setFocalLengthSwitch(false);
+      };
+
+      document.onkeydown = (event) => {
+        if (event.code !== 'Enter') return;
+        if (animationSwitch === false) {
+          startAnimation();
+        } else {
+          stopAnimation();
+        }
+      };
+
+      meter.onpointerdown = (event) => {
+        setFocalLengthSwitch(true, getClientPosition(event).X);
+      };
+
+      if (typeof display.ontouchstart === 'object') {
+        display.ontouchstart = displayOnpointerdown;
+      } else {
+        display.onpointerdown = displayOnpointerdown;
+      }
+      if (typeof document.ontouchmove === 'object') {
+        document.ontouchmove = documentMousemove;
+      } else {
+        document.onmousemove = documentMousemove;
+      }
+
+      outputAuxiliaryLine();
+      setMeterPosition(focalLengthPercentage / 2 - (1 / 4));
+      makeLand();
+    </script>
+  </body>
+</html>
