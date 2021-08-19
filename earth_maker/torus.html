@@ -114,13 +114,11 @@
       const displaySize = 500;
       const displayRadius = displaySize / 2;
       const vectorSlideRadius = displaySize / 8 * 3;
-      const positionsBase = {};
       const positions = {};
       const params = [];
       const surfaces = {};
-      const cores = {};
       const lines = {};
-      const axises = {};
+      // const axises = {};
 
       const displayContext = document.getElementById('display').getContext('2d');
       const auxiliaryLineContext =  document.getElementById('auxiliary-line').getContext('2d');
@@ -140,12 +138,10 @@
       let animationSwitch = false;
       let animationStartSwitch = false;
       let animationTimeout = null;
-      // let surfaces = {};
-      // let surfaceCodes = [];
       let momentPoses = {};
-      let momentLines = [];
-      let momentAxises = [];
-      let momentMeridians = [];
+      // let momentLines = [];
+      // let momentAxises = [];
+      // let momentMeridians = [];
       let focalLengthSwitch = false;
       let horizonDepth =  RO * RO / displaySize / focalLengthPercentage;
       let meterHandleDiffX = 0;
@@ -182,17 +178,18 @@
 
       Array(latitudeL).fill(null).forEach((_1, i1) => {
         const T = Math.PI * 2 / latitudeL * i1;
-        const W = Math.sin(T) * (RO - RI) / 2 + RI + (RO - RI) / 2;
-        const H = Math.cos(T) * (RO - RI) / 2;
+        const W = Math.cos(T) * (RO - RI) / -2 + RI + (RO - RI) / 2;
+        const H = Math.sin(T) * (RO - RI) / 2;
         const R = Math.pow(W * W + H * H, 1 / 2);
         const X = Math.acos(H / R);
         const ST = Math.PI * 2 / latitudeL * (i1 + 1 / 2);
         const SL = Math.cos(Math.PI / latitudeL) * (RO - RI) / 2;
-        const SW = Math.sin(ST) * SL + RO - (RO - RI) / 2;
-        const SH = Math.cos(ST) * SL * -1;
+        const SW = Math.cos(ST) * SL * -1 + RO - (RO - RI) / 2;
+        const SH = Math.sin(ST) * SL * -1;
         const SR = Math.pow(SW * SW + SH * SH, 1 / 2);
         const SX = Math.asin(SH / SR) * (SW >= 0 ? 1 : -1) + Math.PI / 2;
         const i2 = i1 < latitudeL - 1 ? i1 + 1 : 0;
+
         params[i1] = [];
 
         Array(longitudeL).fill(null).forEach((_2, k1) => {
@@ -200,46 +197,63 @@
           const SY = Math.PI * 2 / longitudeL * (k1 + 1 / 2);
           const k2 = k1 < longitudeL - 1 ? k1 + 1 : 0;
 
-          if (i1 === 0) {
-            positions[`C${k1}`] = {
-              R: RI + (RO - RI) / 2,
-              X: Math.PI / 2,
-              Y: Math.PI * 2 / longitudeL * (k1 + 1 / 2),
-            };
-          }
-
           positions[`I${i1}.K${k1}`] = { R, X, Y };
           positions[`S${i1}.${k1}`] = { R: SR, X: SX, Y: SY };
           params[i1][k1] = { S: 0 };
           surfaces[`${i1}.${k1}`] = {
+            P: [i1, k1],
             C: [`I${i1}.K${k1}`, `I${i1}.K${k2}`, `I${i2}.K${k2}`, `I${i2}.K${k1}`],
             S: `S${i1}.${k1}`,
-            B: `C${k1}`,
+            B: `B${k1}`,
+            G: 0,
           };
         });
       });
 
-      // Array(longitudeL).fill(null).forEach((_, i) => {
-      //   const T = Math.PI / longitudeL * i;
+      Array(longitudeL).fill(null).forEach((_, k) => {
+        const Y = Math.PI * 2 / longitudeL * k;
 
-      //   positions[`R.${i}`] = { R, X: Math.PI / 2, Y: T };
-      //   positions[`K.${i}`] = { R, X: T, Y: 0 };
-      //   positions[`M.${i}`] = { R, X: T, Y: Math.PI / 2 };
-      // });
+        positions[`R.${k}`] = { R: RO, X: Math.PI / 2, Y };
+        positions[`P.${k}`] = { R: RI, X: Math.PI / 2, Y };
+        positions[`B${k}`] = {
+          R: RI + (RO - RI) / 2,
+          X: Math.PI / 2,
+          Y: Math.PI * 2 / longitudeL * (k + 1 / 2),
+        };
 
-      // ['M', 'K', 'R'].forEach((code) => {
-      //   Array(latitudeL * 2).fill(null).forEach((_, i) => {
-      //     const prevI = (i - 1 + latitudeL * 2) % (latitudeL * 2);
-      //     lines[`${code}.${i}`] = [`${code}.${prevI}`, `${code}.${i}`];
-      //   });
-      // });
+        lines[`R.${k}`] = [`R.${k}`, `R.${(k + 1) % longitudeL}`];
+      });
 
-      // positions['Z.S0'] = { R, X: 0, Y: 0 };
-      // positions['Z.S1'] = { R: R * 2, X: 0, Y: 0 };
-      // positions['Z.N0'] = { R, X: Math.PI, Y: 0 };
-      // positions['Z.N1'] = { R: R * 2, X: Math.PI, Y: 0 };
-      // axises['Z.N'] = ['Z.N0', 'Z.N1'];
-      // axises['Z.S'] = ['Z.S0', 'Z.S1'];
+      Array(latitudeL).fill(null).forEach((_, i) => {
+        const T = Math.PI * 2 / latitudeL * i;
+        const W = Math.cos(T) * (RO - RI) / -2 + RI + (RO - RI) / 2;
+        const H = Math.sin(T) * (RO - RI) / 2;
+        const R = Math.pow(W * W + H * H, 1 / 2);
+        const X = Math.acos(H / R);
+
+        positions[`K0.${i}`] = { R, X, Y: 0 };
+        positions[`K1.${i}`] = { R, X, Y: Math.PI / 2 };
+        positions[`K2.${i}`] = { R, X, Y: Math.PI };
+        positions[`K3.${i}`] = { R, X, Y: Math.PI / 2 * 3 };
+        lines[`K0.${i}`] = [`K0.${i}`, `K0.${(i + 1) % latitudeL}`];
+        lines[`K1.${i}`] = [`K1.${i}`, `K1.${(i + 1) % latitudeL}`];
+        lines[`K2.${i}`] = [`K2.${i}`, `K2.${(i + 1) % latitudeL}`];
+        lines[`K3.${i}`] = [`K3.${i}`, `K3.${(i + 1) % latitudeL}`];
+      });
+      // positions[`N`] = { R: RO * 2, X: 0, Y: 0 };
+      // positions[`S`] = { R: RO * 2, X: Math.PI, Y: 0 };
+      positions['O'] = { R: 0, X: 0, Y: 0 };
+      positions['N0'] = { R: RO, X: 0, Y: 0 };
+      positions['N1'] = { R: RO * 2, X: 0, Y: 0 };
+      positions['S0'] = { R: RO, X: Math.PI, Y: 0 };
+      positions['S1'] = { R: RO * 2, X: Math.PI, Y: 0 };
+      surfaces['N0'] = { C: ['O', 'N0'], G: 'N' };
+      surfaces['N1'] = { C: ['N0', 'N1'], G: 'N' };
+      surfaces['S0'] = { C: ['O', 'S0'], G: 'S' };
+      surfaces['S1'] = { C: ['S0', 'S1'], G: 'S' };
+
+      const lineCodes = Object.keys(lines);
+      const surfaceCodes = Object.keys(surfaces);
 
       let prevResolution = startResolution;
       let resolution = startResolution + 4;
@@ -377,7 +391,7 @@
                 const k_1 = Math.floor(grounds[i_1 + pi].length * k / iparams.length);
                 const k_2 = Math.ceil(grounds[i_1 + pi].length * (k + 1) / iparams.length) - 1;
                 Array(k_2 - k_1 + 1).fill(null).forEach((_, pk) => {
-                  surfaces[`${i}.${k}`].P = grounds[i_1 + pi][k_1 + pk];
+                  surfaces[`${i}.${k}`].G = grounds[i_1 + pi][k_1 + pk];
                 });
               });
           });
@@ -431,26 +445,18 @@
 
       const output = () => {
         momentSurfaces = [];
-        momentLines = [];
-        momentAxises = [];
 
-        Object.keys(lines).forEach((surfaceCode) => {
+        lineCodes.forEach((surfaceCode) => {
           lines[surfaceCode].forEach((posCode) => {
             momentPoses[posCode] = calculatePosition(posCode);
           });
-
-          momentLines.push({ code: surfaceCode });
         });
-        Object.keys(axises).forEach((surfaceCode) => {
-          axises[surfaceCode].forEach((posCode) => {
-            momentPoses[posCode] = calculatePosition(posCode);
-          });
 
-          momentAxises.push({ code: surfaceCode });
-        });
-        Object.keys(surfaces).forEach((surfaceCode) => {
-          momentPoses[surfaces[surfaceCode].S] = calculatePosition(surfaces[surfaceCode].S);
-          momentPoses[surfaces[surfaceCode].B] = calculatePosition(surfaces[surfaceCode].B);
+        surfaceCodes.forEach((surfaceCode) => {
+          if (surfaces[surfaceCode].C.length === 4) {
+            momentPoses[surfaces[surfaceCode].S] = calculatePosition(surfaces[surfaceCode].S);
+            momentPoses[surfaces[surfaceCode].B] = calculatePosition(surfaces[surfaceCode].B);
+          }
 
           let zIndex = 0;
 
@@ -484,46 +490,58 @@
           });
         });
 
-        // const [PZ1s, PZ2s] = ['Z.N', 'Z.S'].reduce(([_PZ1s, _PZ2s], code) => (
-        //   momentPoses[`${code}0`].Z > horizonDepth
-        //     ? [[..._PZ1s, code], _PZ2s]
-        //     : [_PZ1s, [..._PZ2s, code]]
-        // ), [[], []]);
-
         const focalLength = displaySize * focalLengthPercentage;
         const Z2 = Math.pow(focalLength * focalLength - RO * RO, 1 / 2);
         const ER = RO / Z2 * focalLength;
 
         displayContext.setTransform(1, 0, 0, 1, 0, 0);
         displayContext.clearRect(0, 0, displaySize, displaySize);
-        // PZ2s.forEach((code) => {
-        //   displayContext.strokeStyle = code === 'Z.N' ? '#aa0000' : '#0000aa';
-        //   drawStroke(displayContext, [[momentPoses[`${code}0`].X, momentPoses[`${code}0`].Y], [momentPoses[`${code}1`].X, momentPoses[`${code}1`].Y]]);
-        // });
 
-        momentSurfaces.forEach((momentSurface) => {
-          if (surfaces[momentSurface.code].D) {
-            const colorStyle = surfaces[momentSurface.code].P === 1 ? '#88ff88' : '#0066ff';
+        momentSurfaces.forEach((momentSurface, n) => {
+          const surface = surfaces[momentSurface.code];
+
+          if (['N', 'S'].includes(surface.G)) {
+            const strokeColor = surface.G === 'N' ? '#aa0000' : '#0000aa';
+            drawStroke(displayContext, [
+              [momentPoses[surface.C[0]].X, momentPoses[surface.C[0]].Y],
+              [momentPoses[surface.C[1]].X, momentPoses[surface.C[1]].Y],
+            ], displayRadius, strokeColor);
+          } else if (surface.D) {
+            const colorStyle = surface.G === 1 ? '#88ff88' : '#0066ff';
 
             displayContext.beginPath();
-
-            surfaces[momentSurface.code].C.forEach((posCode, j) => {
+            surface.C.forEach((posCode, j) => {
               const pos = momentPoses[posCode];
-
               if (j === 0) {
                 displayContext.moveTo(displayRadius + pos.X, displayRadius + pos.Y);
               } else {
                 displayContext.lineTo(displayRadius + pos.X, displayRadius + pos.Y);
               }
             });
-
             displayContext.closePath();
             displayContext.fillStyle = colorStyle;
             displayContext.fill();
-            surfaces[momentSurface.code].AD.forEach((status, direction) => {
+
+            const longitudePhase = Math.ceil(surface.P[1] / longitudeL * 4);
+            if (longitudePhase !== Math.ceil((surface.P[1] + 1) / longitudeL * 4)) {
+              const strokeColor = [0, 2].includes(longitudePhase) ? '#ffffff' : '#ccccff';
+              drawStroke(displayContext, [
+                [momentPoses[lines[`K${longitudePhase}.${surface.P[0]}`][0]].X, momentPoses[lines[`K${longitudePhase}.${surface.P[0]}`][0]].Y],
+                [momentPoses[lines[`K${longitudePhase}.${surface.P[0]}`][1]].X, momentPoses[lines[`K${longitudePhase}.${surface.P[0]}`][1]].Y],
+              ], displayRadius, strokeColor);
+            }
+
+            if (surface.P[0] === Math.floor(latitudeL / 2)) {
+              drawStroke(displayContext, [
+                [momentPoses[lines[`R.${surface.P[1]}`][0]].X, momentPoses[lines[`R.${surface.P[1]}`][0]].Y],
+                [momentPoses[lines[`R.${surface.P[1]}`][1]].X, momentPoses[lines[`R.${surface.P[1]}`][1]].Y],
+              ], displayRadius, '#ff0000');
+            }
+
+            surface.AD.forEach((status, direction) => {
               if (status) return;
-              const pos1 = momentPoses[surfaces[momentSurface.code].C[direction]];
-              const pos2 = momentPoses[surfaces[momentSurface.code].C[(direction + 1) % 4]];
+              const pos1 = momentPoses[surface.C[direction]];
+              const pos2 = momentPoses[surface.C[(direction + 1) % 4]];
               drawStroke(displayContext, [
                 [pos1.X, pos1.Y],
                 [pos2.X, pos2.Y],
@@ -531,28 +549,6 @@
             });
           }
         });
-
-        momentLines.forEach((momentSurface) => {
-          displayContext.strokeStyle = (() => {
-            switch (momentSurface.code[0]) {
-              case 'R':
-                return '#ff0000';
-              case 'K':
-                return '#ffffff';
-              default:
-                return '#8888ff';
-            }
-          })();
-
-          const [code1, code2] = lines[momentSurface.code];
-
-          drawStroke(displayContext, [[momentPoses[code1].X, momentPoses[code1].Y], [momentPoses[code2].X, momentPoses[code2].Y]]);
-        });
-
-        // PZ1s.forEach((code) => {
-        //   displayContext.strokeStyle = code === 'Z.N' ? '#aa0000' : '#0000aa';
-        //   drawStroke(displayContext, [[momentPoses[`${code}0`].X, momentPoses[`${code}0`].Y], [momentPoses[`${code}1`].X, momentPoses[`${code}1`].Y]]);
-        // });
       };
 
       const outputAuxiliaryLine = () => {
