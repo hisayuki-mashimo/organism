@@ -111,6 +111,7 @@
         </div>
       </div>
     </div>
+    <script src="debug.js"></script>
     <script>
       const RO = 150;
       const RI = 50;
@@ -122,8 +123,7 @@
       const displayRadius = displaySize / 2;
       const vectorSlideRadius = displaySize / 8 * 3;
       const positions = {};
-      const params = [];
-      const surfaces = {};
+      const surfaces = [];
       const lines = {};
 
       const displayContext = document.getElementById('display').getContext('2d');
@@ -131,7 +131,8 @@
       const mapDisplayWrapper = document.getElementById('map-display-wrapper');
       const mapDisplay = document.getElementById('map-display');
       const mapDisplayContext = mapDisplay.getContext('2d');
-      const mapDisplayPositionContext = document.getElementById('map-display-position').getContext('2d');
+      const mapDisplayPosition = document.getElementById('map-display-position');
+      const mapDisplayPositionContext = mapDisplayPosition.getContext('2d');
       const meter = document.getElementById('focal-length-meter');
       const meterHandle = document.getElementById('focal-length-meter-handle');
 
@@ -189,6 +190,8 @@
       });
       mapDisplay.style.top = `${mapY}px`;
       mapDisplay.style.left = `${mapX}px`;
+      mapDisplayPosition.style.top = `${mapY}px`;
+      mapDisplayPosition.style.left = `${mapX}px`;
       mapDisplayWrapper.style.height = `${RO * 2}px`;
 
       Array(latitudeL).fill(null).forEach((_1, i1) => {
@@ -205,7 +208,7 @@
         const SX = Math.asin(SH / SR) * (SW >= 0 ? 1 : -1) + Math.PI / 2;
         const i2 = i1 < latitudeL - 1 ? i1 + 1 : 0;
 
-        params[i1] = [];
+        surfaces[i1] = [];
 
         Array(longitudeL).fill(null).forEach((_2, k1) => {
           const Y = Math.PI * 2 / longitudeL * k1;
@@ -214,9 +217,7 @@
 
           positions[`I${i1}.K${k1}`] = { R, X, Y };
           positions[`S${i1}.${k1}`] = { R: SR, X: SX, Y: SY };
-          params[i1][k1] = { S: 0 };
-          surfaces[`${i1}.${k1}`] = {
-            P: [i1, k1],
+          surfaces[i1][k1] = {
             C: [`I${i1}.K${k1}`, `I${i1}.K${k2}`, `I${i2}.K${k2}`, `I${i2}.K${k1}`],
             S: `S${i1}.${k1}`,
             B: `B${k1}`,
@@ -261,10 +262,6 @@
       positions['N1'] = { R: RO * 2, X: 0, Y: 0 };
       positions['S0'] = { R: RO, X: Math.PI, Y: 0 };
       positions['S1'] = { R: RO * 2, X: Math.PI, Y: 0 };
-      surfaces['N0'] = { C: ['O', 'N0'], G: 'N' };
-      surfaces['N1'] = { C: ['N0', 'N1'], G: 'N' };
-      surfaces['S0'] = { C: ['O', 'S0'], G: 'S' };
-      surfaces['S1'] = { C: ['S0', 'S1'], G: 'S' };
 
       const lineCodes = Object.keys(lines);
       const surfaceCodes = Object.keys(surfaces);
@@ -397,16 +394,16 @@
       };
 
       const displayLands = () => {
-        params.forEach((iparams, i) => {
-          const i_1 = Math.floor(grounds.length * i / params.length);
-          const i_2 = Math.ceil(grounds.length * (i + 1) / params.length) - 1;
+        surfaces.forEach((isurfaces, i) => {
+          const i_1 = Math.floor(grounds.length * i / latitudeL);
+          const i_2 = Math.ceil(grounds.length * (i + 1) / latitudeL) - 1;
 
-          iparams.forEach((param, k) => {
+          isurfaces.forEach((surface, k) => {
               Array(i_2 - i_1 + 1).fill(null).forEach((_, pi) => {
-                const k_1 = Math.floor(grounds[i_1 + pi].length * k / iparams.length);
-                const k_2 = Math.ceil(grounds[i_1 + pi].length * (k + 1) / iparams.length) - 1;
+                const k_1 = Math.floor(grounds[i_1 + pi].length * k / longitudeL);
+                const k_2 = Math.ceil(grounds[i_1 + pi].length * (k + 1) / longitudeL) - 1;
                 Array(k_2 - k_1 + 1).fill(null).forEach((_, pk) => {
-                  surfaces[`${i}.${k}`].G = grounds[i_1 + pi][k_1 + pk];
+                  surface.G = grounds[i_1 + pi][k_1 + pk];
                 });
               });
           });
@@ -464,6 +461,48 @@
         return { X, Y, Z, LX, LY, L };
       };
 
+      const splitMesh = (poses) => {
+        const meshParams = [
+          [1, 1], [1, 0], [1, -1],
+          [0, 1], [0, 0], [0, -1],
+          [-1, 1], [-1, 0], [-1, -1],
+        ].map(([I, K]) => ({ I, K, C: [], minI: null, maxI: null, minK: null, maxK: null }));
+
+        let phase = 0;
+        let phaseI = 0;
+        let phaseK = 0;
+        let pi = null;
+        let pk = null;
+
+        poses.forEach(([i, k]) => {
+          if (i === 0 && pi === latitudeL - 1) phaseI ++;
+          if (i === latitudeL - 1 && pi === 0) phaseI --;
+          if (k === 0 && pk === longitudeL - 1) phaseK ++;
+          if (k === longitudeL - 1 && pk === 0) phaseK --;
+
+          meshParams.forEach((param) => {
+            const mi = param.I > phaseI ? 0 : param.I < phaseI ? latitudeL : i;
+            const mk = param.K > phaseK ? 0 : param.K < phaseK ? longitudeL : k;
+            if (param.C.length) {
+              const [li, lk] = param.C[param.C.length - 1];
+              if (mi === li && mk === lk) return;
+            }
+            param.C.push([mi, mk]);
+            if (param.minI === null || param.minI > mi) param.minI = mi;
+            if (param.maxI === null || param.maxI < mi) param.maxI = mi;
+            if (param.minK === null || param.minK > mk) param.minK = mk;
+            if (param.maxK === null || param.maxK < mk) param.maxK = mk;
+          });
+
+          pi = i;
+          pk = k;
+        });
+
+        return meshParams
+          .filter((p) => p.maxI > p.minI && p.maxK > p.minK)
+          .map((p) => p.C);
+      };
+
       const output = () => {
         momentPoses = {};
 
@@ -471,22 +510,11 @@
           momentPoses[posCode] = calculatePosition(posCode);
         });
 
-        surfaceCodes.forEach((surfaceCode) => {
-          surfaces[surfaceCode].Z = surfaces[surfaceCode].C.reduce((Z, posCode) => Z + momentPoses[posCode].Z, 0);
-        });
-
-        params.forEach((iparams, i) => {
-          const it = i > 0 ? i - 1 : params.length - 1;
-          const ib = i < params.length - 1 ? i + 1 : 0;
-
-          iparams.forEach((param, k) => {
-            const kr = k < iparams.length - 1 ? k + 1 : 0;
-            const kl = k > 0 ? k - 1 : iparams.length - 1;
-
-            const surface = surfaces[`${i}.${k}`];
-
+        surfaces.forEach((isurfaces) => {
+          isurfaces.forEach((surface) => {
             // 視点(O)~ドーナツ断面中心点(B)の距離の2乗がポリゴン中心点(S)~(B)・(O)~(S)の合計の2乗より小さい(∠(OSB)が直角より狭い)場合は、ポリゴンが視界に背いていると判断
             surface.D = momentPoses[surface.S].L + Math.pow((RO - RI) / 2, 2) <= momentPoses[surface.B].L;
+            surface.Z = surface.C.reduce((Z, posCode) => Z + momentPoses[posCode].Z, 0);
           });
         });
 
@@ -496,15 +524,14 @@
         let tieChain = [];
 
         Array(longitudeL).fill(null).forEach((_1, k1) => {
-          ties[k1] = { K: k1, IS: 0, IE: 0, Z: 0 };
+          ties[k1] = { K: k1, IS: 0, IE: 0, Z: null };
 
           Array(latitudeL).fill(null).forEach((_, i1) => {
             const i2 = (i1 + 1) % latitudeL;
-            const surface1 = surfaces[`${i1}.${k1}`];
-            const surface2 = surfaces[`${i2}.${k1}`];
-            if (surface1.D && !surface2.D) ties[k1].IE = i1;
-            if (surface2.D && !surface1.D) ties[k1].IS = i2;
-            if (ties[k1].Z < surface1.Z) ties[k1].Z = surface1.Z;
+
+            if (surfaces[i1][k1].D && !surfaces[i2][k1].D) ties[k1].IE = i1;
+            if (surfaces[i2][k1].D && !surfaces[i1][k1].D) ties[k1].IS = i2;
+            if (ties[k1].Z === null || ties[k1].Z < surfaces[i1][k1].Z) ties[k1].Z = surfaces[i1][k1].Z;
           });
 
           tieChain[k1] = k1;
@@ -517,14 +544,14 @@
         let horizonMaxX = 0;
 
         if (axisX !== 0) {
-          Array(longitudeL / 4).fill(null).forEach((_, k) => {
+          Array(Math.floor(longitudeL / 4)).fill(null).forEach((_, k) => {
             [1, -1].forEach((direction) => {
               const k1 = direction === 1
                 ? (horizonBK + k * direction + longitudeL) % longitudeL
                 : (horizonBK + (k + 1) * direction + longitudeL) % longitudeL;
               const horizonSurface = directionType
-                ? surfaces[`${ties[k1].IS}.${k1}`]
-                : surfaces[`${ties[k1].IE}.${k1}`];
+                ? surfaces[ties[k1].IS][k1]
+                : surfaces[ties[k1].IE][k1];
               const poses = directionType
                 ? [momentPoses[horizonSurface.C[0]], momentPoses[horizonSurface.C[1]]]
                 : [momentPoses[horizonSurface.C[2]], momentPoses[horizonSurface.C[3]]];
@@ -548,7 +575,7 @@
             const i1 = directionType
               ? (ib + i) % latitudeL
               : (ib - i + latitudeL) % latitudeL;
-            const surface1 = surfaces[`${i1}.${k1}`];
+            const surface1 = surfaces[i1][k1];
             if (surface1.D && (i1 < latitudeL / 4 || i1 > latitudeL / 4 * 3)) {
               const poses = directionType
                 ? [momentPoses[surface1.C[2]], momentPoses[surface1.C[3]]]
@@ -578,13 +605,13 @@
         ties.forEach((tie1, k1) => {
           const tie2 = ties[(k1 + 1) % longitudeL];
           const [tieM, tieS] = tie1.Z > tie2.Z ? [tie1, tie2] : [tie2, tie1];
-          const surfaceSS = surfaces[`${(tieM.IS - 1 + latitudeL) % latitudeL}.${tieS.K}`];
-          const surfaceSE = surfaces[`${(tieM.IE + 1) % latitudeL}.${tieS.K}`]; 
+          const surfaceSS = surfaces[(tieM.IS - 1 + latitudeL) % latitudeL][tieS.K];
+          const surfaceSE = surfaces[(tieM.IE + 1) % latitudeL][tieS.K];
           if (surfaceSS.D || surfaceSE.D) return;
           if (Array(latitudeL).fill(1).every(
             (_, i) =>
-              !surfaces[`${i}.${tieS.K}`].D ||
-              !surfaces[`${i}.${tieM.K}`].D
+              !surfaces[i][tieS.K].D ||
+              !surfaces[i][tieM.K].D
           )) return;
           const tieSK = tieChain[tieS.K];
           tieChain.forEach((param, k) => {
@@ -600,7 +627,7 @@
           const k2 = (k1 + 1) % longitudeL;
           const tie1 = ties[k1];
           const KS = tieChain[k0] !== tieChain[k1] || !meshes[tiePhase];
-          const KE = tieChain[k1] !== tieChain[k2];
+          const KE = tieChain[k1] !== tieChain[k2] || k2 === tie0.K;
           const KT = ((KC) => KC ? KC.P : null)(
             [0, 1, 2, 3].map(
               (KP) => ({ P: KP, K: Math.floor(longitudeL / 4 * KP) })
@@ -609,76 +636,68 @@
 
           if (KS) {
             if (meshes[tiePhase]) tiePhase ++;
-            meshes[tiePhase] = { L: [], H: [[], []], G: [], R: [], P: [], M: [], Z: 0 };
+            meshes[tiePhase] = { L: [], H: [[], []], G: [], R: [[]], P: [], M: [], Z: 0 };
           }
 
           const mesh = meshes[tiePhase];
           const L = [[], [], [], []];
-          const H = [[], []];
+          const H = [[], [], [], []];
           const G = [];
           const M = [];
-          let [LIL, LIR, HI, GI] = [0, 2, 0, 0];
+          let [LIL, LIR, HIL, HIR, GI, RI] = [0, 2, 0, 2, 0, 0];
 
           mesh.Z = Math.max(mesh.Z, tie1.Z);
 
           Array(latitudeL).fill(null).forEach((_, i) => {
             const i1 = (tie1.IS + i) % latitudeL;
-            const surface1 = surfaces[`${i1}.${k1}`];
-            const surface0 = surfaces[`${i1}.${(k1 - 1 + longitudeL) % longitudeL}`];
-            const surface2 = surfaces[`${i1}.${(k1 + 1) % longitudeL}`];
+            const i2 = (i1 + 1) % latitudeL;
+            const surface1 = surfaces[i1][k1];
+            const surface0 = surfaces[i1][k0];
+            const surface2 = surfaces[i1][k2];
 
             if (surface1.D) {
               if (i1 === tie1.IS) {
-                L[LIL].push(surface1.C[0], surface1.C[1]);
-                H[HI].push(surface1.C[0], surface1.C[1]);
+                L[LIL].push([i1, k1], [i1, k2]);
+                H[HIL].push(surface1.C[0], surface1.C[1]);
+              }
+              if (!surface0.D || KS) {
+                L[LIL].unshift([i2, k1], [i1, k1]);
+              } else {
+                LIL = 1;
               }
               if (!surface0.D) {
-                L[LIL].unshift(surface1.C[3], surface1.C[0]);
-                H[HI].unshift(surface1.C[3], surface1.C[0]);
+                H[HIL].unshift(surface1.C[3], surface1.C[0]);
               } else {
-                if (KS) {
-                  L[LIL].unshift(surface1.C[3], surface1.C[0]);
-                } else if (LIL === 0) {
-                  mesh.L = mesh.L.concat(L[LIL]);
-                  LIL = 1;
-                }
-                if (surface2.D && HI === 0) {
-                  mesh.H[HI] = mesh.H[HI].concat(H[HI]);
-                  HI = 1;
-                }
+                HIL = 1;
+              }
+              if (!surface2.D || KE) {
+                L[LIR].push([i1, k2], [i2, k2]);
+              } else {
+                LIR = 3;
               }
               if (!surface2.D) {
-                L[LIR].push(surface1.C[1], surface1.C[2]);
-                H[HI].push(surface1.C[1], surface1.C[2]);
+                H[HIR].push(surface1.C[1], surface1.C[2]);
               } else {
-                if (KE) {
-                  L[LIR].push(surface1.C[1], surface1.C[2]);
-                } else if (LIR === 2) {
-                  mesh.L = mesh.L.concat(L[LIR]);
-                  LIR = 3;
-                }
-                if (surface0.D && HI === 0) {
-                  mesh.H[HI] = mesh.H[HI].concat(H[HI]);
-                  HI = 1;
-                }
+                HIR = 3;
               }
               if (i1 === tie1.IE) {
-                L[LIL].unshift(surface1.C[2], surface1.C[3]);
-                mesh.L = L[LIR].concat(L[LIL]).concat(mesh.L);
-                !surface2.D
-                  ? H[HI].push(surface1.C[2], surface1.C[3])
-                  : H[HI].unshift(surface1.C[2], surface1.C[3]);
-                mesh.H[HI] = HI === 0
-                  ? mesh.H[HI].concat(H[HI])
-                  : H[HI].concat(mesh.H[HI]);
+                L[LIL].unshift([i2, k2], [i2, k1]);
+                H[HIL].unshift(surface1.C[2], surface1.C[3]);
+                mesh.L = L[3].concat(L[1]).concat(mesh.L).concat(L[0]).concat(L[2]);
+                mesh.H[0] = mesh.H[0].concat(H[0]).concat(H[2]);
+                mesh.H[1] = H[3].concat(H[1]).concat(mesh.H[1]);
               }
+
               if (surface1.G === 1) {
                 if (!G[GI]) {
-                  G[GI] = [[surface1.C[0]], [surface1.C[1]]];
+                  // G[GI] = [[surface1.C[0]], [surface1.C[1]]];
+                  G[GI] = [[[i1, k1]], [[i1, k2]]];
                 }
 
-                G[GI][0].unshift(surface1.C[3]);
-                G[GI][1].push(surface1.C[2]);
+                // G[GI][0].unshift(surface1.C[3]);
+                // G[GI][1].push(surface1.C[2]);
+                G[GI][0].unshift([i2, k1]);
+                G[GI][1].push([i2, k2]);
               } else if (G[GI]) {
                 GI ++;
               }
@@ -701,10 +720,14 @@
               }
 
               if (i1 === Math.floor(latitudeL / 2) - 1) {
-                if (!mesh.R.length) {
-                  mesh.R.push(`R.${k1}`);
+                if (!mesh.R[RI].length) {
+                  mesh.R[RI].push(`R.${k1}`);
                 }
-                mesh.R.push(`R.${k2}`);
+                if (mesh.R[RI][mesh.R[RI].length - 1] !== `R.${k1}`) {
+                  RI ++;
+                  mesh.R[RI] = [`R.${k1}`];
+                }
+                mesh.R[RI].push(`R.${k2}`);
               }
             }
           });
@@ -722,26 +745,26 @@
         ].sort((A, B) => A.C.Z - B.C.Z);
 
         displayContext.clearRect(0, 0, displaySize, displaySize);
+        mapDisplayPositionContext.clearRect(0, 0, RO * 8, RO * 4);
 
         meshes.forEach((mesh, n) => {
-          if (n === 0 || n === meshes.length - 1) {
-            const axis = n === 0 ? axises[0] : axises[1];
-
-            displayContext.strokeStyle = axis.S;
+          if (n === 0) {
+            displayContext.strokeStyle = axises[0].S;
             displayContext.beginPath();
             displayContext.moveTo(displayRadius, displayRadius);
-            displayContext.lineTo(displayRadius + axis.C.X, displayRadius + axis.C.Y);
+            displayContext.lineTo(displayRadius + axises[0].C.X, displayRadius + axises[0].C.Y);
             displayContext.stroke();
           }
 
           displayContext.fillStyle = '#0066ff';
           displayContext.strokeStyle = '#0066ff';
           displayContext.beginPath();
-          mesh.L.forEach((posCode, j) => {
+          mesh.L.forEach(([i, k], j) => {
+            const posCode = `I${i}.K${k}`;
             const pos = momentPoses[posCode];
             if (j === 0) {
               displayContext.moveTo(displayRadius + pos.X, displayRadius + pos.Y);
-            } else if (posCode !== mesh.L[j - 1]) {
+            } else if (i !== mesh.L[j - 1][0] || k !== mesh.L[j - 1][1]) {
               displayContext.lineTo(displayRadius + pos.X, displayRadius + pos.Y);
             }
           });
@@ -758,7 +781,8 @@
           mesh.G.forEach((Gs) => {
             Gs.forEach((G) => {
               displayContext.beginPath();
-              G[0].concat(G[1]).forEach((posCode, j) => {
+              G[0].concat(G[1]).forEach(([i, k], j) => {
+                const posCode = `I${i}.K${k}`;
                 const pos = momentPoses[posCode];
                 if (j === 0) {
                   displayContext.moveTo(displayRadius + pos.X, displayRadius + pos.Y);
@@ -786,9 +810,23 @@
             displayContext.stroke();
           });
 
-          [mesh.R, mesh.P].forEach((Ls, i) => {
+          if (mesh.P.length) {
+            displayContext.strokeStyle = '#88aaff';
+            displayContext.beginPath();
+            mesh.P.forEach((posCode, j) => {
+              const pos = momentPoses[posCode];
+              if (j === 0) {
+                displayContext.moveTo(displayRadius + pos.X, displayRadius + pos.Y);
+              } else {
+                displayContext.lineTo(displayRadius + pos.X, displayRadius + pos.Y);
+              }
+            });
+            displayContext.stroke();
+          }
+
+          mesh.R.forEach((Ls, i) => {
             if (Ls.length) {
-              displayContext.strokeStyle = i === 0 ? '#ff0000' : '#88aaff';
+              displayContext.strokeStyle = '#ff0000';
               displayContext.beginPath();
               Ls.forEach((posCode, j) => {
                 const pos = momentPoses[posCode];
@@ -818,7 +856,77 @@
               displayContext.stroke();
             }
           });
+
+          if (meshes.length === 1 || n === meshes.length - 2) {
+            displayContext.strokeStyle = axises[1].S;
+            displayContext.beginPath();
+            displayContext.moveTo(displayRadius, displayRadius);
+            displayContext.lineTo(displayRadius + axises[1].C.X, displayRadius + axises[1].C.Y);
+            displayContext.stroke();
+          }
+
+          mapDisplayPositionContext.fillStyle = '#0066ff';
+          splitMesh(mesh.L).forEach((L) => {
+            Array(4).fill(null).forEach((_, p) => {
+              const py = Math.floor(p / 2);
+              const px = p % 2;
+              mapDisplayPositionContext.beginPath();
+              L.forEach(([i, k], j) => {
+                const X = RO * 4 * px + RO * 4 / longitudeL * k;
+                const Y = RO * 2 * py + RO * 2 / latitudeL * i;
+                if (j === 0) {
+                  mapDisplayPositionContext.moveTo(X, Y);
+                } else {
+                  mapDisplayPositionContext.lineTo(X, Y);
+                }
+              });
+              mapDisplayPositionContext.closePath();
+              mapDisplayPositionContext.fill();
+            });
+          });
+
+          const meshGs = [];
+
+          mesh.G.forEach((Gs) => {
+            Gs.forEach((G) => {
+              splitMesh(G[0].concat(G[1])).forEach((meshG) => {
+                meshGs.push(meshG);
+              });
+            });
+          });
+
+          mapDisplayPositionContext.fillStyle = '#88ff88';
+
+          meshGs.forEach((G) => {
+            Array(4).fill(null).forEach((_, p) => {
+              const py = Math.floor(p / 2);
+              const px = p % 2;
+              mapDisplayPositionContext.beginPath();
+              G.forEach(([i, k], j) => {
+                const X = RO * 4 * px + RO * 4 / longitudeL * k;
+                const Y = RO * 2 * py + RO * 2 / latitudeL * i;
+                if (j === 0) {
+                  mapDisplayPositionContext.moveTo(X, Y);
+                } else {
+                  mapDisplayPositionContext.lineTo(X, Y);
+                }
+              });
+              mapDisplayPositionContext.closePath();
+              mapDisplayPositionContext.fill();
+            });
+          });
         });
+
+        drawStroke(mapDisplayPositionContext, [[RO, 0], [RO, RO * 4]], 0.5, '#8888ff');
+        drawStroke(mapDisplayPositionContext, [[RO * 3, 0], [RO * 3, RO * 4]], 0.5, '#8888ff');
+        drawStroke(mapDisplayPositionContext, [[RO * 5, 0], [RO * 5, RO * 4]], 0.5, '#8888ff');
+        drawStroke(mapDisplayPositionContext, [[RO * 7, 0], [RO * 7, RO * 4]], 0.5, '#8888ff');
+        drawStroke(mapDisplayPositionContext, [[RO * 2, 0], [RO * 2, RO * 4]], 0.5, '#ffffff');
+        drawStroke(mapDisplayPositionContext, [[RO * 4, 0], [RO * 4, RO * 4]], 0.5, '#ffffff');
+        drawStroke(mapDisplayPositionContext, [[RO * 6, 0], [RO * 6, RO * 4]], 0.5, '#ffffff');
+        drawStroke(mapDisplayPositionContext, [[0, RO], [RO * 8, RO]], 0.5, '#ff0000');
+        drawStroke(mapDisplayPositionContext, [[0, RO * 3], [RO * 8, RO * 3]], 0.5, '#ff0000');
+        drawStroke(mapDisplayPositionContext, [[0, RO * 2], [RO * 8, RO * 2]], 0.5, '#88aaff');
       };
 
       const outputAuxiliaryLine = () => {
@@ -826,7 +934,6 @@
         const Z2 = Math.pow(focalLength * focalLength - RO * RO, 1 / 2);
         const ER = RO / Z2 * focalLength;
 
-        auxiliaryLineContext.setTransform(1, 0, 0, 1, 0, 0);
         auxiliaryLineContext.clearRect(0, 0, displaySize, displaySize);
         drawArc(auxiliaryLineContext, 0.5, 0.5, vectorSlideRadius, 0, Math.PI * 2, displayRadius, '#eeeeee');
         drawStroke(auxiliaryLineContext, [[displayRadius * -1, 0.5], [displayRadius, 0.5]], displayRadius, '#aaaaaa');
@@ -834,11 +941,10 @@
       };
 
       const outputMap = () => {
-        mapDisplayContext.setTransform(1, 0, 0, 1, 0, 0);
-        mapDisplayContext.fillStyle = '#0066ff';
+        mapDisplayContext.fillStyle = '#0044cc';
         mapDisplayContext.fillRect(0, 0, RO * 8, RO * 4);
-        mapDisplayContext.strokeStyle = '#88ff88';
-        mapDisplayContext.fillStyle = '#88ff88';
+        mapDisplayContext.strokeStyle = '#66cc66';
+        mapDisplayContext.fillStyle = '#66cc66';
 
         const [yws, ywt] = grounds.reduce(([_yws, _ywt], ig, i) => {
           const [yu, yd] = _yws[_yws.length - 1] || [0, 0];
@@ -869,17 +975,6 @@
             });
           });
         });
-
-        drawStroke(mapDisplayContext, [[RO, 0], [RO, RO * 4]], 0.5, '#8888ff');
-        drawStroke(mapDisplayContext, [[RO * 3, 0], [RO * 3, RO * 4]], 0.5, '#8888ff');
-        drawStroke(mapDisplayContext, [[RO * 5, 0], [RO * 5, RO * 4]], 0.5, '#8888ff');
-        drawStroke(mapDisplayContext, [[RO * 7, 0], [RO * 7, RO * 4]], 0.5, '#8888ff');
-        drawStroke(mapDisplayContext, [[RO * 2, 0], [RO * 2, RO * 4]], 0.5, '#ffffff');
-        drawStroke(mapDisplayContext, [[RO * 4, 0], [RO * 4, RO * 4]], 0.5, '#ffffff');
-        drawStroke(mapDisplayContext, [[RO * 6, 0], [RO * 6, RO * 4]], 0.5, '#ffffff');
-        drawStroke(mapDisplayContext, [[0, RO], [RO * 8, RO]], 0.5, '#ff0000');
-        drawStroke(mapDisplayContext, [[0, RO * 3], [RO * 8, RO * 3]], 0.5, '#ff0000');
-        drawStroke(mapDisplayContext, [[0, RO * 2], [RO * 8, RO * 2]], 0.5, '#88aaff');
       };
 
       const move = () => {
@@ -1064,6 +1159,8 @@
         if (mapY > 0) mapY -= RO * 2;
         mapDisplay.style.top = `${mapY}px`;
         mapDisplay.style.left = `${mapX}px`;
+        mapDisplayPosition.style.top = `${mapY}px`;
+        mapDisplayPosition.style.left = `${mapX}px`;
       };
 
       const getClientPosition = (event) => ({
@@ -1134,11 +1231,12 @@
 
       document.onkeydown = (event) => {
         if (event.code !== 'Enter') return;
-        if (animationSwitch === false) {
-          startAnimation();
-        } else {
-          stopAnimation();
-        }
+        // if (animationSwitch === false) {
+        //   startAnimation();
+        // } else {
+        //   stopAnimation();
+        // }
+        output();
       };
 
       meter.onpointerdown = (event) => {
