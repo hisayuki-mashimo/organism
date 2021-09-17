@@ -1,0 +1,682 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overscroll-behavior-x: none;
+        overscroll-behavior-y: none;
+      }
+      #contents {
+        display: grid;
+        grid-template-columns: auto auto;
+        grid-template-rows: auto auto;
+        margin: 10px 0 0 10px;
+      }
+      .wrapper {
+        position: relative;
+        box-sizing: border-box;
+        border: solid 1px #aaaaaa;
+        margin: 0 10px 10px 0;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+      }
+      .wrapper canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      #form {
+        grid-column: 1;
+        grid-row: 1;
+        padding: 5px;
+        justify-content: space-between;
+      }
+      #focal-length-meter {
+        position: relative;
+        height: 24px;
+        width: 80%;
+      }
+      #focal-length-meter::before {
+        content: "";
+        position: absolute;
+        display: block;
+        width: 100%;
+        height: 1px;
+        top: 50%;
+        border-top: solid 1px #aaaaaa;
+      }
+      #focal-length-meter-handle {
+        position: absolute;
+        top: 0;
+        width: 10px;
+        height: calc(100% - 2px);
+        background-color: #ffffff;
+        border: solid 1px #888888;
+      }
+      #display-wrapper {
+        grid-column: 1;
+        grid-row: 2;
+      }
+      @media screen and (max-width: 1000px) {
+        #contents {
+          grid-template-columns: auto;
+          grid-template-rows: auto auto auto auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="contents">
+      <div class="wrapper" id="form">
+        <div id="title">中心点距離</div>
+        <div id="focal-length-meter">
+          <div id="focal-length-meter-handle"></div>
+        </div>
+      </div>
+      <div class="wrapper canvas-wrapper" id="display-wrapper">
+        <canvas class="canvas" id="auxiliary-line"></canvas>
+        <canvas class="canvas" id="display"></canvas>
+      </div>
+    </div>
+    <!-- <script src="../earth_maker/debug.js"></script> -->
+    <script>
+      const R = 150;
+      const capacity = 9;
+      const displaySize = 500;
+      const displayRadius = displaySize / 2;
+      const vectorSlideRadius = displaySize / 8 * 3;
+
+      const blockFormations = [
+        {P: [[0, 0], [0, -1], [0, 1], [0, 2]], C: [255, 0, 0]},
+        {P: [[0, 0], [0, -1], [-1, -1], [0, 1]], C: [0, 128, 255]},
+        {P: [[0, 0], [0, 1], [-1, 1], [1, 0]], C: [255, 255, 0]},
+        {P: [[0, 0], [-1, 0], [0, 1], [1, 1]], C: [0, 170, 0]},
+        {P: [[0, 0], [1, 0], [0, 1], [1, -1]], C: [128, 0, 170]},
+        {P: [[0, 0], [-1, 0], [1, 0], [0, 1]], C: [255, 80, 170]},
+        {P: [[0, 0], [1, 0], [0, 1], [1, 1]], C: [0, 0, 255]},
+      ];
+
+      const displayContext = document.getElementById('display').getContext('2d');
+      const auxiliaryLineContext =  document.getElementById('auxiliary-line').getContext('2d');
+      const meter = document.getElementById('focal-length-meter');
+      const meterHandle = document.getElementById('focal-length-meter-handle');
+
+      const keyMap = {
+        ArrowUp: 0,
+        ArrowRight: 1,
+        ArrowDown: 2,
+        ArrowLeft: 3,
+      };
+
+      // 内部変数
+      let focalLengthPercentage = 1.5;
+      let moveSwitch = false;
+      let latestMoveX = 0;
+      let latestMoveY = 0;
+      let latestBaseX = 0;
+      let latestBaseY = 0;
+      let latestPointerX = 0;
+      let latestPointerY = 0;
+      let moveType = 'vector';
+      let animationSwitch = false;
+      let animationTimeout = null;
+      let blocks = [
+        { P: { X:  0, Y:  0, Z:  0 }, C: [200, 255, 248] },
+      ];
+      let block = null;
+      let surfaces = [];
+      let momentPoses = {};
+      let focalLengthSwitch = false;
+      let meterHandleDiffX = 0;
+      // 位置軸: 静止状態の対象物の基本姿勢からの傾きを表す軸
+      let positionAxisX = Math.PI / 180 * 60; // 位置軸のZ軸(正面方向軸)に対する角度(0 ~ π)
+      let positionAxisY = Math.PI / 180 * -70; // 位置軸のY軸(上下方向軸)に対する角度(-π ~ π)
+      let positionAxisL = Math.PI / 180 * 60; // 位置軸に対する回転角度(-π ~ π)
+      // 回転軸: 自転するベースとなる軸
+      let momentAxisX = 0; // 位置軸のZ軸(正面方向軸)に対する角度(0 ~ π)
+      let momentAxisY = 0; // 位置軸のY軸(上下方向軸)に対する角度(-π ~ π)
+      let momentAxisL = 0; // 位置軸に対する回転角度(-π ~ π)
+      let diffAxisL = 0;
+      let axisX = positionAxisX;
+      let axisY = positionAxisY;
+      let axisL = positionAxisL;
+      let lightX = Math.PI / 180 * 70; // 光源軸のZ軸(正面方向軸)に対する角度(0 ~ π)
+      let lightY = Math.PI / 180 * 60; // 光源軸のY軸(上下方向軸)に対する角度(-π ~ π)
+      let time = 0;
+
+      Array.prototype.forEach.call(document.getElementsByClassName('canvas'), (elem) => {
+        elem.style.width = `${displaySize}px`;
+        elem.setAttribute('width', displaySize);
+        elem.setAttribute('height', displaySize);
+      });
+      document.getElementById('display-wrapper').style.height = `${displaySize}px`;
+
+      const drawStroke = (context, poses, centerLength = displayRadius, strokeStyle = null) => {
+        if (strokeStyle) {
+          context.strokeStyle = strokeStyle;
+        }
+        context.beginPath();
+        poses.forEach(([X, Y], i) => {
+          i === 0
+            ? context.moveTo(centerLength + X, centerLength + Y)
+            : context.lineTo(centerLength + X, centerLength + Y);
+        });
+        context.closePath();
+        context.stroke();
+      };
+
+      const drawArc = (context, X, Y, R, BT, LT, centerLength = displayRadius, strokeStyle = null) => {
+        if (strokeStyle) {
+          context.strokeStyle = strokeStyle;
+        }
+        context.beginPath();
+        context.arc(centerLength + X, centerLength + Y, R, BT - Math.PI, BT + LT - Math.PI);
+        context.closePath();
+        context.stroke();
+      };
+
+      const calculateBlockPosition = (pos, considerFocalLength) => {
+        let [X, Y, Z] = [0, 0, 0];
+
+        const RZ0 = Math.pow(pos.X * pos.X + pos.Y * pos.Y, 1 / 2); // Z面上の半径
+        const TZ0 = RZ0 > 0 ? (Math.acos(pos.Y / RZ0) * (pos.X > 0 ? 1 : -1)) : 0;
+        const TZ1 = TZ0 + axisL; // 回転角度の加算
+        const LX1 = Math.sin(TZ1) * RZ0; // 回転軸に対するX軸上の相対距離
+        const LY1 = Math.cos(TZ1) * RZ0; // 回転軸に対するY軸上の相対距離
+        const RX1 = Math.pow(LY1 * LY1 + pos.Z * pos.Z, 1 / 2);
+        const TX1 = RX1 > 0 ? (Math.acos(pos.Z / RX1) * (LY1 >= 0 ? 1 : -1)) : 0;
+        const TX2 = TX1 + axisX;
+        const LY2 = Math.sin(TX2) * RX1;
+        const LZ2 = Math.cos(TX2) * RX1;
+        const RZ2 = Math.pow(LX1 * LX1 + LY2 * LY2, 1 / 2);
+        const TZ2 = RZ2 > 0 ? (Math.acos(LY2 / RZ2) * (LX1 > 0 ? 1 : -1)) : 0;
+        const TZ3 = TZ2 + axisY;
+        const LX3 = Math.sin(TZ3) * RZ2;
+        const LY3 = Math.cos(TZ3) * RZ2;
+
+        X = LX3 / capacity * R;
+        Y = LY3 / capacity * R;
+        Z = LZ2 / capacity * R;
+        L = 0;
+
+        let LX = LX1 / capacity * R;
+        let LY = LY2 / capacity * R;
+
+        if (considerFocalLength) {
+          const focalLength = displaySize * focalLengthPercentage;
+          const focalCofficient = 1 / Math.abs((focalLength - Z) / focalLength);
+          // 法線角度計算用(視点からの距離の2乗)
+          L = Math.pow(focalLength - Z, 2) + X * X + Y * Y;
+          [X, Y] = [X * focalCofficient, Y * focalCofficient];
+          // 正面重複判別用
+          [LX, LY] = [LX * focalCofficient, LY * focalCofficient];
+        }
+
+        return { X, Y, Z, LX, LY, L };
+      };
+
+      const calculateRelativeVector = (basePos, meshPos, z) => {
+        const LRZ = Math.sin(lightX);
+        const LLZ = Math.cos(lightX);
+        const LLX = Math.sin(lightY) * LRZ;
+        const LLY = Math.cos(lightY) * LRZ;
+        const LRX = Math.pow(LLY * LLY + LLZ * LLZ, 1 / 2);
+        const LRY = Math.pow(LLX * LLX + LLZ * LLZ, 1 / 2);
+        const LTX = LRX > 0 ? (Math.acos(LLZ / LRX) * (LLY > 0 ? 1 : -1)) : 0;
+        const LTY = LRY > 0 ? (Math.acos(LLZ / LRY) * (LLX > 0 ? 1 : -1)) : 0;
+
+        const MLX0 = meshPos.X - basePos.X;
+        const MLY0 = meshPos.Y - basePos.Y;
+        const MLZ0 = meshPos.Z - basePos.Z;
+        const MRX0 = Math.pow(MLY0 * MLY0 + MLZ0 * MLZ0, 1 / 2);
+        const MTX0 = MRX0 > 0 ? (Math.acos(MLZ0 / MRX0) * (MLY0 > 0 ? 1 : -1)) : 0;
+        const MTX1 = MTX0 + LTX;
+        const MLZ1 = Math.cos(MTX1) * MRX0;
+        const MLY1 = Math.sin(MTX1) * MRX0;
+        const MRY1 = Math.pow(MLX0 * MLX0 + MLZ1 * MLZ1, 1 / 2);
+        const MTY1 = MRY1 > 0 ? (Math.acos(MLZ1 / MRY1) * (MLX0 > 0 ? 1 : -1)) : 0;
+        const MTY2 = MTY1 + LTY;
+        const MLX2 = Math.sin(MTY2) * MRY1;
+        const MLZ2 = Math.cos(MTY2) * MRY1;
+        const MRZ2 = Math.pow(MLX2 * MLX2 + MLY1 * MLY1, 1 / 2);
+        const MRO2 = Math.pow(MLZ2 * MLZ2 + MRZ2 * MRZ2, 1 / 2);
+        const MTO2 = MRO2 > 0 ? Math.acos(MLZ2 / MRO2) : 0;
+
+        return Math.abs(MTO2) % (Math.PI * 2);
+      };
+
+      const calculateColor = (C, V) => {
+        const CD = C.map((C0, i) => {
+          const C1 = V < 1 / 2
+            ? Math.round(C0 + (255 - C0) * (1 - V * 2))
+            : Math.round(C0 * (1 / 2 + 1 - V));
+
+          return (C1 < 16 ? '0' : '') + C1.toString(16);
+        });
+
+        return `#${CD.join('')}`;
+      };
+
+      const output = () => {
+        if (moveSwitch === true) {
+          move();
+          slide();
+        }
+
+        surfaces = [];
+
+        [
+          ...blocks,
+          ...(block ? block.P.map((p) => ({ P: p, C: block.C })) : [])
+        ].forEach(({ P, C }) => {
+          const [LX1, LX2] = [P.X + 1 / 2, P.X - 1 / 2];
+          const [LY1, LY2] = [P.Y + 1 / 2, P.Y - 1 / 2];
+          const [LZ1, LZ2] = [P.Z + 1 / 2, P.Z - 1 / 2];
+          const pointPoses = [
+            { X: LX1, Y: LY1, Z: LZ1 }, // 左上前
+            { X: LX2, Y: LY1, Z: LZ1 }, // 右上前
+            { X: LX1, Y: LY2, Z: LZ1 }, // 左下前
+            { X: LX2, Y: LY2, Z: LZ1 }, // 右下前
+            { X: LX1, Y: LY1, Z: LZ2 }, // 左上後
+            { X: LX2, Y: LY1, Z: LZ2 }, // 右上後
+            { X: LX1, Y: LY2, Z: LZ2 }, // 左下後
+            { X: LX2, Y: LY2, Z: LZ2 }, // 右下後
+          ].map((pos) => calculateBlockPosition(pos, true));
+          const meshPoses = [
+            { X: P.X, Y: P.Y, Z: P.Z }, // 中心
+            { X: P.X, Y: P.Y, Z: LZ1 }, // 正面
+            { X: P.X, Y: LY1, Z: P.Z }, // 上面
+            { X: P.X, Y: LY2, Z: P.Z }, // 下面
+            { X: LX1, Y: P.Y, Z: P.Z }, // 左面
+            { X: LX2, Y: P.Y, Z: P.Z }, // 右面
+            { X: P.X, Y: P.Y, Z: LZ2 }, // 背面
+          ].map((pos, z) => calculateBlockPosition(pos, false));
+          [
+            { P: [pointPoses[0], pointPoses[1], pointPoses[3], pointPoses[2]], M: meshPoses[1] },
+            { P: [pointPoses[0], pointPoses[1], pointPoses[5], pointPoses[4]], M: meshPoses[2] },
+            { P: [pointPoses[0], pointPoses[2], pointPoses[6], pointPoses[4]], M: meshPoses[4] },
+            { P: [pointPoses[1], pointPoses[3], pointPoses[7], pointPoses[5]], M: meshPoses[5] },
+            { P: [pointPoses[2], pointPoses[3], pointPoses[7], pointPoses[6]], M: meshPoses[3] },
+            { P: [pointPoses[4], pointPoses[5], pointPoses[7], pointPoses[6]], M: meshPoses[6] },
+          ].forEach(({ P, M }) => {
+            const Z = P.reduce((res, pos) => res + pos.Z, 0);
+            const V = calculateRelativeVector(meshPoses[0], M);
+            surfaces.push({ P, Z, C, V });
+          });
+        });
+
+        surfaces.sort((A, B) => A.Z - B.Z);
+
+        displayContext.clearRect(0, 0, displaySize, displaySize);
+
+        surfaces.forEach((mesh, n) => {
+          displayContext.fillStyle = calculateColor(mesh.C, mesh.V / Math.PI, mesh.V, mesh.z) + '88';
+          displayContext.strokeStyle = calculateColor(mesh.C, mesh.V / Math.PI) + 'aa';
+          displayContext.beginPath();
+          mesh.P.forEach(({ X, Y, Z }, j) => {
+            j === 0
+              ? displayContext.moveTo(displayRadius + X, displayRadius + Y)
+              : displayContext.lineTo(displayRadius + X, displayRadius + Y);
+          });
+          displayContext.closePath();
+          displayContext.fill();
+          displayContext.stroke();
+        });
+      };
+
+      const outputAuxiliaryLine = () => {
+        const focalLength = displaySize * focalLengthPercentage;
+        const Z2 = Math.pow(focalLength * focalLength - R * R, 1 / 2);
+        const ER = R / Z2 * focalLength;
+
+        auxiliaryLineContext.clearRect(0, 0, displaySize, displaySize);
+        drawArc(auxiliaryLineContext, 0.5, 0.5, vectorSlideRadius, 0, Math.PI * 2, displayRadius, '#eeeeee');
+        drawStroke(auxiliaryLineContext, [[displayRadius * -1, 0.5], [displayRadius, 0.5]], displayRadius, '#aaaaaa');
+        drawStroke(auxiliaryLineContext, [[0.5, displayRadius * -1], [0.5, displayRadius]], displayRadius, '#aaaaaa');
+      };
+
+      const move = () => {
+        positionAxisX = axisX;
+        positionAxisY = axisY;
+        positionAxisL = axisL;
+
+        if (moveType === 'vector') {
+          const diffX = latestMoveX - latestBaseX;
+          const diffY = latestMoveY - latestBaseY;
+          const diffL = Math.pow(diffX * diffX + diffY * diffY, 1 / 2);
+          const diffR = Math.max(diffL, displayRadius / 100);
+
+          if (diffL > 0) {
+            momentAxisY = Math.acos(diffY / diffL) * (diffX >= 0 ? 1 : -1) + Math.PI / 2;
+          }
+          momentAxisX = Math.PI / 2;
+          momentAxisL = 0;
+          diffAxisL = diffR > 0 ? Math.asin(diffR / displayRadius) : 0;
+        } else {
+          const X1 = latestBaseX - displayRadius;
+          const Y1 = latestBaseY - displayRadius;
+          const X2 = latestMoveX - displayRadius;
+          const Y2 = latestMoveY - displayRadius;
+          const L1 = Math.pow(X1 * X1 + Y1 * Y1, 1 / 2);
+          const L2 = Math.pow(X2 * X2 + Y2 * Y2, 1 / 2);
+          const T1 = L1 > 0 ? Math.acos(Y1 / L1) * (X1 >= 0 ? 1 : -1) : 0;
+          const T2 = L2 > 0 ? Math.acos(Y2 / L2) * (X2 >= 0 ? 1 : -1) : 0;
+
+          momentAxisX = 0;
+          momentAxisY = 0;
+          momentAxisL = 0;
+          diffAxisL = T2 - T1;
+        }
+
+        outputAuxiliaryLine();
+
+        latestBaseX = latestMoveX;
+        latestBaseY = latestMoveY;
+      };
+
+      const slide = () => {
+        momentAxisL += diffAxisL;
+
+        const RZ0 = Math.sin(positionAxisX); // Z面上の半径
+        const LZ0 = Math.cos(positionAxisX); // Z軸上の中心点との距離
+        const TZ1 = positionAxisY - momentAxisY; // 回転軸に対するZ面上の相対角度
+        const LX1 = Math.sin(TZ1) * RZ0; // 回転軸に対するX軸上の相対距離
+        const LY1 = Math.cos(TZ1) * RZ0; // 回転軸に対するY軸上の相対距離
+        const RX1 = Math.pow(LY1 * LY1 + LZ0 * LZ0, 1 / 2);
+        const TX1 = RX1 > 0 ? Math.acos(LZ0 / RX1) * (LY1 >= 0 ? 1 : -1) : 0;
+        const TX2 = TX1 - momentAxisX; // 回転軸に対するX面上の相対角度
+        const LY2 = Math.sin(TX2) * RX1;
+        const LZ2 = Math.cos(TX2) * RX1;
+        const RZ2 = Math.pow(LX1 * LX1 + LY2 * LY2, 1 / 2);
+        const TZ2 = RZ2 > 0 ? Math.acos(LY2 / RZ2) * (LX1 >= 0 ? 1 : -1) : 0;
+        const TZ3 = TZ2 + momentAxisL; // 回転角度に対するZ面上の相対角度
+        const LX3 = Math.sin(TZ3) * RZ2;
+        const LY3 = Math.cos(TZ3) * RZ2;
+        const RX3 = Math.pow(LY3 * LY3 + LZ2 * LZ2, 1 / 2);
+        const TX3 = RX3 > 0 ? Math.acos(LZ2 / RX3) * (LY3 >= 0 ? 1 : -1) : 0;
+        const TX4 = TX3 + momentAxisX;
+        const LY4 = Math.sin(TX4) * RX3;
+        const LZ4 = Math.cos(TX4) * RX3;
+        const RZ4 = Math.pow(LX3 * LX3 + LY4 * LY4, 1 / 2);
+        const TZ4 = RZ4 > 0 ? Math.acos(LY4 / RZ4) * (LX3 >= 0 ? 1 : -1) : 0;
+        const TZ5 = TZ4 + momentAxisY;
+        const RX5 = Math.pow(RZ4 * RZ4 + LZ4 * LZ4, 1 / 2);
+        const TX5 = RX5 > 0 ? Math.acos(LZ4 / RX5) : 0;
+
+        const L_LX0 = Math.sin(positionAxisL);
+        const L_LY0 = Math.cos(positionAxisL) * Math.cos(positionAxisX);
+        const L_LZ0 = Math.cos(positionAxisL) * Math.sin(positionAxisX) * -1;
+        const L_RZ0 = Math.pow(L_LX0 * L_LX0 + L_LY0 * L_LY0, 1 / 2);
+        const L_TZ0 = L_RZ0 > 0 ? Math.acos(L_LY0 / L_RZ0) * (L_LX0 >= 0 ? 1 : -1) : 0;
+        const L_TZ1 = L_TZ0 + positionAxisY - momentAxisY;
+        const L_LX1 = Math.sin(L_TZ1) * L_RZ0;
+        const L_LY1 = Math.cos(L_TZ1) * L_RZ0;
+        const L_RX1 = Math.pow(L_LY1 * L_LY1 + L_LZ0 * L_LZ0, 1 / 2);
+        const L_TX1 = L_RX1 > 0 ? Math.acos(L_LZ0 / L_RX1) * (L_LY1 >= 0 ? 1 : -1) : 0;
+        const L_TX2 = L_TX1 - momentAxisX;
+        const L_LY2 = Math.sin(L_TX2) * L_RX1;
+        const L_LZ2 = Math.cos(L_TX2) * L_RX1;
+        const L_RZ2 = Math.pow(L_LX1 * L_LX1 + L_LY2 * L_LY2, 1 / 2);
+        const L_TZ2 = L_RZ2 > 0 ? Math.acos(L_LY2 / L_RZ2) * (L_LX1 >= 0 ? 1 : -1) : 0;
+        const L_TZ3 = L_TZ2 + momentAxisL;
+        const L_LX3 = Math.sin(L_TZ3) * L_RZ2;
+        const L_LY3 = Math.cos(L_TZ3) * L_RZ2;
+        const L_RX3 = Math.pow(L_LY3 * L_LY3 + L_LZ2 * L_LZ2, 1 / 2);
+        const L_TX3 = L_RX3 > 0 ? Math.acos(L_LZ2 / L_RX3) * (L_LY3 >= 0 ? 1 : -1) : 0;
+        const L_TX4 = L_TX3 + momentAxisX;
+        const L_LY4 = Math.sin(L_TX4) * L_RX3;
+        const L_LZ4 = Math.cos(L_TX4) * L_RX3;
+        const L_RZ4 = Math.pow(L_LX3 * L_LX3 + L_LY4 * L_LY4, 1 / 2);
+        const L_TZ4 = L_RZ4 > 0 ? Math.acos(L_LY4 / L_RZ4) * (L_LX3 >= 0 ? 1 : -1) : 0;
+        const L_TZ5 = L_TZ4 - TZ4;
+        const L_LX5 = Math.sin(L_TZ5) * L_RZ4;
+        const L_LY5 = Math.cos(L_TZ5) * L_RZ4;
+        const L_RX5 = Math.pow(L_LY5 * L_LY5 + L_LZ4 * L_LZ4, 1 / 2);
+        const L_TX5 = L_RX5 > 0 ? Math.acos(L_LZ4 / L_RX5) * (L_LY5 >= 0 ? 1 : -1) : 0;
+        const L_TX6 = L_TX5 - TX5;
+        const L_LY6 = Math.sin(L_TX6) * L_RX5;
+        const L_RZ6 = Math.pow(L_LX5 * L_LX5 + L_LY6 * L_LY6, 1 / 2);
+        const L_TZ6 = L_RZ6 > 0 ? Math.acos(L_LY6 / L_RZ6) * (L_LX5 >= 0 ? 1 : -1) : 0;
+
+        axisX = TX5;
+        axisY = TZ5;
+        axisL = L_TZ6;
+      };
+
+      const animate = () => {
+        if (!block) {
+          const N = Math.floor(Math.random() * blockFormations.length);
+          const B = blockFormations[N];
+          const D = Math.floor(Math.random() * 6);
+          const A1 = Math.floor(Math.random() * 4);
+          const A2 = Math.floor(Math.random() * 4);
+          const A3 = Math.floor(Math.random() * 4);
+          const P = B.P.map(([X, Y]) => {
+            let Z = 0;
+            [X, Y] = A1 === 1 ? [Y, X * -1] : A1 === 2 ? [X * -1, Y * -1] : A1 === 3 ? [Y * -1, X] : [X, Y];
+            [Y, Z] = A2 === 1 ? [Z, Y * -1] : A2 === 2 ? [Y * -1, Z * -1] : A2 === 3 ? [Z * -1, Y] : [Y, Z];
+            [X, Z] = A3 === 1 ? [Z, X * -1] : A3 === 2 ? [X * -1, Z * -1] : A3 === 3 ? [Z * -1, X] : [X, Z];
+            X += (D === 4 ? capacity : D === 5 ? (capacity * -1) : 0);
+            Y += (D === 1 ? capacity : D === 3 ? (capacity * -1) : 0);
+            Z += (D === 0 ? capacity : D === 2 ? (capacity * -1) : 0);
+
+            return { X, Y, Z };
+          });
+          block = { P, C: B.C, D, N };
+        } else if (time > 0 && time % 50 === 0) {
+          const P = block.P.map((p) => ({
+            ...p,
+            X: p.X - (block.D === 4 ? 1 : block.D === 5 ? -1 : 0),
+            Y: p.Y - (block.D === 1 ? 1 : block.D === 3 ? -1 : 0),
+            Z: p.Z - (block.D === 0 ? 1 : block.D === 2 ? -1 : 0),
+          }));
+
+          if (P.find(
+              (p) => blocks.find(
+                (b) => b.P.X === p.X && b.P.Y === p.Y && b.P.Z === p.Z
+              )
+          )) {
+            block.P.forEach((p) => {
+              blocks.push({ P: { ...p }, C: block.C });
+            });
+            block = null;
+            time = 0;
+          } else if (P.find(
+            (p) => Math.abs(p.X) > capacity + 2 || Math.abs(p.Y) > capacity + 2 || Math.abs(p.Z) > capacity + 2
+          )) {
+            block = null;
+            time = 0;
+          } else {
+            block.P = P;
+          }
+        }
+
+        output();
+
+        if (animationSwitch) {
+          time ++;
+          setTimeout(animate, 25);
+        }
+      };
+
+      const startAnimation = () => {
+        animationSwitch = true;
+        animate();
+      };
+
+      const stopAnimation = () => {
+        animationSwitch = false;
+      };
+
+      const getMeterParams = () => {
+        const meterRect = meter.getBoundingClientRect();
+        const meterHandleRect = meterHandle.getBoundingClientRect();
+
+        return {
+          left: meterRect.left + meterHandleRect.width / 2,
+          right: meterRect.left + meterRect.width - meterHandleRect.width / 2,
+        };
+      };
+
+      const setMeterPosition = (percentage) => {
+        const { left, right } = getMeterParams();
+        meterHandle.style.left = `${Math.floor((right - left) * percentage)}px`;
+      };
+
+      const setFocalLengthSwitch = (operate, clientX) => {
+        focalLengthSwitch = operate;
+        if (operate === false) return;
+
+        const meterHandleRect = meterHandle.getBoundingClientRect();
+        if (clientX >= meterHandleRect.left && clientX <= meterHandleRect.left + meterHandleRect.width) {
+          meterHandleDiffX = clientX - (meterHandleRect.left + meterHandleRect.width / 2);
+        } else {
+          meterHandleDiffX = 0;
+          setFocalLength(clientX);
+        }
+      };
+
+      const setFocalLength = (clientX) => {
+        const { left, right } = getMeterParams();
+        let percentage = (clientX - meterHandleDiffX - left) / (right - left);
+        if (percentage < 0) percentage = 0;
+        if (percentage > 1) percentage = 1;
+        setMeterPosition(percentage);
+        focalLengthPercentage = 1 / 2 + 2 * percentage;
+
+        const focalLength = displaySize * focalLengthPercentage;
+
+        outputAuxiliaryLine();
+        if (!animationSwitch) output();
+      };
+
+      const getClientPosition = (event) => ({
+        X: event.clientX !== undefined ? event.clientX : event.changedTouches[0].clientX,
+        Y: event.clientY !== undefined ? event.clientY : event.changedTouches[0].clientY,
+      });
+
+      const displayOnpointerdown = (event) => {
+        if (moveSwitch === true || focalLengthSwitch === true) return;
+
+        // stopAnimation();
+
+        const { X, Y } = getClientPosition(event);
+
+        moveSwitch = true;
+        latestMoveX = X;
+        latestMoveY = Y;
+        latestBaseX = X;
+        latestBaseY = Y;
+
+        const displayRect = display.getBoundingClientRect();
+        const relativeDiffX = X - displayRect.left - displayRadius;
+        const relativeDiffY = Y - displayRect.top - displayRadius;
+        const relativeDiffRadius = Math.pow(relativeDiffX * relativeDiffX + relativeDiffY * relativeDiffY, 1 / 2);
+        moveType = relativeDiffRadius <= vectorSlideRadius ? 'vector' : 'rotate';
+      };
+
+      const moveBlock = (direction) => {
+        block.P.forEach((P) => {
+          switch (block.D) {
+            case 0:
+              P.X += direction === 1 ? 1 : direction === 3 ? -1 : 0;
+              P.Y += direction === 0 ? 1 : direction === 2 ? -1 : 0;
+              break;
+
+            case 2:
+              P.X += direction === 3 ? 1 : direction === 1 ? -1 : 0;
+              P.Y += direction === 2 ? 1 : direction === 0 ? -1 : 0;
+              break;
+
+            case 1:
+              P.X += direction === 1 ? 1 : direction === 3 ? -1 : 0;
+              P.Z += direction === 0 ? 1 : direction === 2 ? -1 : 0;
+              break;
+
+            case 3:
+              P.X += direction === 3 ? 1 : direction === 1 ? -1 : 0;
+              P.Z += direction === 2 ? 1 : direction === 0 ? -1 : 0;
+              break;
+
+            case 4:
+              P.Y += direction === 0 ? 1 : direction === 2 ? -1 : 0;
+              P.Z += direction === 3 ? 1 : direction === 1 ? -1 : 0;
+              break;
+
+            case 5:
+              P.Y += direction === 2 ? 1 : direction === 0 ? -1 : 0;
+              P.Z += direction === 1 ? 1 : direction === 3 ? -1 : 0;
+              break;
+          }
+        });
+      };
+
+      const documentMousemove = (event) => {
+        const { X, Y } = getClientPosition(event);
+
+        if (moveSwitch === true) {
+          latestMoveX = X;
+          latestMoveY = Y;
+          output();
+        } else if (focalLengthSwitch) {
+          setFocalLength(X);
+        }
+      };
+
+      document.onpointerup = (event) => {
+        if (moveSwitch === true) {
+          moveSwitch = false;
+
+          const { X, Y } = getClientPosition(event);
+          latestMoveX = X;
+          latestMoveY = Y;
+        }
+
+        setFocalLengthSwitch(false);
+      };
+
+      document.onkeydown = (event) => {
+        switch (event.code) {
+          case 'Enter':
+            if (animationSwitch === false) {
+              startAnimation();
+            } else {
+              stopAnimation();
+            }
+
+            break;
+          case 'ArrowUp':
+          case 'ArrowRight':
+          case 'ArrowDown':
+          case 'ArrowLeft':
+            moveBlock(keyMap[event.code]);
+
+            break;
+          default:
+        }
+      };
+
+      meter.onpointerdown = (event) => {
+        setFocalLengthSwitch(true, getClientPosition(event).X);
+      };
+
+      if (typeof display.ontouchstart === 'object') {
+        display.ontouchstart = displayOnpointerdown;
+      } else {
+        display.onpointerdown = displayOnpointerdown;
+      }
+      if (typeof document.ontouchmove === 'object') {
+        document.ontouchmove = documentMousemove;
+      } else {
+        document.onmousemove = documentMousemove;
+      }
+
+      outputAuxiliaryLine();
+      setMeterPosition(focalLengthPercentage / 2 - (1 / 4));
+      startAnimation();
+    </script>
+  </body>
+</html>
