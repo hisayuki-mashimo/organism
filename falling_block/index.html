@@ -77,14 +77,13 @@
         </div>
       </div>
       <div class="wrapper canvas-wrapper" id="display-wrapper">
-        <canvas class="canvas" id="auxiliary-line"></canvas>
         <canvas class="canvas" id="display"></canvas>
       </div>
     </div>
-    <!-- <script src="../earth_maker/debug.js"></script> -->
+    <script src="../earth_maker/debug.js"></script>
     <script>
       const R = 150;
-      const capacity = 9;
+      const capacity = 10;
       const displaySize = 500;
       const displayRadius = displaySize / 2;
       const vectorSlideRadius = displaySize / 8 * 3;
@@ -92,7 +91,7 @@
       const blockFormations = [
         {P: [[0, 0], [0, -1], [0, 1], [0, 2]], C: [255, 0, 0]},
         {P: [[0, 0], [0, -1], [-1, -1], [0, 1]], C: [0, 128, 255]},
-        {P: [[0, 0], [0, 1], [-1, 1], [1, 0]], C: [255, 255, 0]},
+        {P: [[0, 0], [0, -1], [-1, 1], [0, 1]], C: [255, 255, 0]},
         {P: [[0, 0], [-1, 0], [0, 1], [1, 1]], C: [0, 170, 0]},
         {P: [[0, 0], [1, 0], [0, 1], [1, -1]], C: [128, 0, 170]},
         {P: [[0, 0], [-1, 0], [1, 0], [0, 1]], C: [255, 80, 170]},
@@ -100,7 +99,6 @@
       ];
 
       const displayContext = document.getElementById('display').getContext('2d');
-      const auxiliaryLineContext =  document.getElementById('auxiliary-line').getContext('2d');
       const meter = document.getElementById('focal-length-meter');
       const meterHandle = document.getElementById('focal-length-meter-handle');
 
@@ -112,7 +110,7 @@
       };
 
       // 内部変数
-      let focalLengthPercentage = 1.5;
+      let focalLengthPercentage = 2;
       let moveSwitch = false;
       let latestMoveX = 0;
       let latestMoveY = 0;
@@ -122,19 +120,17 @@
       let latestPointerY = 0;
       let moveType = 'vector';
       let animationSwitch = false;
-      let animationTimeout = null;
-      let blocks = [
-        { P: { X:  0, Y:  0, Z:  0 }, C: [200, 255, 248] },
-      ];
+      let blocks = [{ P: { X:  0, Y:  0, Z:  0 }, C: [200, 255, 248] }];
       let block = null;
-      let surfaces = [];
-      let momentPoses = {};
       let focalLengthSwitch = false;
       let meterHandleDiffX = 0;
       // 位置軸: 静止状態の対象物の基本姿勢からの傾きを表す軸
-      let positionAxisX = Math.PI / 180 * 60; // 位置軸のZ軸(正面方向軸)に対する角度(0 ~ π)
-      let positionAxisY = Math.PI / 180 * -70; // 位置軸のY軸(上下方向軸)に対する角度(-π ~ π)
-      let positionAxisL = Math.PI / 180 * 60; // 位置軸に対する回転角度(-π ~ π)
+      let positionAxisX = Math.PI / 180 * 40; // 位置軸のZ軸(正面方向軸)に対する角度(0 ~ π)
+      let positionAxisY = Math.PI / 180 * -50; // 位置軸のY軸(上下方向軸)に対する角度(-π ~ π)
+      let positionAxisL = Math.PI / 180 * 50; // 位置軸に対する回転角度(-π ~ π)
+      // let positionAxisX = Math.PI / 180 * 0; // 位置軸のZ軸(正面方向軸)に対する角度(0 ~ π)
+      // let positionAxisY = Math.PI / 180 * 0; // 位置軸のY軸(上下方向軸)に対する角度(-π ~ π)
+      // let positionAxisL = Math.PI / 180 * 0; // 位置軸に対する回転角度(-π ~ π)
       // 回転軸: 自転するベースとなる軸
       let momentAxisX = 0; // 位置軸のZ軸(正面方向軸)に対する角度(0 ~ π)
       let momentAxisY = 0; // 位置軸のY軸(上下方向軸)に対する角度(-π ~ π)
@@ -153,30 +149,6 @@
         elem.setAttribute('height', displaySize);
       });
       document.getElementById('display-wrapper').style.height = `${displaySize}px`;
-
-      const drawStroke = (context, poses, centerLength = displayRadius, strokeStyle = null) => {
-        if (strokeStyle) {
-          context.strokeStyle = strokeStyle;
-        }
-        context.beginPath();
-        poses.forEach(([X, Y], i) => {
-          i === 0
-            ? context.moveTo(centerLength + X, centerLength + Y)
-            : context.lineTo(centerLength + X, centerLength + Y);
-        });
-        context.closePath();
-        context.stroke();
-      };
-
-      const drawArc = (context, X, Y, R, BT, LT, centerLength = displayRadius, strokeStyle = null) => {
-        if (strokeStyle) {
-          context.strokeStyle = strokeStyle;
-        }
-        context.beginPath();
-        context.arc(centerLength + X, centerLength + Y, R, BT - Math.PI, BT + LT - Math.PI);
-        context.closePath();
-        context.stroke();
-      };
 
       const calculateBlockPosition = (pos, considerFocalLength) => {
         let [X, Y, Z] = [0, 0, 0];
@@ -200,22 +172,14 @@
         X = LX3 / capacity * R;
         Y = LY3 / capacity * R;
         Z = LZ2 / capacity * R;
-        L = 0;
-
-        let LX = LX1 / capacity * R;
-        let LY = LY2 / capacity * R;
 
         if (considerFocalLength) {
           const focalLength = displaySize * focalLengthPercentage;
           const focalCofficient = 1 / Math.abs((focalLength - Z) / focalLength);
-          // 法線角度計算用(視点からの距離の2乗)
-          L = Math.pow(focalLength - Z, 2) + X * X + Y * Y;
           [X, Y] = [X * focalCofficient, Y * focalCofficient];
-          // 正面重複判別用
-          [LX, LY] = [LX * focalCofficient, LY * focalCofficient];
         }
 
-        return { X, Y, Z, LX, LY, L };
+        return { X, Y, Z };
       };
 
       const calculateRelativeVector = (basePos, meshPos, z) => {
@@ -266,7 +230,7 @@
           slide();
         }
 
-        surfaces = [];
+        const surfaces = [];
 
         [
           ...blocks,
@@ -293,7 +257,7 @@
             { X: LX1, Y: P.Y, Z: P.Z }, // 左面
             { X: LX2, Y: P.Y, Z: P.Z }, // 右面
             { X: P.X, Y: P.Y, Z: LZ2 }, // 背面
-          ].map((pos, z) => calculateBlockPosition(pos, false));
+          ].map((pos) => calculateBlockPosition(pos, false));
           [
             { P: [pointPoses[0], pointPoses[1], pointPoses[3], pointPoses[2]], M: meshPoses[1] },
             { P: [pointPoses[0], pointPoses[1], pointPoses[5], pointPoses[4]], M: meshPoses[2] },
@@ -308,15 +272,182 @@
           });
         });
 
+        if (block) {
+          const blockBase = block.P.reduce(
+            (res, P) =>
+              (block.D === 0 && (!(`${P.X}.${P.Y}` in res) || res[`${P.X}.${P.Y}`].V > P.Z)) ? ({ ...res, [`${P.X}.${P.Y}`]: { P, V: P.Z }}) :
+              (block.D === 1 && (!(`${P.X}.${P.Z}` in res) || res[`${P.X}.${P.Z}`].V > P.Y)) ? ({ ...res, [`${P.X}.${P.Z}`]: { P, V: P.Y }}) :
+              (block.D === 2 && (!(`${P.X}.${P.Y}` in res) || res[`${P.X}.${P.Y}`].V < P.Z)) ? ({ ...res, [`${P.X}.${P.Y}`]: { P, V: P.Z }}) :
+              (block.D === 3 && (!(`${P.X}.${P.Z}` in res) || res[`${P.X}.${P.Z}`].V < P.Y)) ? ({ ...res, [`${P.X}.${P.Z}`]: { P, V: P.Y }}) :
+              (block.D === 4 && (!(`${P.Y}.${P.Z}` in res) || res[`${P.Y}.${P.Z}`].V > P.X)) ? ({ ...res, [`${P.Y}.${P.Z}`]: { P, V: P.X }}) :
+              (block.D === 5 && (!(`${P.Y}.${P.Z}` in res) || res[`${P.Y}.${P.Z}`].V < P.X)) ? ({ ...res, [`${P.Y}.${P.Z}`]: { P, V: P.X }}) :
+              res,
+            {}
+          );
+          const blocksCover = blocks.reduce(
+            (res, { P }) =>
+              (block.D === 0 && (!(`${P.X}.${P.Y}` in res) || res[`${P.X}.${P.Y}`] < P.Z)) ? ({ ...res, [`${P.X}.${P.Y}`]: P.Z }) :
+              (block.D === 1 && (!(`${P.X}.${P.Z}` in res) || res[`${P.X}.${P.Z}`] < P.Y)) ? ({ ...res, [`${P.X}.${P.Z}`]: P.Y }) :
+              (block.D === 2 && (!(`${P.X}.${P.Y}` in res) || res[`${P.X}.${P.Y}`] > P.Z)) ? ({ ...res, [`${P.X}.${P.Y}`]: P.Z }) :
+              (block.D === 3 && (!(`${P.X}.${P.Z}` in res) || res[`${P.X}.${P.Z}`] > P.Y)) ? ({ ...res, [`${P.X}.${P.Z}`]: P.Y }) :
+              (block.D === 4 && (!(`${P.Y}.${P.Z}` in res) || res[`${P.Y}.${P.Z}`] < P.X)) ? ({ ...res, [`${P.Y}.${P.Z}`]: P.X }) :
+              (block.D === 5 && (!(`${P.Y}.${P.Z}` in res) || res[`${P.Y}.${P.Z}`] > P.X)) ? ({ ...res, [`${P.Y}.${P.Z}`]: P.X }) :
+              res,
+            {}
+          );
+          const diff = Object.keys(blockBase).reduce(
+            (d, code) => {
+              if (code in blocksCover) {
+                if ([0, 1, 4].includes(block.D) && d > blockBase[code].V - blocksCover[code]) return blockBase[code].V - blocksCover[code];
+                if ([2, 3, 5].includes(block.D) && d > blocksCover[code] - blockBase[code].V) return blocksCover[code] - blockBase[code].V;
+              }
+
+              return d;
+            },
+            capacity * 2
+          );
+          Object.keys(blockBase).forEach((code) => {
+            const { P: { X, Y, Z }, V } = blockBase[code];
+            const trajectoryPoses = Array(diff).fill(null).map(
+              (_, i) => (
+                  Array(4).fill(null).map((_, j) =>
+                    block.D === 0 ?
+                      { X: X + ([0, 3].includes(j) ? 1 : -1) / 2, Y: Y + ([0, 1].includes(j) ? 1 : -1) / 2, Z: Z - i - 1 / 2 } :
+                    block.D === 1 ?
+                      { X: X + ([0, 3].includes(j) ? 1 : -1) / 2, Z: Z + ([0, 1].includes(j) ? 1 : -1) / 2, Y: Y - i - 1 / 2 } :
+                    block.D === 2 ?
+                      { X: X + ([0, 3].includes(j) ? 1 : -1) / 2, Y: Y + ([0, 1].includes(j) ? 1 : -1) / 2, Z: Z + i + 1 / 2 } :
+                    block.D === 3 ?
+                      { X: X + ([0, 3].includes(j) ? 1 : -1) / 2, Z: Z + ([0, 1].includes(j) ? 1 : -1) / 2, Y: Y + i + 1 / 2 } :
+                    block.D === 4 ?
+                      { Y: Y + ([0, 3].includes(j) ? 1 : -1) / 2, Z: Z + ([0, 1].includes(j) ? 1 : -1) / 2, X: X - i - 1 / 2 } :
+                      { Y: Y + ([0, 3].includes(j) ? 1 : -1) / 2, Z: Z + ([0, 1].includes(j) ? 1 : -1) / 2, X: X + i + 1 / 2 }
+                  )
+              )
+            ).map(
+              (ps) => ps.map((p) => calculateBlockPosition(p, true))
+            );
+
+            trajectoryPoses.forEach((p1, i) => {
+              if (i > 0) {
+                const p0 = trajectoryPoses[i - 1];
+                Array(4).fill(null).forEach((_, j) => {
+                  const nextP1 = ([0, 1, 2, 3].includes(block.D) ? X : Y) + (j === 3 ? 1 : j === 1 ? -1 : 0);
+                  const nextP2 = ([1, 3, 4, 5].includes(block.D) ? Z : Y) + (j === 0 ? 1 : j === 2 ? -1 : 0);
+                  const nextPos = blockBase[`${nextP1}.${nextP2}`];
+                  if (nextPos) {
+                    if ([0, 1, 4].includes(block.D) && nextPos.V - diff <= V - i - 1) return;
+                    if ([2, 3, 5].includes(block.D) && nextPos.V + diff >= V + i + 1) return;
+                  }
+                  const P = [p0[j], p0[(j + 1) % 4], p1[(j + 1) % 4], p1[j]];
+                  const L = [];
+                  const cornerPT1 = ([0, 1, 2, 3].includes(block.D) ? X : Y) + (j === 2 ? 1 : j === 0 ? -1 : 0);
+                  const cornerPT2 = ([1, 3, 4, 5].includes(block.D) ? Z : Y) + (j === 3 ? 1 : j === 1 ? -1 : 0);
+                  const cornerPN1 = ([0, 1, 2, 3].includes(block.D) ? X : Y) + ([0, 1].includes(j) ? -1 : 1);
+                  const cornerPN2 = ([1, 3, 4, 5].includes(block.D) ? Z : Y) + ([1, 2].includes(j) ? -1 : 1);
+                  const cornerPosT = blockBase[`${cornerPT1}.${cornerPT2}`];
+                  const cornerPosN = blockBase[`${cornerPN1}.${cornerPN2}`];
+                  if (
+                    (
+                      !cornerPosT ||
+                      ([0, 1, 4].includes(block.D) && cornerPosT.V - diff > V - i - 1) ||
+                      ([2, 3, 5].includes(block.D) && cornerPosT.V + diff < V + i + 1)
+                    ) || (
+                      cornerPosN && (
+                        ([0, 1, 4].includes(block.D) && cornerPosN.V > V - i && cornerPosN.V - diff <= V - i - 1) ||
+                        ([2, 3, 5].includes(block.D) && cornerPosN.V < V + i && cornerPosN.V + diff >= V + i + 1)
+                      )
+                    )
+                  ) {
+                    L.push([p0[(j + 1) % 4], p1[(j + 1) % 4]]);
+                  }
+                  surfaces.push({ P, L, Z: P.reduce((z, p) => z + p.Z, 0) });
+                });
+              }
+              if (i === diff - 1) {
+                surfaces.push({ P: p1, Z: p1.reduce((z, p) => z + p.Z, 0) });
+              }
+            });
+          });
+        }
+
         surfaces.sort((A, B) => A.Z - B.Z);
+
+        const framePoses = [
+          { X: capacity, Y: capacity, Z: capacity },
+          { X: capacity * -1, Y: capacity, Z: capacity },
+          { X: capacity, Y: capacity * -1, Z: capacity },
+          { X: capacity * -1, Y: capacity * -1, Z: capacity },
+          { X: capacity, Y: capacity, Z: capacity * -1 },
+          { X: capacity * -1, Y: capacity, Z: capacity * -1 },
+          { X: capacity, Y: capacity * -1, Z: capacity * -1 },
+          { X: capacity * -1, Y: capacity * -1, Z: capacity * -1 },
+        ].map((pos) => calculateBlockPosition(pos, true));
+        const frameLines = [
+          [framePoses[0], framePoses[1]],
+          [framePoses[0], framePoses[2]],
+          [framePoses[0], framePoses[4]],
+          [framePoses[3], framePoses[1]],
+          [framePoses[3], framePoses[2]],
+          [framePoses[3], framePoses[7]],
+          [framePoses[5], framePoses[1]],
+          [framePoses[5], framePoses[4]],
+          [framePoses[5], framePoses[7]],
+          [framePoses[6], framePoses[2]],
+          [framePoses[6], framePoses[4]],
+          [framePoses[6], framePoses[7]],
+        ].sort((A, B) => A[0].Z + A[1].Z - B[0].Z - B[1].Z);
 
         displayContext.clearRect(0, 0, displaySize, displaySize);
 
+        displayContext.strokeStyle = '#aaddff88';
+        Array(6).fill(null).forEach((_, i) => {
+          displayContext.beginPath();
+          displayContext.moveTo(displayRadius + frameLines[i][0].X, displayRadius + frameLines[i][0].Y);
+          displayContext.lineTo(displayRadius + frameLines[i][1].X, displayRadius + frameLines[i][1].Y);
+          displayContext.stroke();
+        });
+
         surfaces.forEach((mesh, n) => {
+          if (!mesh.C) {
+            if (mesh.L) {
+              displayContext.fillStyle = '#ff88aa22';
+              displayContext.strokeStyle = '#ff88aa11';
+              displayContext.beginPath();
+              mesh.P.forEach(({ X, Y, Z }, j) => {
+                j === 0
+                  ? displayContext.moveTo(displayRadius + X, displayRadius + Y)
+                  : displayContext.lineTo(displayRadius + X, displayRadius + Y);
+              });
+              displayContext.closePath();
+              displayContext.fill();
+
+              mesh.L.forEach((L) => {
+                displayContext.beginPath();
+                displayContext.moveTo(displayRadius + L[0].X, displayRadius + L[0].Y);
+                displayContext.lineTo(displayRadius + L[1].X, displayRadius + L[1].Y);
+                displayContext.stroke();
+              });
+            } else {
+              displayContext.fillStyle = '#ff88aa66';
+              displayContext.strokeStyle = '#ff88aa44';
+              displayContext.beginPath();
+              mesh.P.forEach(({ X, Y, Z }, j) => {
+                j === 0
+                  ? displayContext.moveTo(displayRadius + X, displayRadius + Y)
+                  : displayContext.lineTo(displayRadius + X, displayRadius + Y);
+              });
+              displayContext.closePath();
+              displayContext.fill();
+            }
+
+            return;
+          }
+
           displayContext.fillStyle = calculateColor(mesh.C, mesh.V / Math.PI, mesh.V, mesh.z) + '88';
           displayContext.strokeStyle = calculateColor(mesh.C, mesh.V / Math.PI) + 'aa';
           displayContext.beginPath();
-          mesh.P.forEach(({ X, Y, Z }, j) => {
+          mesh.P.forEach(({ X, Y }, j) => {
             j === 0
               ? displayContext.moveTo(displayRadius + X, displayRadius + Y)
               : displayContext.lineTo(displayRadius + X, displayRadius + Y);
@@ -325,17 +456,70 @@
           displayContext.fill();
           displayContext.stroke();
         });
-      };
 
-      const outputAuxiliaryLine = () => {
-        const focalLength = displaySize * focalLengthPercentage;
-        const Z2 = Math.pow(focalLength * focalLength - R * R, 1 / 2);
-        const ER = R / Z2 * focalLength;
+        displayContext.strokeStyle = '#aaddffaa';
+        Array(6).fill(null).forEach((_, i) => {
+          displayContext.beginPath();
+          displayContext.moveTo(displayRadius + frameLines[6 + i][0].X, displayRadius + frameLines[6 + i][0].Y);
+          displayContext.lineTo(displayRadius + frameLines[6 + i][1].X, displayRadius + frameLines[6 + i][1].Y);
+          displayContext.stroke();
+        });
 
-        auxiliaryLineContext.clearRect(0, 0, displaySize, displaySize);
-        drawArc(auxiliaryLineContext, 0.5, 0.5, vectorSlideRadius, 0, Math.PI * 2, displayRadius, '#eeeeee');
-        drawStroke(auxiliaryLineContext, [[displayRadius * -1, 0.5], [displayRadius, 0.5]], displayRadius, '#aaaaaa');
-        drawStroke(auxiliaryLineContext, [[0.5, displayRadius * -1], [0.5, displayRadius]], displayRadius, '#aaaaaa');
+        if (block) {
+          const { D, S: { X, Y, Z } } = block;
+          const PS =
+            D === 0 ? [
+              { P: [{ X, Y: Y + 5, Z }, { X: X + 1, Y: Y + 4, Z }, { X: X - 1, Y: Y + 4, Z }], C: '#00aa00' },
+              { P: [{ X: X - 5, Y, Z }, { X: X - 4, Y: Y + 1, Z }, { X: X - 4, Y: Y - 1, Z }], C: '#0000ff' },
+              { P: [{ X, Y: Y - 5, Z }, { X: X + 1, Y: Y - 4, Z }, { X: X - 1, Y: Y - 4, Z }], C: '#ffff00' },
+              { P: [{ X: X + 5, Y, Z }, { X: X + 4, Y: Y + 1, Z }, { X: X + 4, Y: Y - 1, Z }], C: '#ff0000' },
+            ] :
+            D === 1 ? [
+              { P: [{ X, Y, Z: Z - 5 }, { X: X + 1, Y, Z: Z - 4 }, { X: X - 1, Y, Z: Z - 4 }], C: '#00aa00' },
+              { P: [{ X: X - 5, Y, Z }, { X: X - 4, Y, Z: Z + 1 }, { X: X - 4, Y, Z: Z - 1 }], C: '#0000ff' },
+              { P: [{ X, Y, Z: Z + 5 }, { X: X + 1, Y, Z: Z + 4 }, { X: X - 1, Y, Z: Z + 4 }], C: '#ffff00' },
+              { P: [{ X: X + 5, Y, Z }, { X: X + 4, Y, Z: Z + 1 }, { X: X + 4, Y, Z: Z - 1 }], C: '#ff0000' },
+            ] :
+            D === 2 ? [
+              { P: [{ X, Y: Y - 5, Z }, { X: X - 1, Y: Y - 4, Z }, { X: X + 1, Y: Y - 4, Z }], C: '#00aa00' },
+              { P: [{ X: X + 5, Y, Z }, { X: X + 4, Y: Y - 1, Z }, { X: X + 4, Y: Y + 1, Z }], C: '#0000ff' },
+              { P: [{ X, Y: Y + 5, Z }, { X: X - 1, Y: Y + 4, Z }, { X: X + 1, Y: Y + 4, Z }], C: '#ffff00' },
+              { P: [{ X: X - 5, Y, Z }, { X: X - 4, Y: Y - 1, Z }, { X: X - 4, Y: Y + 1, Z }], C: '#ff0000' },
+            ] :
+            D === 3 ? [
+              { P: [{ X, Y, Z: Z + 5 }, { X: X - 1, Y, Z: Z + 4 }, { X: X + 1, Y, Z: Z + 4 }], C: '#00aa00' },
+              { P: [{ X: X + 5, Y, Z }, { X: X + 4, Y, Z: Z - 1 }, { X: X + 4, Y, Z: Z + 1 }], C: '#0000ff' },
+              { P: [{ X, Y, Z: Z - 5 }, { X: X - 1, Y, Z: Z - 4 }, { X: X + 1, Y, Z: Z - 4 }], C: '#ffff00' },
+              { P: [{ X: X - 5, Y, Z }, { X: X - 4, Y, Z: Z - 1 }, { X: X - 4, Y, Z: Z + 1 }], C: '#ff0000' },
+            ] :
+            D === 4 ? [
+              { P: [{ X, Y: Y + 5, Z }, { X, Y: Y + 4, Z: Z + 1 }, { X, Y: Y + 4, Z: Z - 1 }], C: '#00aa00' },
+              { P: [{ X, Y, Z: Z + 5 }, { X, Y: Y + 1, Z: Z + 4 }, { X, Y: Y - 1, Z: Z + 4 }], C: '#0000ff' },
+              { P: [{ X, Y: Y - 5, Z }, { X, Y: Y - 4, Z: Z + 1 }, { X, Y: Y - 4, Z: Z - 1 }], C: '#ffff00' },
+              { P: [{ X, Y, Z: Z - 5 }, { X, Y: Y + 1, Z: Z - 4 }, { X, Y: Y - 1, Z: Z - 4 }], C: '#ff0000' },
+            ] :
+            [
+              { P: [{ X, Y: Y + 5, Z }, { X, Y: Y + 4, Z: Z + 1 }, { X, Y: Y + 4, Z: Z - 1 }], C: '#00aa00' },
+              { P: [{ X, Y, Z: Z - 5 }, { X, Y: Y + 1, Z: Z - 4 }, { X, Y: Y - 1, Z: Z - 4 }], C: '#0000ff' },
+              { P: [{ X, Y: Y - 5, Z }, { X, Y: Y - 4, Z: Z + 1 }, { X, Y: Y - 4, Z: Z - 1 }], C: '#ffff00' },
+              { P: [{ X, Y, Z: Z + 5 }, { X, Y: Y + 1, Z: Z + 4 }, { X, Y: Y - 1, Z: Z + 4 }], C: '#ff0000' },
+            ];
+            PS.forEach(({ P, C }) => {
+              displayContext.fillStyle = C + '88';
+              displayContext.strokeStyle = C + 'aa';
+              displayContext.beginPath();
+              P.map(
+                (p) => calculateBlockPosition(p, true)
+              ).forEach(({ X, Y }, j) => {
+                j === 0
+                  ? displayContext.moveTo(displayRadius + X, displayRadius + Y)
+                  : displayContext.lineTo(displayRadius + X, displayRadius + Y);
+              });
+              displayContext.closePath();
+              displayContext.fill();
+              displayContext.stroke();
+            });
+        }
       };
 
       const move = () => {
@@ -370,8 +554,6 @@
           momentAxisL = 0;
           diffAxisL = T2 - T1;
         }
-
-        outputAuxiliaryLine();
 
         latestBaseX = latestMoveX;
         latestBaseY = latestMoveY;
@@ -446,33 +628,74 @@
         axisL = L_TZ6;
       };
 
+      const summonBlock = () => {
+        const D = Math.floor(Math.random() * 6);
+        const N = Math.floor(Math.random() * blockFormations.length);
+        const B = blockFormations[N];
+        const S = {
+          X: (D === 4 ? capacity : D === 5 ? (capacity * -1) : 0),
+          Y: (D === 1 ? capacity : D === 3 ? (capacity * -1) : 0),
+          Z: (D === 0 ? capacity : D === 2 ? (capacity * -1) : 0),
+        };
+        const P = B.P.map(([X, Y]) => ({ X: S.X + X, Y: S.Y + Y, Z: S.Z }));
+
+        block = { P, C: B.C, D, S };
+
+        rotateBlock(
+          Math.floor(Math.random() * 4),
+          Math.floor(Math.random() * 4),
+          Math.floor(Math.random() * 4),
+        );
+      };
+
+      const rotateBlock = (RZ, RX, RY) => {
+        block.P.forEach(({ X, Y, Z }, i) => {
+          [X, Y, Z] = [X - block.S.X, Y - block.S.Y, Z - block.S.Z];
+          [X, Y] = RZ === 1 ? [Y, X * -1] : RZ === 2 ? [X * -1, Y * -1] : RZ === 3 ? [Y * -1, X] : [X, Y];
+          [Y, Z] = RX === 1 ? [Z, Y * -1] : RX === 2 ? [Y * -1, Z * -1] : RX === 3 ? [Z * -1, Y] : [Y, Z];
+          [X, Z] = RY === 1 ? [Z, X * -1] : RY === 2 ? [X * -1, Z * -1] : RY === 3 ? [Z * -1, X] : [X, Z];
+          [block.P[i].X, block.P[i].Y, block.P[i].Z] = [X + block.S.X, Y + block.S.Y, Z + block.S.Z];
+        });
+      };
+
+      const slideBlock = (direction) => {
+        const UD = direction === 0 ? 1 : direction === 2 ? -1 : 0;
+        const LR = direction === 3 ? 1 : direction === 1 ? -1 : 0;
+        P.X += [2, 3].includes(block.D) ? LR : [0, 1].includes(block.D) ? LR * -1 : 0;
+        P.Y += [0, 4].includes(block.D) ? UD : [2, 5].includes(block.D) ? UD * -1 : 0;
+        P.Z +=
+          block.D === 1 ? UD :
+          block.D === 3 ? UD * -1 :
+          block.D === 4 ? LR :
+          block.D === 5 ? LR * -1 : 0;
+
+        [block.S, ...block.P].forEach((P) => {
+          P.X += [2, 3].includes(block.D) ? LR : [0, 1].includes(block.D) ? LR * -1 : 0;
+          P.Y += [0, 4].includes(block.D) ? UD : [2, 5].includes(block.D) ? UD * -1 : 0;
+          P.Z +=
+            block.D === 1 ? UD :
+            block.D === 3 ? UD * -1 :
+            block.D === 4 ? LR :
+            block.D === 5 ? LR * -1 : 0;
+        });
+
+      };
+
       const animate = () => {
         if (!block) {
-          const N = Math.floor(Math.random() * blockFormations.length);
-          const B = blockFormations[N];
-          const D = Math.floor(Math.random() * 6);
-          const A1 = Math.floor(Math.random() * 4);
-          const A2 = Math.floor(Math.random() * 4);
-          const A3 = Math.floor(Math.random() * 4);
-          const P = B.P.map(([X, Y]) => {
-            let Z = 0;
-            [X, Y] = A1 === 1 ? [Y, X * -1] : A1 === 2 ? [X * -1, Y * -1] : A1 === 3 ? [Y * -1, X] : [X, Y];
-            [Y, Z] = A2 === 1 ? [Z, Y * -1] : A2 === 2 ? [Y * -1, Z * -1] : A2 === 3 ? [Z * -1, Y] : [Y, Z];
-            [X, Z] = A3 === 1 ? [Z, X * -1] : A3 === 2 ? [X * -1, Z * -1] : A3 === 3 ? [Z * -1, X] : [X, Z];
-            X += (D === 4 ? capacity : D === 5 ? (capacity * -1) : 0);
-            Y += (D === 1 ? capacity : D === 3 ? (capacity * -1) : 0);
-            Z += (D === 0 ? capacity : D === 2 ? (capacity * -1) : 0);
-
-            return { X, Y, Z };
-          });
-          block = { P, C: B.C, D, N };
+          summonBlock();
+          output();
         } else if (time > 0 && time % 50 === 0) {
-          const P = block.P.map((p) => ({
-            ...p,
-            X: p.X - (block.D === 4 ? 1 : block.D === 5 ? -1 : 0),
-            Y: p.Y - (block.D === 1 ? 1 : block.D === 3 ? -1 : 0),
-            Z: p.Z - (block.D === 0 ? 1 : block.D === 2 ? -1 : 0),
-          }));
+          const [P, [S]] = [block.P, [block.S]].map(
+            (ps) => ps.map(
+              (p) => ({
+                ...p,
+                X: p.X - (block.D === 4 ? 1 : block.D === 5 ? -1 : 0),
+                Y: p.Y - (block.D === 1 ? 1 : block.D === 3 ? -1 : 0),
+                Z: p.Z - (block.D === 0 ? 1 : block.D === 2 ? -1 : 0),
+              })
+            )
+          );
 
           if (P.find(
               (p) => blocks.find(
@@ -491,10 +714,13 @@
             time = 0;
           } else {
             block.P = P;
+            block.S = S;
           }
+  
+          output();
         }
 
-        output();
+        // console.log(ka(axisX), ka(axisY), ka(axisL));
 
         if (animationSwitch) {
           time ++;
@@ -545,12 +771,9 @@
         if (percentage < 0) percentage = 0;
         if (percentage > 1) percentage = 1;
         setMeterPosition(percentage);
-        focalLengthPercentage = 1 / 2 + 2 * percentage;
+        focalLengthPercentage = 1 + 1 * percentage;
 
-        const focalLength = displaySize * focalLengthPercentage;
-
-        outputAuxiliaryLine();
-        if (!animationSwitch) output();
+        output();
       };
 
       const getClientPosition = (event) => ({
@@ -560,8 +783,6 @@
 
       const displayOnpointerdown = (event) => {
         if (moveSwitch === true || focalLengthSwitch === true) return;
-
-        // stopAnimation();
 
         const { X, Y } = getClientPosition(event);
 
@@ -578,42 +799,6 @@
         moveType = relativeDiffRadius <= vectorSlideRadius ? 'vector' : 'rotate';
       };
 
-      const moveBlock = (direction) => {
-        block.P.forEach((P) => {
-          switch (block.D) {
-            case 0:
-              P.X += direction === 1 ? 1 : direction === 3 ? -1 : 0;
-              P.Y += direction === 0 ? 1 : direction === 2 ? -1 : 0;
-              break;
-
-            case 2:
-              P.X += direction === 3 ? 1 : direction === 1 ? -1 : 0;
-              P.Y += direction === 2 ? 1 : direction === 0 ? -1 : 0;
-              break;
-
-            case 1:
-              P.X += direction === 1 ? 1 : direction === 3 ? -1 : 0;
-              P.Z += direction === 0 ? 1 : direction === 2 ? -1 : 0;
-              break;
-
-            case 3:
-              P.X += direction === 3 ? 1 : direction === 1 ? -1 : 0;
-              P.Z += direction === 2 ? 1 : direction === 0 ? -1 : 0;
-              break;
-
-            case 4:
-              P.Y += direction === 0 ? 1 : direction === 2 ? -1 : 0;
-              P.Z += direction === 3 ? 1 : direction === 1 ? -1 : 0;
-              break;
-
-            case 5:
-              P.Y += direction === 2 ? 1 : direction === 0 ? -1 : 0;
-              P.Z += direction === 1 ? 1 : direction === 3 ? -1 : 0;
-              break;
-          }
-        });
-      };
-
       const documentMousemove = (event) => {
         const { X, Y } = getClientPosition(event);
 
@@ -621,6 +806,8 @@
           latestMoveX = X;
           latestMoveY = Y;
           output();
+          latestBaseX = X;
+          latestBaseY = Y;
         } else if (focalLengthSwitch) {
           setFocalLength(X);
         }
@@ -652,10 +839,12 @@
           case 'ArrowRight':
           case 'ArrowDown':
           case 'ArrowLeft':
-            moveBlock(keyMap[event.code]);
+            slideBlock(keyMap[event.code]);
+            output();
 
             break;
           default:
+            console.log(event.code);
         }
       };
 
@@ -674,9 +863,9 @@
         document.onmousemove = documentMousemove;
       }
 
-      outputAuxiliaryLine();
-      setMeterPosition(focalLengthPercentage / 2 - (1 / 4));
-      startAnimation();
+      setMeterPosition(1 / 2);
+      // startAnimation();
+      animate();
     </script>
   </body>
 </html>
