@@ -98,20 +98,34 @@
         {P: [[0, 0], [1, 0], [0, 1], [1, 1]], C: [0, 0, 255]},
       ];
 
-      const displayContext = document.getElementById('display').getContext('2d');
+      const display = document.getElementById('display');
+      const displayWrapper = document.getElementById('display-wrapper');
+      const displayContext = display.getContext('2d');
       const meter = document.getElementById('focal-length-meter');
       const meterHandle = document.getElementById('focal-length-meter-handle');
+      display.style.width = `${displaySize}px`;
+      display.setAttribute('width', displaySize);
+      display.setAttribute('height', displaySize);
+      displayWrapper.style.height = `${displaySize}px`;
 
       const keyMap = {
-        ArrowUp: 0,
-        ArrowRight: 1,
-        ArrowDown: 2,
-        ArrowLeft: 3,
+        ArrowUp: 'U',
+        ArrowRight: 'R',
+        ArrowDown: 'D',
+        ArrowLeft: 'L',
+        KeyZ: [1, 0, 0],
+        KeyA: [3, 0, 0],
+        KeyX: [0, 1, 0],
+        KeyS: [0, 3, 0],
+        KeyC: [0, 0, 1],
+        KeyD: [0, 0, 3],
       };
+      const directionMap = { U: 0, R: 1, D: 2, L: 3 };
 
       // 内部変数
       let focalLengthPercentage = 2;
       let moveSwitch = false;
+      let rotationSwitch = false;
       let latestMoveX = 0;
       let latestMoveY = 0;
       let latestBaseX = 0;
@@ -128,9 +142,6 @@
       let positionAxisX = Math.PI / 180 * 40; // 位置軸のZ軸(正面方向軸)に対する角度(0 ~ π)
       let positionAxisY = Math.PI / 180 * -50; // 位置軸のY軸(上下方向軸)に対する角度(-π ~ π)
       let positionAxisL = Math.PI / 180 * 50; // 位置軸に対する回転角度(-π ~ π)
-      // let positionAxisX = Math.PI / 180 * 0; // 位置軸のZ軸(正面方向軸)に対する角度(0 ~ π)
-      // let positionAxisY = Math.PI / 180 * 0; // 位置軸のY軸(上下方向軸)に対する角度(-π ~ π)
-      // let positionAxisL = Math.PI / 180 * 0; // 位置軸に対する回転角度(-π ~ π)
       // 回転軸: 自転するベースとなる軸
       let momentAxisX = 0; // 位置軸のZ軸(正面方向軸)に対する角度(0 ~ π)
       let momentAxisY = 0; // 位置軸のY軸(上下方向軸)に対する角度(-π ~ π)
@@ -142,13 +153,6 @@
       let lightX = Math.PI / 180 * 70; // 光源軸のZ軸(正面方向軸)に対する角度(0 ~ π)
       let lightY = Math.PI / 180 * 60; // 光源軸のY軸(上下方向軸)に対する角度(-π ~ π)
       let time = 0;
-
-      Array.prototype.forEach.call(document.getElementsByClassName('canvas'), (elem) => {
-        elem.style.width = `${displaySize}px`;
-        elem.setAttribute('width', displaySize);
-        elem.setAttribute('height', displaySize);
-      });
-      document.getElementById('display-wrapper').style.height = `${displaySize}px`;
 
       const calculateBlockPosition = (pos, considerFocalLength) => {
         let [X, Y, Z] = [0, 0, 0];
@@ -284,6 +288,7 @@
               res,
             {}
           );
+
           const blocksCover = blocks.reduce(
             (res, { P }) =>
               (block.D === 0 && (!(`${P.X}.${P.Y}` in res) || res[`${P.X}.${P.Y}`] < P.Z)) ? ({ ...res, [`${P.X}.${P.Y}`]: P.Z }) :
@@ -295,17 +300,16 @@
               res,
             {}
           );
-          const diff = Object.keys(blockBase).reduce(
-            (d, code) => {
-              if (code in blocksCover) {
-                if ([0, 1, 4].includes(block.D) && d > blockBase[code].V - blocksCover[code]) return blockBase[code].V - blocksCover[code];
-                if ([2, 3, 5].includes(block.D) && d > blocksCover[code] - blockBase[code].V) return blocksCover[code] - blockBase[code].V;
-              }
 
-              return d;
-            },
-            capacity * 2
-          );
+          const diffBase = 
+            [0, 1, 4].includes(block.D)
+              ? capacity + 3 + Math.min(...Object.keys(blockBase).map((code) => blockBase[code].V))
+              : capacity + 3 - Math.max(...Object.keys(blockBase).map((code) => blockBase[code].V));
+          const diffs = Object.keys(blockBase)
+            .filter((code) => code in blocksCover)
+            .map((code) => Math.abs(blockBase[code].V - blocksCover[code]));
+          const diff = Math.min(diffBase, ...diffs);
+
           Object.keys(blockBase).forEach((code) => {
             const { P: { X, Y, Z }, V } = blockBase[code];
             const trajectoryPoses = Array(diff).fill(null).map(
@@ -412,7 +416,7 @@
           if (!mesh.C) {
             if (mesh.L) {
               displayContext.fillStyle = '#ff88aa22';
-              displayContext.strokeStyle = '#ff88aa11';
+              displayContext.strokeStyle = '#ff88aa44';
               displayContext.beginPath();
               mesh.P.forEach(({ X, Y, Z }, j) => {
                 j === 0
@@ -430,7 +434,7 @@
               });
             } else {
               displayContext.fillStyle = '#ff88aa66';
-              displayContext.strokeStyle = '#ff88aa44';
+              displayContext.strokeStyle = '#ff88aa88';
               displayContext.beginPath();
               mesh.P.forEach(({ X, Y, Z }, j) => {
                 j === 0
@@ -444,8 +448,10 @@
             return;
           }
 
-          displayContext.fillStyle = calculateColor(mesh.C, mesh.V / Math.PI, mesh.V, mesh.z) + '88';
-          displayContext.strokeStyle = calculateColor(mesh.C, mesh.V / Math.PI) + 'aa';
+          // displayContext.fillStyle = calculateColor(mesh.C, mesh.V / Math.PI, mesh.V, mesh.z) + '88';
+          // displayContext.strokeStyle = calculateColor(mesh.C, mesh.V / Math.PI) + 'aa';
+          displayContext.fillStyle = calculateColor(mesh.C, mesh.V / Math.PI, mesh.V, mesh.z) + 'cc';
+          displayContext.strokeStyle = calculateColor(mesh.C, mesh.V / Math.PI) + 'dd';
           displayContext.beginPath();
           mesh.P.forEach(({ X, Y }, j) => {
             j === 0
@@ -467,58 +473,86 @@
 
         if (block) {
           const { D, S: { X, Y, Z } } = block;
-          const PS =
+          const { X: SX, Y: SY, Z: SZ } = calculateBlockPosition({ X, Y, Z }, true);
+          const PS = (
             D === 0 ? [
-              { P: [{ X, Y: Y + 5, Z }, { X: X + 1, Y: Y + 4, Z }, { X: X - 1, Y: Y + 4, Z }], C: '#00aa00' },
-              { P: [{ X: X - 5, Y, Z }, { X: X - 4, Y: Y + 1, Z }, { X: X - 4, Y: Y - 1, Z }], C: '#0000ff' },
-              { P: [{ X, Y: Y - 5, Z }, { X: X + 1, Y: Y - 4, Z }, { X: X - 1, Y: Y - 4, Z }], C: '#ffff00' },
-              { P: [{ X: X + 5, Y, Z }, { X: X + 4, Y: Y + 1, Z }, { X: X + 4, Y: Y - 1, Z }], C: '#ff0000' },
+              [{ X, Y: Y + 5, Z }, { X: X + 1, Y: Y + 4, Z }, { X: X - 1, Y: Y + 4, Z }],
+              [{ X: X - 5, Y, Z }, { X: X - 4, Y: Y + 1, Z }, { X: X - 4, Y: Y - 1, Z }],
+              [{ X, Y: Y - 5, Z }, { X: X + 1, Y: Y - 4, Z }, { X: X - 1, Y: Y - 4, Z }],
+              [{ X: X + 5, Y, Z }, { X: X + 4, Y: Y + 1, Z }, { X: X + 4, Y: Y - 1, Z }],
             ] :
             D === 1 ? [
-              { P: [{ X, Y, Z: Z - 5 }, { X: X + 1, Y, Z: Z - 4 }, { X: X - 1, Y, Z: Z - 4 }], C: '#00aa00' },
-              { P: [{ X: X - 5, Y, Z }, { X: X - 4, Y, Z: Z + 1 }, { X: X - 4, Y, Z: Z - 1 }], C: '#0000ff' },
-              { P: [{ X, Y, Z: Z + 5 }, { X: X + 1, Y, Z: Z + 4 }, { X: X - 1, Y, Z: Z + 4 }], C: '#ffff00' },
-              { P: [{ X: X + 5, Y, Z }, { X: X + 4, Y, Z: Z + 1 }, { X: X + 4, Y, Z: Z - 1 }], C: '#ff0000' },
+              [{ X, Y, Z: Z - 5 }, { X: X + 1, Y, Z: Z - 4 }, { X: X - 1, Y, Z: Z - 4 }],
+              [{ X: X - 5, Y, Z }, { X: X - 4, Y, Z: Z + 1 }, { X: X - 4, Y, Z: Z - 1 }],
+              [{ X, Y, Z: Z + 5 }, { X: X + 1, Y, Z: Z + 4 }, { X: X - 1, Y, Z: Z + 4 }],
+              [{ X: X + 5, Y, Z }, { X: X + 4, Y, Z: Z + 1 }, { X: X + 4, Y, Z: Z - 1 }],
             ] :
             D === 2 ? [
-              { P: [{ X, Y: Y - 5, Z }, { X: X - 1, Y: Y - 4, Z }, { X: X + 1, Y: Y - 4, Z }], C: '#00aa00' },
-              { P: [{ X: X + 5, Y, Z }, { X: X + 4, Y: Y - 1, Z }, { X: X + 4, Y: Y + 1, Z }], C: '#0000ff' },
-              { P: [{ X, Y: Y + 5, Z }, { X: X - 1, Y: Y + 4, Z }, { X: X + 1, Y: Y + 4, Z }], C: '#ffff00' },
-              { P: [{ X: X - 5, Y, Z }, { X: X - 4, Y: Y - 1, Z }, { X: X - 4, Y: Y + 1, Z }], C: '#ff0000' },
+              [{ X, Y: Y - 5, Z }, { X: X - 1, Y: Y - 4, Z }, { X: X + 1, Y: Y - 4, Z }],
+              [{ X: X + 5, Y, Z }, { X: X + 4, Y: Y - 1, Z }, { X: X + 4, Y: Y + 1, Z }],
+              [{ X, Y: Y + 5, Z }, { X: X - 1, Y: Y + 4, Z }, { X: X + 1, Y: Y + 4, Z }],
+              [{ X: X - 5, Y, Z }, { X: X - 4, Y: Y - 1, Z }, { X: X - 4, Y: Y + 1, Z }],
             ] :
             D === 3 ? [
-              { P: [{ X, Y, Z: Z + 5 }, { X: X - 1, Y, Z: Z + 4 }, { X: X + 1, Y, Z: Z + 4 }], C: '#00aa00' },
-              { P: [{ X: X + 5, Y, Z }, { X: X + 4, Y, Z: Z - 1 }, { X: X + 4, Y, Z: Z + 1 }], C: '#0000ff' },
-              { P: [{ X, Y, Z: Z - 5 }, { X: X - 1, Y, Z: Z - 4 }, { X: X + 1, Y, Z: Z - 4 }], C: '#ffff00' },
-              { P: [{ X: X - 5, Y, Z }, { X: X - 4, Y, Z: Z - 1 }, { X: X - 4, Y, Z: Z + 1 }], C: '#ff0000' },
+              [{ X, Y, Z: Z + 5 }, { X: X - 1, Y, Z: Z + 4 }, { X: X + 1, Y, Z: Z + 4 }],
+              [{ X: X + 5, Y, Z }, { X: X + 4, Y, Z: Z - 1 }, { X: X + 4, Y, Z: Z + 1 }],
+              [{ X, Y, Z: Z - 5 }, { X: X - 1, Y, Z: Z - 4 }, { X: X + 1, Y, Z: Z - 4 }],
+              [{ X: X - 5, Y, Z }, { X: X - 4, Y, Z: Z - 1 }, { X: X - 4, Y, Z: Z + 1 }],
             ] :
             D === 4 ? [
-              { P: [{ X, Y: Y + 5, Z }, { X, Y: Y + 4, Z: Z + 1 }, { X, Y: Y + 4, Z: Z - 1 }], C: '#00aa00' },
-              { P: [{ X, Y, Z: Z + 5 }, { X, Y: Y + 1, Z: Z + 4 }, { X, Y: Y - 1, Z: Z + 4 }], C: '#0000ff' },
-              { P: [{ X, Y: Y - 5, Z }, { X, Y: Y - 4, Z: Z + 1 }, { X, Y: Y - 4, Z: Z - 1 }], C: '#ffff00' },
-              { P: [{ X, Y, Z: Z - 5 }, { X, Y: Y + 1, Z: Z - 4 }, { X, Y: Y - 1, Z: Z - 4 }], C: '#ff0000' },
+              [{ X, Y: Y + 5, Z }, { X, Y: Y + 4, Z: Z + 1 }, { X, Y: Y + 4, Z: Z - 1 }],
+              [{ X, Y, Z: Z + 5 }, { X, Y: Y + 1, Z: Z + 4 }, { X, Y: Y - 1, Z: Z + 4 }],
+              [{ X, Y: Y - 5, Z }, { X, Y: Y - 4, Z: Z + 1 }, { X, Y: Y - 4, Z: Z - 1 }],
+              [{ X, Y, Z: Z - 5 }, { X, Y: Y + 1, Z: Z - 4 }, { X, Y: Y - 1, Z: Z - 4 }],
             ] :
             [
-              { P: [{ X, Y: Y + 5, Z }, { X, Y: Y + 4, Z: Z + 1 }, { X, Y: Y + 4, Z: Z - 1 }], C: '#00aa00' },
-              { P: [{ X, Y, Z: Z - 5 }, { X, Y: Y + 1, Z: Z - 4 }, { X, Y: Y - 1, Z: Z - 4 }], C: '#0000ff' },
-              { P: [{ X, Y: Y - 5, Z }, { X, Y: Y - 4, Z: Z + 1 }, { X, Y: Y - 4, Z: Z - 1 }], C: '#ffff00' },
-              { P: [{ X, Y, Z: Z + 5 }, { X, Y: Y + 1, Z: Z + 4 }, { X, Y: Y - 1, Z: Z + 4 }], C: '#ff0000' },
-            ];
-            PS.forEach(({ P, C }) => {
-              displayContext.fillStyle = C + '88';
-              displayContext.strokeStyle = C + 'aa';
-              displayContext.beginPath();
-              P.map(
-                (p) => calculateBlockPosition(p, true)
-              ).forEach(({ X, Y }, j) => {
-                j === 0
-                  ? displayContext.moveTo(displayRadius + X, displayRadius + Y)
-                  : displayContext.lineTo(displayRadius + X, displayRadius + Y);
-              });
-              displayContext.closePath();
-              displayContext.fill();
-              displayContext.stroke();
+              [{ X, Y: Y + 5, Z }, { X, Y: Y + 4, Z: Z + 1 }, { X, Y: Y + 4, Z: Z - 1 }],
+              [{ X, Y, Z: Z - 5 }, { X, Y: Y + 1, Z: Z - 4 }, { X, Y: Y - 1, Z: Z - 4 }],
+              [{ X, Y: Y - 5, Z }, { X, Y: Y - 4, Z: Z + 1 }, { X, Y: Y - 4, Z: Z - 1 }],
+              [{ X, Y, Z: Z + 5 }, { X, Y: Y + 1, Z: Z + 4 }, { X, Y: Y - 1, Z: Z + 4 }],
+            ]
+          ).map(
+            (P) => (P.map((p) => calculateBlockPosition(p, true)))
+          );
+          const CS = ['#00aa00', '#0000ff', '#ffff00', '#ff0000'];
+          const [PUI] = PS.reduce(([I, T0], P, i) => {
+            const X1 = P[0].X - SX;
+            const Y1 = P[0].Y - SY;
+            const L1 = Math.pow(X1 * X1 + Y1 * Y1, 1 / 2);
+            const T1 = L1 > 0 ? Math.abs(Math.acos(Y1 / L1)) : 0;
+
+            return T0 && T0 < T1 ? [I, T0] : [i, T1];
+          }, [0, null]);
+          const [PLI] = [(PUI + 1) % 4, (PUI + 3) % 4].reduce(([I, T0], i) => {
+            const P1 = PS[i];
+            const X1 = P1[0].X - SX;
+            const Y1 = P1[0].Y - SY;
+            const L1 = Math.pow(X1 * X1 + Y1 * Y1, 1 / 2);
+            const T1 = L1 > 0 ? Math.abs(Math.acos(X1 / L1)) : 0;
+
+            return T0 && T0 < T1 ? [I, T0] : [i, T1];
+          }, [(PUI + 1) % 4, null]);
+          directionMap.U = PUI;
+          directionMap.L = PLI;
+          directionMap.D = (PUI + 2) % 4;
+          directionMap.R = (PLI + 2) % 4;
+          ['U', 'R', 'D', 'L'].forEach((D, i) => {
+            PS[directionMap[D]] = { P: PS[directionMap[D]], C: CS[i] };
+          });
+
+          PS.forEach(({ P, C }) => {
+            displayContext.fillStyle = C + '88';
+            displayContext.strokeStyle = C + 'aa';
+            displayContext.beginPath();
+            P.forEach(({ X, Y }, j) => {
+              j === 0
+                ? displayContext.moveTo(displayRadius + X, displayRadius + Y)
+                : displayContext.lineTo(displayRadius + X, displayRadius + Y);
             });
+            displayContext.closePath();
+            displayContext.fill();
+            displayContext.stroke();
+          });
         }
       };
 
@@ -659,26 +693,33 @@
       };
 
       const slideBlock = (direction) => {
-        const UD = direction === 0 ? 1 : direction === 2 ? -1 : 0;
-        const LR = direction === 3 ? 1 : direction === 1 ? -1 : 0;
-        P.X += [2, 3].includes(block.D) ? LR : [0, 1].includes(block.D) ? LR * -1 : 0;
-        P.Y += [0, 4].includes(block.D) ? UD : [2, 5].includes(block.D) ? UD * -1 : 0;
-        P.Z +=
-          block.D === 1 ? UD :
-          block.D === 3 ? UD * -1 :
-          block.D === 4 ? LR :
-          block.D === 5 ? LR * -1 : 0;
+        const [P, [S]] = [block.P, [block.S]].map(
+          (ps) => ps.map((p) => ({
+            ...p,
+            X: p.X + (direction === 4 ? 1 : direction === 5 ? -1 : 0),
+            Y: p.Y + (direction === 1 ? 1 : direction === 3 ? -1 : 0),
+            Z: p.Z + (direction === 0 ? 1 : direction === 2 ? -1 : 0),
+          }))
+        );
 
-        [block.S, ...block.P].forEach((P) => {
-          P.X += [2, 3].includes(block.D) ? LR : [0, 1].includes(block.D) ? LR * -1 : 0;
-          P.Y += [0, 4].includes(block.D) ? UD : [2, 5].includes(block.D) ? UD * -1 : 0;
-          P.Z +=
-            block.D === 1 ? UD :
-            block.D === 3 ? UD * -1 :
-            block.D === 4 ? LR :
-            block.D === 5 ? LR * -1 : 0;
-        });
+        if (P.find(
+            (p) => blocks.find(
+              (b) => b.P.X === p.X && b.P.Y === p.Y && b.P.Z === p.Z
+            )
+        )) {
+          return -1;
+        }
 
+        if (P.find(
+          (p) => Math.abs(p.X) > capacity + 2 || Math.abs(p.Y) > capacity + 2 || Math.abs(p.Z) > capacity + 2
+        )) {
+          return -2;
+        }
+
+        block.P = P;
+        block.S = S;
+
+        return 0;
       };
 
       const animate = () => {
@@ -686,37 +727,19 @@
           summonBlock();
           output();
         } else if (time > 0 && time % 50 === 0) {
-          const [P, [S]] = [block.P, [block.S]].map(
-            (ps) => ps.map(
-              (p) => ({
-                ...p,
-                X: p.X - (block.D === 4 ? 1 : block.D === 5 ? -1 : 0),
-                Y: p.Y - (block.D === 1 ? 1 : block.D === 3 ? -1 : 0),
-                Z: p.Z - (block.D === 0 ? 1 : block.D === 2 ? -1 : 0),
-              })
-            )
-          );
+          const slidedResult = slideBlock([2, 3, 0, 1, 5, 4][block.D]);
 
-          if (P.find(
-              (p) => blocks.find(
-                (b) => b.P.X === p.X && b.P.Y === p.Y && b.P.Z === p.Z
-              )
-          )) {
+          if (slidedResult === -1) {
             block.P.forEach((p) => {
               blocks.push({ P: { ...p }, C: block.C });
             });
             block = null;
             time = 0;
-          } else if (P.find(
-            (p) => Math.abs(p.X) > capacity + 2 || Math.abs(p.Y) > capacity + 2 || Math.abs(p.Z) > capacity + 2
-          )) {
+          } else if (slidedResult === -2) {
             block = null;
             time = 0;
-          } else {
-            block.P = P;
-            block.S = S;
           }
-  
+
           output();
         }
 
@@ -835,16 +858,61 @@
             }
 
             break;
+          case 'ShiftLeft':
+          case 'ShiftRight':
+            rotationSwitch = true;
+            break;
+
           case 'ArrowUp':
           case 'ArrowRight':
           case 'ArrowDown':
           case 'ArrowLeft':
-            slideBlock(keyMap[event.code]);
+            const key = keyMap[event.code];
+            const index = directionMap[key];
+            if (rotationSwitch) {
+              // console.log(block.D);
+              rotateBlock(...[
+                [[0, 1, 0], [0, 0, 1], [0, 3, 0], [0, 0, 3]],
+                [[0, 3, 0], [1, 0, 0], [0, 1, 0], [3, 0, 0]],
+                [[0, 1, 0], [0, 0, 1], [0, 3, 0], [0, 0, 3]],
+                [[0, 3, 0], [3, 0, 0], [0, 1, 0], [1, 0, 0]],
+                [[1, 0, 0], [0, 0, 3], [3, 0, 0], [0, 0, 1]],
+                [[1, 0, 0], [0, 0, 3], [3, 0, 0], [0, 0, 1]],
+              ][block.D][index]);
+            } else {
+              slideBlock([
+                [3, 4, 1, 5],
+                [0, 4, 2, 5],
+                [1, 5, 3, 4],
+                [2, 5, 0, 4],
+                [3, 2, 1, 0],
+                [3, 0, 1, 2],
+              ][block.D][index]); 
+            }
+            output();
+
+            break;
+          case 'KeyZ':
+          case 'KeyX':
+          case 'KeyC':
+          case 'KeyA':
+          case 'KeyS':
+          case 'KeyD':
+            rotateBlock(...keyMap[event.code]);
             output();
 
             break;
           default:
             console.log(event.code);
+        }
+      };
+
+      document.onkeyup = (event) => {
+        switch (event.code) {
+          case 'ShiftLeft':
+          case 'ShiftRight':
+            rotationSwitch = false;
+            break;
         }
       };
 
