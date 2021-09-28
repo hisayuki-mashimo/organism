@@ -134,7 +134,35 @@
       let latestPointerY = 0;
       let moveType = 'vector';
       let animationSwitch = false;
-      let blocks = [{ P: { X:  0, Y:  0, Z:  0 }, C: [200, 255, 248] }];
+      // let blocks = [{ P: { X:  0, Y:  0, Z:  0 }, C: [200, 255, 248] }];
+      let blocks = [
+        { P: { X:  0, Y:  0, Z:  0 }, C: [200, 255, 248] },
+        { P: { X:  1, Y:  1, Z:  1 }, C: [255, 200, 0] },
+        { P: { X:  1, Y:  0, Z:  1 }, C: [255, 200, 0] },
+        { P: { X:  1, Y:  0, Z:  0 }, C: [255, 200, 0] },
+        { P: { X:  1, Y:  1, Z:  0 }, C: [255, 200, 0] },
+        { P: { X:  0, Y:  1, Z:  1 }, C: [200, 100, 200] },
+        { P: { X:  0, Y:  0, Z:  1 }, C: [200, 100, 200] },
+        { P: { X: -1, Y:  0, Z:  1 }, C: [200, 100, 200] },
+        { P: { X: -1, Y:  1, Z:  1 }, C: [200, 100, 200] },
+        { P: { X:  1, Y: -1, Z:  1 }, C: [100, 200, 200] },
+        { P: { X:  1, Y: -1, Z:  0 }, C: [100, 200, 200] },
+        { P: { X:  0, Y: -1, Z:  0 }, C: [100, 200, 200] },
+        { P: { X:  0, Y: -1, Z:  1 }, C: [100, 200, 200] },
+        { P: { X: -1, Y: -1, Z:  1 }, C: [255,  80, 120] },
+        { P: { X: -1, Y: -1, Z:  0 }, C: [255,  80, 120] },
+        { P: { X: -1, Y:  0, Z:  0 }, C: [255,  80, 120] },
+        { P: { X: -1, Y: -1, Z: -1 }, C: [255,  80, 120] },
+        { P: { X:  0, Y:  0, Z: -1 }, C: [ 80,  80, 255] },
+        { P: { X:  0, Y: -1, Z: -1 }, C: [ 80,  80, 255] },
+        { P: { X: -1, Y:  0, Z: -1 }, C: [ 80,  80, 255] },
+        { P: { X: -1, Y:  1, Z: -1 }, C: [ 80,  80, 255] },
+
+        { P: { X:  0, Y:  1, Z:  0 }, C: [160, 160, 160] },
+        { P: { X:  0, Y:  1, Z: -1 }, C: [160, 160, 160] },
+        { P: { X: -1, Y:  1, Z:  0 }, C: [160, 160, 160] },
+        { P: { X:  1, Y:  1, Z: -1 }, C: [160, 160, 160] },
+      ];
       let block = null;
       let focalLengthSwitch = false;
       let meterHandleDiffX = 0;
@@ -153,6 +181,7 @@
       let lightX = Math.PI / 180 * 70; // 光源軸のZ軸(正面方向軸)に対する角度(0 ~ π)
       let lightY = Math.PI / 180 * 60; // 光源軸のY軸(上下方向軸)に対する角度(-π ~ π)
       let time = 0;
+      let score = 0;
 
       const calculateBlockPosition = (pos, considerFocalLength) => {
         let [X, Y, Z] = [0, 0, 0];
@@ -301,13 +330,20 @@
             {}
           );
 
-          const diffBase = 
+          const diffBase =
             [0, 1, 4].includes(block.D)
               ? capacity + 3 + Math.min(...Object.keys(blockBase).map((code) => blockBase[code].V))
               : capacity + 3 - Math.max(...Object.keys(blockBase).map((code) => blockBase[code].V));
           const diffs = Object.keys(blockBase)
-            .filter((code) => code in blocksCover)
-            .map((code) => Math.abs(blockBase[code].V - blocksCover[code]));
+            .filter(
+              (code) =>
+                code in blocksCover && (
+                  ([0, 1, 4].includes(block.D) && blockBase[code].V >= blocksCover[code]) ||
+                  ([2, 3, 5].includes(block.D) && blockBase[code].V <= blocksCover[code])
+                )
+            ).map(
+              (code) => Math.abs(blockBase[code].V - blocksCover[code])
+            );
           const diff = Math.min(diffBase, ...diffs);
 
           Object.keys(blockBase).forEach((code) => {
@@ -450,8 +486,8 @@
 
           // displayContext.fillStyle = calculateColor(mesh.C, mesh.V / Math.PI, mesh.V, mesh.z) + '88';
           // displayContext.strokeStyle = calculateColor(mesh.C, mesh.V / Math.PI) + 'aa';
-          displayContext.fillStyle = calculateColor(mesh.C, mesh.V / Math.PI, mesh.V, mesh.z) + 'cc';
-          displayContext.strokeStyle = calculateColor(mesh.C, mesh.V / Math.PI) + 'dd';
+          displayContext.fillStyle = calculateColor(mesh.C, mesh.V / Math.PI, mesh.V, mesh.z) + 'bb';
+          displayContext.strokeStyle = calculateColor(mesh.C, mesh.V / Math.PI) + 'cc';
           displayContext.beginPath();
           mesh.P.forEach(({ X, Y }, j) => {
             j === 0
@@ -722,6 +758,163 @@
         return 0;
       };
 
+      const inspectBlocks = () => {
+        const afterBlocks = [{ P: { X:  0, Y:  0, Z:  0 }, C: [200, 255, 248] }];
+        // console.log(blocks);
+        try {
+          Array(capacity).fill(null).forEach((_1, i) => {
+            const layerBlocks = [];
+
+            Array(6).fill(null).forEach((_2, j) => {
+              const [PK1, PS1, PL1, PK2, PS2, PL2, PK3, P3] = [
+                ['X', (i + 1) * -1, (i + 1) * 2 + 1, 'Y', (i + 1) * -1, (i + 1) * 2 + 1, 'Z', i + 1],
+                ['X', (i + 1) * -1, (i + 1) * 2 + 1, 'Z', i * -1, (i + 1) * 2 - 1, 'Y', i + 1],
+                ['X', (i + 1) * -1, (i + 1) * 2 + 1, 'Y', (i + 1) * -1, (i + 1) * 2 + 1, 'Z', i * -1 - 1],
+                ['X', (i + 1) * -1, (i + 1) * 2 + 1, 'Z', i * -1, (i + 1) * 2 - 1, 'Y', i  * -1 - 1],
+                ['Y', i * -1, (i + 1) * 2 - 1, 'Z', i * -1, (i + 1) * 2 - 1, 'X', i + 1],
+                ['Y', i * -1, (i + 1) * 2 - 1, 'Z', i * -1, (i + 1) * 2 - 1, 'X', i * -1 - 1],
+              ][j];
+              // console.log(PK1, PS1, PL1, PK2, PS2, PL2, PK3, P3);
+              Array(PL1).fill(null).forEach((_31, PI1) => {
+                const P1 = PS1 + PI1;
+                Array(PL2).fill(null).forEach((_32, PI2) => {
+                  const P2 = PS2 + PI2;
+                  const P = blocks.find(({ P: p }) => p[PK1] === P1 && p[PK2] === P2 && p[PK3] === P3);
+                  if (P) layerBlocks.push(P);
+                });
+              });
+            });
+
+            if (layerBlocks.length === 0) {
+              throw null;
+            } else if (layerBlocks.length === Math.pow((i + 1) * 2 + 1, 3) - Math.pow(i * 2 + 1, 3)) {
+              score += Math.pow(10, i + 1);
+            } else {
+              layerBlocks.forEach((b) => {
+                afterBlocks.push(b);
+              });
+            }
+          });
+        } catch (_e) {
+        }
+
+        if (afterBlocks.length < blocks.length) {
+          // 空白の穴埋め
+          let blockChain = { '0.0.0': { P: [afterBlocks[0]], BP: [] } };
+          const blockRelations = { '0.0.0': '0.0.0' };
+          const [K1, K2, K3, S3, V3] = [
+            ['X', 'Y', 'Z', capacity, -1],
+            ['X', 'Z', 'Y', capacity, -1],
+            ['X', 'Y', 'Z', capacity * -1, 1],
+            ['X', 'Z', 'Y', capacity * -1, 1],
+            ['Y', 'Z', 'X', capacity, -1],
+            ['Y', 'Z', 'X', capacity * -1, 1],
+          ][block.D];
+          afterBlocks.forEach((BA) => {
+            const { P: { [K1]: P1, [K2]: P2, [K3]: P3 } } = BA;
+            const KA = `${P1}.${P2}.${P3}`;
+            let isBase = false;
+
+            [[P1 + 1, P2, P3], [P1, P2 + 1, P3], [P1, P2, P3 + V3]].forEach(([NP1, NP2, NP3], l) => {
+              const IB = afterBlocks.findIndex(({ P }) => P[K1] === NP1 && P[K2] === NP2 && P[K3] === NP3);
+              if (IB >= 0) {
+                const BB = afterBlocks[IB];
+                const KB = `${NP1}.${NP2}.${NP3}`;
+                if (blockRelations[KA] && blockRelations[KB]) {
+                  const { [KA]: KC, [KB]: KD } = blockRelations;
+                  const [KE, KF] = KA === '0.0.0' ? [KC, KD] : [KD, KC];
+                  const { [KF]: { P: BF }, ...afterBlockChain } = blockChain;
+                  BF.forEach((b) => {
+if (!afterBlockChain[KE]) {
+console.log(`KA:${KA}
+KB:${KB}
+KC:${KC}
+KD:${KD}
+KE:${KE}
+KF:${KF}`, blockRelations, blockChain);
+}
+                    afterBlockChain[KE].P.push(b);
+                    blockRelations[`${b.P[K1]}.${b.P[K2]}.${b.P[K3]}`] = KE;
+                  });
+                  blockChain = afterBlockChain;
+                } else if (blockRelations[KA]) {
+                  blockChain[blockRelations[KA]].P.push(BA);
+                  blockRelations[KB] = blockRelations[KA];
+                } else if (blockRelations[KB]) {
+                  blockChain[blockRelations[KB]].P.push(BB);
+                  blockRelations[KA] = blockRelations[KB];
+                } else {
+                  blockChain[KA] = { P: [BA, BB], BP: [] };
+                  blockRelations[KA] = KA;
+                  blockRelations[KB] = KA;
+                }
+              } else if (l === 2) {
+                isBase = true;
+              }
+            });
+
+            if (!blockRelations[KA]) {
+              blockRelations[KA] = KA;
+              blockChain[KA] = { P: [BA], BP: [] };
+            }
+            if (isBase) {
+              blockChain[blockRelations[KA]].BP.push(BA);
+            }
+          });
+
+          let { '0.0.0': coreChain, ...otherChain } = blockChain;
+          const otherCodes = Object.keys(otherChain);
+
+          try {
+            Array(otherCodes.length).fill(null).forEach((_) => {
+              const coreCovers = {};
+              coreChain.P.forEach(({ P: { [K1]: P1, [K2]: P2, [K3]: P3 } }) => {
+                const K = `${P1}.${P2}`;
+                if (!coreCovers.includes(K)) coreCovers[K] = [];
+                if (!afterBlocks.find(({ P: {  [K1]: NP1, [K2]: NP2, [K3]: NP3 } }) => NP1 === P1 && NP2 === P2 && NP3 === P3 - V3)) {
+                  coreCovers[K],push(P3);
+                }
+              });
+
+              const diffParam = otherCodes.reduce((res, code) => {
+                const { P, BP } = otherChain[code];
+                BP.forEach(({ P: { [K1]: P1, [K2]: P2, [K3]: P3 } }) => {
+                  const K = `${P1}.${P2}`;
+                  if (coreCovers[K]) {
+                    coreCovers[K].forEach((CP3) => {
+                      const diff = CP3 * V3 - P3 * V3;
+                      if (diff > 0 && diff < minDiff) {
+                        res = { C: code, D: diff };
+                      }
+                    });
+                  }
+                });
+
+                return res;
+              }, { C: null, D: Infinity });
+
+              if (!diffParam.C) throw null;
+
+              otherCodes.forEach((code) => {
+                otherChain[code].P.forEach((P) => {
+                  P[K3] += V3 * diffParam.D;
+                });
+              });
+
+              const { [diffParam.C]: targetChain, ...restChain } = otherChain;
+              otherChain = restChain;
+
+              targetChain.P.forEach((P) => {
+                coreChain.P.push(P);
+              });
+            });
+          } catch (_e) {
+          }
+
+          blocks = coreChain.P;
+        }
+      };
+
       const animate = () => {
         if (!block) {
           summonBlock();
@@ -733,6 +926,7 @@
             block.P.forEach((p) => {
               blocks.push({ P: { ...p }, C: block.C });
             });
+            inspectBlocks();
             block = null;
             time = 0;
           } else if (slidedResult === -2) {
@@ -870,15 +1064,36 @@
             const key = keyMap[event.code];
             const index = directionMap[key];
             if (rotationSwitch) {
-              // console.log(block.D);
-              rotateBlock(...[
-                [[0, 1, 0], [0, 0, 1], [0, 3, 0], [0, 0, 3]],
-                [[0, 3, 0], [1, 0, 0], [0, 1, 0], [3, 0, 0]],
-                [[0, 1, 0], [0, 0, 1], [0, 3, 0], [0, 0, 3]],
-                [[0, 3, 0], [3, 0, 0], [0, 1, 0], [1, 0, 0]],
-                [[1, 0, 0], [0, 0, 3], [3, 0, 0], [0, 0, 1]],
-                [[1, 0, 0], [0, 0, 3], [3, 0, 0], [0, 0, 1]],
-              ][block.D][index]);
+              let [ZR, ZX, ZY] = [0, 0, 0];
+              const { U, L } = directionMap;
+
+              if (block.D === 0) {
+                ZX = [0, 2].includes(index) ? (((key === 'U' && L === 1) || (key === 'R' && U === 1) || (key === 'D' && L === 3) || (key === 'L' && U === 3)) ? 1 : 3) : 0;
+                ZY = [1, 3].includes(index) ? (((key === 'U' && L === 0) || (key === 'R' && U === 0) || (key === 'D' && L === 2) || (key === 'L' && U === 2)) ? 1 : 3) : 0;
+              }
+              if (block.D === 2) {
+                ZX = [0, 2].includes(index) ? (((key === 'U' && L === 3) || (key === 'R' && U === 3) || (key === 'D' && L === 1) || (key === 'L' && U === 1)) ? 1 : 3) : 0;
+                ZY = [1, 3].includes(index) ? (((key === 'U' && L === 2) || (key === 'R' && U === 2) || (key === 'D' && L === 0) || (key === 'L' && U === 0)) ? 1 : 3) : 0;
+              }
+              if (block.D === 1) {
+                ZX = [0, 2].includes(index) ? (((key === 'U' && L === 1) || (key === 'R' && U === 1) || (key === 'D' && L === 3) || (key === 'L' && U === 3)) ? 1 : 3) : 0;
+                ZR = [1, 3].includes(index) ? (((key === 'U' && L === 0) || (key === 'R' && U === 0) || (key === 'D' && L === 2) || (key === 'L' && U === 2)) ? 1 : 3) : 0;
+              }
+              if (block.D === 3) {
+                ZX = [0, 2].includes(index) ? (((key === 'U' && L === 3) || (key === 'R' && U === 3) || (key === 'D' && L === 1) || (key === 'L' && U === 1)) ? 1 : 3) : 0;
+                ZR = [1, 3].includes(index) ? (((key === 'U' && L === 2) || (key === 'R' && U === 2) || (key === 'D' && L === 0) || (key === 'L' && U === 0)) ? 1 : 3) : 0;
+              }
+              if (block.D === 4) {
+                ZR = [0, 2].includes(index) ? (((key === 'U' && L === 3) || (key === 'R' && U === 3) || (key === 'D' && L === 1) || (key === 'L' && U === 1)) ? 1 : 3) : 0;
+                ZY = [1, 3].includes(index) ? (((key === 'U' && L === 0) || (key === 'R' && U === 0) || (key === 'D' && L === 2) || (key === 'L' && U === 2)) ? 1 : 3) : 0;
+              }
+              if (block.D === 5) {
+                ZR = [0, 2].includes(index) ? (((key === 'U' && L === 1) || (key === 'R' && U === 1) || (key === 'D' && L === 3) || (key === 'L' && U === 3)) ? 1 : 3) : 0;
+                ZY = [1, 3].includes(index) ? (((key === 'U' && L === 0) || (key === 'R' && U === 0) || (key === 'D' && L === 2) || (key === 'L' && U === 2)) ? 1 : 3) : 0;
+              }
+              // console.log(`D:${block.D} DM:${JSON.stringify(directionMap)} (${ZR}.${ZX}.${ZY}) >> I:${index}`);
+
+              rotateBlock(ZR, ZX, ZY);
             } else {
               slideBlock([
                 [3, 4, 1, 5],
@@ -887,7 +1102,7 @@
                 [2, 5, 0, 4],
                 [3, 2, 1, 0],
                 [3, 0, 1, 2],
-              ][block.D][index]); 
+              ][block.D][index]);
             }
             output();
 
@@ -932,8 +1147,7 @@
       }
 
       setMeterPosition(1 / 2);
-      // startAnimation();
-      animate();
+      startAnimation();
     </script>
   </body>
 </html>
