@@ -121,6 +121,19 @@
         KeyD: [0, 0, 3],
       };
       const directionMap = { U: 0, R: 1, D: 2, L: 3 };
+      const vectorMap = [
+        ['X', 'Y', 'Z', capacity, -1],
+        ['X', 'Z', 'Y', capacity, -1],
+        ['X', 'Y', 'Z', capacity * -1, 1],
+        ['X', 'Z', 'Y', capacity * -1, 1],
+        ['Y', 'Z', 'X', capacity, -1],
+        ['Y', 'Z', 'X', capacity * -1, 1],
+      ];
+      const phaseTimes = {
+        set: 25,
+        fall: 1250,
+        organize: 25,
+      };
 
       // 内部変数
       let focalLengthPercentage = 2;
@@ -133,14 +146,16 @@
       let latestPointerX = 0;
       let latestPointerY = 0;
       let moveType = 'vector';
+      let animation = null;
       let animationSwitch = false;
+      let phase = 'set';
       // let blocks = [{ P: { X:  0, Y:  0, Z:  0 }, C: [200, 255, 248] }];
       let blocks = [
         { P: { X:  0, Y:  0, Z:  0 }, C: [200, 255, 248] },
-        { P: { X:  1, Y:  1, Z:  1 }, C: [255, 200, 0] },
-        { P: { X:  1, Y:  0, Z:  1 }, C: [255, 200, 0] },
-        { P: { X:  1, Y:  0, Z:  0 }, C: [255, 200, 0] },
-        { P: { X:  1, Y:  1, Z:  0 }, C: [255, 200, 0] },
+        { P: { X:  1, Y:  1, Z:  1 }, C: [255, 200,   0] },
+        { P: { X:  1, Y:  0, Z:  1 }, C: [255, 200,   0] },
+        { P: { X:  1, Y:  0, Z:  0 }, C: [255, 200,   0] },
+        { P: { X:  1, Y:  1, Z:  0 }, C: [255, 200,   0] },
         { P: { X:  0, Y:  1, Z:  1 }, C: [200, 100, 200] },
         { P: { X:  0, Y:  0, Z:  1 }, C: [200, 100, 200] },
         { P: { X: -1, Y:  0, Z:  1 }, C: [200, 100, 200] },
@@ -157,13 +172,28 @@
         { P: { X:  0, Y: -1, Z: -1 }, C: [ 80,  80, 255] },
         { P: { X: -1, Y:  0, Z: -1 }, C: [ 80,  80, 255] },
         { P: { X: -1, Y:  1, Z: -1 }, C: [ 80,  80, 255] },
-
         { P: { X:  0, Y:  1, Z:  0 }, C: [160, 160, 160] },
         { P: { X:  0, Y:  1, Z: -1 }, C: [160, 160, 160] },
         { P: { X: -1, Y:  1, Z:  0 }, C: [160, 160, 160] },
         { P: { X:  1, Y:  1, Z: -1 }, C: [160, 160, 160] },
+        { P: { X:  0, Y: -2, Z:  0 }, C: [255, 120,   0] },
+        { P: { X:  0, Y: -2, Z: -1 }, C: [255, 120,   0] },
+        { P: { X: -1, Y: -2, Z:  0 }, C: [255, 120,   0] },
+        { P: { X: -1, Y: -2, Z: -1 }, C: [255, 120,   0] },
+        { P: { X:  0, Y:  0, Z: -2 }, C: [  0, 200, 100] },
+        { P: { X:  0, Y: -1, Z: -2 }, C: [  0, 200, 100] },
+        { P: { X: -1, Y:  0, Z: -2 }, C: [  0, 200, 100] },
+        { P: { X: -1, Y: -1, Z: -2 }, C: [  0, 200, 100] },
+        { P: { X:  2, Y:  0, Z:  0 }, C: [200,   0, 100] },
+        { P: { X:  2, Y: -1, Z:  0 }, C: [200,   0, 100] },
+        { P: { X:  2, Y:  0, Z:  1 }, C: [200,   0, 100] },
+        { P: { X:  2, Y: -1, Z:  1 }, C: [200,   0, 100] },
       ];
       let block = null;
+      let coreParam = null;
+      let fallingParams = null;
+      let fallingParam = null;
+      let fallingBlocks = [];
       let focalLengthSwitch = false;
       let meterHandleDiffX = 0;
       // 位置軸: 静止状態の対象物の基本姿勢からの傾きを表す軸
@@ -181,6 +211,7 @@
       let lightX = Math.PI / 180 * 70; // 光源軸のZ軸(正面方向軸)に対する角度(0 ~ π)
       let lightY = Math.PI / 180 * 60; // 光源軸のY軸(上下方向軸)に対する角度(-π ~ π)
       let time = 0;
+      let nextTime = 0;
       let score = 0;
 
       const calculateBlockPosition = (pos, considerFocalLength) => {
@@ -267,7 +298,8 @@
 
         [
           ...blocks,
-          ...(block ? block.P.map((p) => ({ P: p, C: block.C })) : [])
+          ...(block ? block.P.map((p) => ({ P: p, C: block.C })) : []),
+          ...(fallingBlocks),
         ].forEach(({ P, C }) => {
           const [LX1, LX2] = [P.X + 1 / 2, P.X - 1 / 2];
           const [LY1, LY2] = [P.Y + 1 / 2, P.Y - 1 / 2];
@@ -758,9 +790,13 @@
         return 0;
       };
 
-      const inspectBlocks = () => {
+      const inspectBlocks = async () => {
+        block.P.forEach((p) => {
+          blocks.push({ P: { ...p }, C: block.C });
+        });
+
         const afterBlocks = [{ P: { X:  0, Y:  0, Z:  0 }, C: [200, 255, 248] }];
-        // console.log(blocks);
+
         try {
           Array(capacity).fill(null).forEach((_1, i) => {
             const layerBlocks = [];
@@ -774,7 +810,6 @@
                 ['Y', i * -1, (i + 1) * 2 - 1, 'Z', i * -1, (i + 1) * 2 - 1, 'X', i + 1],
                 ['Y', i * -1, (i + 1) * 2 - 1, 'Z', i * -1, (i + 1) * 2 - 1, 'X', i * -1 - 1],
               ][j];
-              // console.log(PK1, PS1, PL1, PK2, PS2, PL2, PK3, P3);
               Array(PL1).fill(null).forEach((_31, PI1) => {
                 const P1 = PS1 + PI1;
                 Array(PL2).fill(null).forEach((_32, PI2) => {
@@ -785,9 +820,8 @@
               });
             });
 
-            if (layerBlocks.length === 0) {
-              throw null;
-            } else if (layerBlocks.length === Math.pow((i + 1) * 2 + 1, 3) - Math.pow(i * 2 + 1, 3)) {
+            if (layerBlocks.length === 0) throw null;
+            if (layerBlocks.length === Math.pow((i + 1) * 2 + 1, 3) - Math.pow(i * 2 + 1, 3)) {
               score += Math.pow(10, i + 1);
             } else {
               layerBlocks.forEach((b) => {
@@ -798,160 +832,201 @@
         } catch (_e) {
         }
 
-        if (afterBlocks.length < blocks.length) {
-          // 空白の穴埋め
-          let blockChain = { '0.0.0': { P: [afterBlocks[0]], BP: [] } };
-          const blockRelations = { '0.0.0': '0.0.0' };
-          const [K1, K2, K3, S3, V3] = [
-            ['X', 'Y', 'Z', capacity, -1],
-            ['X', 'Z', 'Y', capacity, -1],
-            ['X', 'Y', 'Z', capacity * -1, 1],
-            ['X', 'Z', 'Y', capacity * -1, 1],
-            ['Y', 'Z', 'X', capacity, -1],
-            ['Y', 'Z', 'X', capacity * -1, 1],
-          ][block.D];
-          afterBlocks.forEach((BA) => {
-            const { P: { [K1]: P1, [K2]: P2, [K3]: P3 } } = BA;
-            const KA = `${P1}.${P2}.${P3}`;
-            let isBase = false;
+        if (afterBlocks.length === blocks.length) return;
 
-            [[P1 + 1, P2, P3], [P1, P2 + 1, P3], [P1, P2, P3 + V3]].forEach(([NP1, NP2, NP3], l) => {
-              const IB = afterBlocks.findIndex(({ P }) => P[K1] === NP1 && P[K2] === NP2 && P[K3] === NP3);
-              if (IB >= 0) {
-                const BB = afterBlocks[IB];
-                const KB = `${NP1}.${NP2}.${NP3}`;
-                if (blockRelations[KA] && blockRelations[KB]) {
-                  const { [KA]: KC, [KB]: KD } = blockRelations;
-                  const [KE, KF] = KA === '0.0.0' ? [KC, KD] : [KD, KC];
-                  const { [KF]: { P: BF }, ...afterBlockChain } = blockChain;
-                  BF.forEach((b) => {
-if (!afterBlockChain[KE]) {
-console.log(`KA:${KA}
-KB:${KB}
-KC:${KC}
-KD:${KD}
-KE:${KE}
-KF:${KF}`, blockRelations, blockChain);
-}
+        let blockChain = { '0.0.0': { P: [afterBlocks[0]], BP: [] } };
+        const blockRelations = { '0.0.0': '0.0.0' };
+        const [K1, K2, K3, S3, V3] = vectorMap[block.D];
+
+        afterBlocks.forEach((BA) => {
+          const { P: { [K1]: P1, [K2]: P2, [K3]: P3 } } = BA;
+          const KA = `${P1}.${P2}.${P3}`;
+          let isBase = false;
+
+          [[P1 + 1, P2, P3], [P1, P2 + 1, P3], [P1, P2, P3 + V3]].forEach(([NP1, NP2, NP3], l) => {
+            const IB = afterBlocks.findIndex(({ P }) => P[K1] === NP1 && P[K2] === NP2 && P[K3] === NP3);
+            if (IB >= 0) {
+              const BB = afterBlocks[IB];
+              const KB = `${NP1}.${NP2}.${NP3}`;
+              if (blockRelations[KA] && blockRelations[KB]) {
+                const { [KA]: KC, [KB]: KD } = blockRelations;
+                if (KC !== KD) {
+                  const [KE, KF] = KC === '0.0.0' ? [KC, KD] : [KD, KC];
+                  const { [KF]: { P, BP }, ...afterBlockChain } = blockChain;
+                  P.forEach((b) => {
                     afterBlockChain[KE].P.push(b);
                     blockRelations[`${b.P[K1]}.${b.P[K2]}.${b.P[K3]}`] = KE;
                   });
+                  afterBlockChain[KE].BP = afterBlockChain[KE].BP.concat(BP);
                   blockChain = afterBlockChain;
-                } else if (blockRelations[KA]) {
-                  blockChain[blockRelations[KA]].P.push(BA);
-                  blockRelations[KB] = blockRelations[KA];
-                } else if (blockRelations[KB]) {
-                  blockChain[blockRelations[KB]].P.push(BB);
-                  blockRelations[KA] = blockRelations[KB];
-                } else {
-                  blockChain[KA] = { P: [BA, BB], BP: [] };
-                  blockRelations[KA] = KA;
-                  blockRelations[KB] = KA;
                 }
-              } else if (l === 2) {
-                isBase = true;
+              } else if (blockRelations[KA]) {
+                blockChain[blockRelations[KA]].P.push(BB);
+                blockRelations[KB] = blockRelations[KA];
+              } else if (blockRelations[KB]) {
+                blockChain[blockRelations[KB]].P.push(BA);
+                blockRelations[KA] = blockRelations[KB];
+              } else {
+                blockChain[KA] = { P: [BA, BB], BP: [] };
+                blockRelations[KA] = KA;
+                blockRelations[KB] = KA;
               }
-            });
-
-            if (!blockRelations[KA]) {
-              blockRelations[KA] = KA;
-              blockChain[KA] = { P: [BA], BP: [] };
-            }
-            if (isBase) {
-              blockChain[blockRelations[KA]].BP.push(BA);
+            } else if (l === 2) {
+              isBase = true;
             }
           });
+          if (!blockRelations[KA]) {
+            blockRelations[KA] = KA;
+            blockChain[KA] = { P: [BA], BP: [] };
+          }
+          if (isBase) {
+            blockChain[blockRelations[KA]].BP.push(BA);
+          }
+        });
 
-          let { '0.0.0': coreChain, ...otherChain } = blockChain;
-          const otherCodes = Object.keys(otherChain);
+        const { '0.0.0': coreChain, ...fallingChain } = blockChain;
+        coreParam = { ...coreChain, D: block.D, T: 0 };
+        block = null;
+        blocks = coreChain.P;
+        fallingParams = [];
+        fallingBlocks = [];
 
-          try {
-            Array(otherCodes.length).fill(null).forEach((_) => {
-              const coreCovers = {};
-              coreChain.P.forEach(({ P: { [K1]: P1, [K2]: P2, [K3]: P3 } }) => {
-                const K = `${P1}.${P2}`;
-                if (!coreCovers.includes(K)) coreCovers[K] = [];
-                if (!afterBlocks.find(({ P: {  [K1]: NP1, [K2]: NP2, [K3]: NP3 } }) => NP1 === P1 && NP2 === P2 && NP3 === P3 - V3)) {
-                  coreCovers[K],push(P3);
+        try {
+          Object.keys(fallingChain).forEach((_) => {
+            const coreCovers = {};
+
+            coreChain.P.forEach((P) => {
+              const { P: { [K1]: P1, [K2]: P2, [K3]: P3 } } = P;
+              const K = `${P1}.${P2}`;
+              if (!(K in coreCovers)) coreCovers[K] = [];
+              if (!blocks.find(({ P: { [K1]: NP1, [K2]: NP2, [K3]: NP3 } }) => NP1 === P1 && NP2 === P2 && NP3 === P3 - V3)) {
+                coreCovers[K].push(P3);
+              }
+              fallingBlocks.push(P);
+            });
+
+            const fallingParam = Object.keys(fallingChain).map((code) => {
+              let D = capacity * 2;
+              let I = false;
+
+              fallingChain[code].BP.forEach(({ P: { [K1]: P1, [K2]: P2, [K3]: P3 } }) => {
+                if (coreCovers[`${P1}.${P2}`]) {
+                  coreCovers[`${P1}.${P2}`].forEach((CP3) => {
+                    const d = (CP3 - P3) * V3;
+                    if (d > 0 && d < D) D = d;
+                  });
+                  I = true;
                 }
               });
 
-              const diffParam = otherCodes.reduce((res, code) => {
-                const { P, BP } = otherChain[code];
-                BP.forEach(({ P: { [K1]: P1, [K2]: P2, [K3]: P3 } }) => {
-                  const K = `${P1}.${P2}`;
-                  if (coreCovers[K]) {
-                    coreCovers[K].forEach((CP3) => {
-                      const diff = CP3 * V3 - P3 * V3;
-                      if (diff > 0 && diff < minDiff) {
-                        res = { C: code, D: diff };
-                      }
-                    });
-                  }
-                });
+              return { ...fallingChain[code], C: code, D, I };
+            }).sort(
+              (A, B) => A.D - B.D
+            ).reduce((res, param, i) => {
+              if (i === 0) {
+                delete fallingChain[param.C];
 
-                return res;
-              }, { C: null, D: Infinity });
+                return param;
+              }
 
-              if (!diffParam.C) throw null;
+              if (param.I && res.I && param.D === res.D) {
+                delete fallingChain[param.C];
+                res.P = res.P.concat(param.P);
+                res.BP = res.P.concat(param.BP);
+              }
 
-              otherCodes.forEach((code) => {
-                otherChain[code].P.forEach((P) => {
-                  P[K3] += V3 * diffParam.D;
-                });
-              });
+              return res;
+            }, null);
 
-              const { [diffParam.C]: targetChain, ...restChain } = otherChain;
-              otherChain = restChain;
+            fallingParams.push(fallingParam);
 
-              targetChain.P.forEach((P) => {
-                coreChain.P.push(P);
-              });
-            });
-          } catch (_e) {
+            if (!Object.keys(fallingChain).length) throw null;
+          });
+        } catch (_e) {
+        }
+      };
+
+      const organize = () => {
+        const [K1, K2, K3, S3, V3] = vectorMap[coreParam.D];
+
+        coreParam.T ++;
+
+        const PR3 = Math.pow(coreParam.T, 2) * 0.1;
+        let lastIndex = null;
+
+        fallingBlocks = [];
+        fallingParams.forEach((fallingParam, i) => {
+          const isLast = PR3 >= fallingParam.D - 1;
+          fallingParam.P.forEach((B) => {
+            if (isLast) {
+              if (fallingParam.I) {
+                blocks.push({ ...B, P: { ...B.P, [K3]: B.P[K3] + V3 * (fallingParam.D - 1) } });
+              }
+            } else {
+              fallingBlocks.push({ ...B, P: { ...B.P, [K3]: B.P[K3] + V3 * PR3 } });
+            }
+          });
+          if (isLast) {
+            lastIndex = i;
           }
+        });
 
-          blocks = coreChain.P;
+        if (lastIndex !== null) {
+          fallingParams = fallingParams.splice(lastIndex + 1);
+        }
+        if (!fallingParams.length) {
+          fallingParams = null;
+          coreParam = null;
         }
       };
 
       const animate = () => {
-        if (!block) {
-          summonBlock();
-          output();
-        } else if (time > 0 && time % 50 === 0) {
-          const slidedResult = slideBlock([2, 3, 0, 1, 5, 4][block.D]);
+        if (!animationSwitch) return;
 
-          if (slidedResult === -1) {
-            block.P.forEach((p) => {
-              blocks.push({ P: { ...p }, C: block.C });
-            });
-            inspectBlocks();
-            block = null;
-            time = 0;
-          } else if (slidedResult === -2) {
-            block = null;
-            time = 0;
-          }
-
-          output();
+        switch (phase) {
+          case 'set':
+            summonBlock();
+            phase = 'fall';
+            break;
+          case 'fall':
+            const slidedResult = slideBlock([2, 3, 0, 1, 5, 4][block.D]);
+            if (slidedResult === -1) {
+              inspectBlocks();
+              phase = fallingParams ? 'organize' : 'set';
+            } else if (slidedResult === -2) {
+              phase = 'set';
+            }
+            break;
+          case 'organize':
+            organize();
+            if (!fallingParams) {
+              phase = 'set';
+            }
+            break;
         }
 
         // console.log(ka(axisX), ka(axisY), ka(axisL));
+        output();
 
-        if (animationSwitch) {
-          time ++;
-          setTimeout(animate, 25);
-        }
+        time = (new Date()).getTime();
+        nextTime = time + phaseTimes[phase];
+        animation = setTimeout(animate, nextTime - time);
       };
 
       const startAnimation = () => {
+        if (animation) clearTimeout(animation);
         animationSwitch = true;
-        animate();
+        if (nextTime > time) {
+          animation = setTimeout(animate, nextTime - time);
+        } else {
+          animate();
+        }
       };
 
       const stopAnimation = () => {
         animationSwitch = false;
+        if (animation) clearTimeout(animation);
+        time = (new Date()).getTime();
       };
 
       const getMeterParams = () => {
@@ -1091,7 +1166,6 @@ KF:${KF}`, blockRelations, blockChain);
                 ZR = [0, 2].includes(index) ? (((key === 'U' && L === 1) || (key === 'R' && U === 1) || (key === 'D' && L === 3) || (key === 'L' && U === 3)) ? 1 : 3) : 0;
                 ZY = [1, 3].includes(index) ? (((key === 'U' && L === 0) || (key === 'R' && U === 0) || (key === 'D' && L === 2) || (key === 'L' && U === 2)) ? 1 : 3) : 0;
               }
-              // console.log(`D:${block.D} DM:${JSON.stringify(directionMap)} (${ZR}.${ZX}.${ZY}) >> I:${index}`);
 
               rotateBlock(ZR, ZX, ZY);
             } else {
