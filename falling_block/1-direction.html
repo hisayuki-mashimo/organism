@@ -1,0 +1,581 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * {
+        user-select: none;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        overscroll-behavior-x: none;
+        overscroll-behavior-y: none;
+      }
+      #contents {
+        display: grid;
+        grid-template-columns: auto auto;
+        grid-template-rows: auto auto;
+        margin: 10px 0 0 10px;
+      }
+      .wrapper {
+        position: relative;
+        box-sizing: border-box;
+        border: solid 1px #aaaaaa;
+        margin: 0 10px 10px 0;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+      }
+      .wrapper canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      #display-wrapper {
+        grid-column: 1;
+        grid-row: 1;
+        border: solid 1px #888888;
+      }
+      #score-wrapper {
+        grid-column: 1;
+        grid-row: 2;
+        flex-direction: column;
+        align-items: inherit;
+        padding-bottom: 5px;
+      }
+      #score-wrapper .announcer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: none;
+        margin: 0;
+        padding: 5px 5px 0 5px;
+        font-size: 16px;
+        line-height: 1;
+      }
+      #failed-dialog {
+        display: none;
+        position: absolute;
+        margin: 150px 10px;
+        justify-content: center;
+        align-items: center;
+        width: calc(100% - 20px);
+        height: calc(100% - 300px);
+        background-color: #ffffffcc;
+        border: solid 1px #aaaaccee;
+      }
+      #form {
+        grid-column: 1;
+        grid-row: 3;
+        padding: 5px;
+        justify-content: space-between;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="contents">
+      <div id="display-score-wrapper">
+        <div class="wrapper canvas-wrapper" id="display-wrapper">
+          <canvas class="canvas" id="display"></canvas>
+          <div id="failed-dialog">
+            残念です。
+          </div>
+        </div>
+        <div class="wrapper" id="score-wrapper">
+          <div class="announcer">
+            <div>得点1:</div>
+            <div id="score-display1">0</div>
+          </div>
+          <div class="announcer">
+            <div>得点2:</div>
+            <div id="score-display2">0</div>
+          </div>
+          <div class="announcer">
+            <div>得点3:</div>
+            <div id="score-display3">0</div>
+          </div>
+          <div class="announcer">
+            <div>得点4:</div>
+            <div id="score-display4">0</div>
+          </div>
+        </div>
+      </div>
+      <div class="wrapper" id="next-block-display-wrapper">
+        <canvas class="canvas" id="next-block-display"></canvas>
+      </div>
+    </div>
+    <script>
+      const W = 18;
+      const capacity_X = 11;
+      const capacity_Y = 20;
+      const blockFormations = [
+        {P: [[0, 0], [0, -1], [0, 1], [0, 2]], C: [255, 0, 0]},
+        {P: [[0, 0], [0, -1], [-1, -1], [0, 1]], C: [0, 128, 255]},
+        {P: [[0, 0], [0, -1], [-1, 1], [0, 1]], C: [255, 192, 0]},
+        {P: [[0, 0], [-1, 0], [0, -1], [1, -1]], C: [0, 170, 0]},
+        {P: [[0, 0], [1, 0], [0, 1], [1, -1]], C: [128, 0, 170]},
+        {P: [[0, 0], [-1, 0], [1, 0], [0, 1]], C: [255, 80, 170]},
+        {P: [[0, 0], [1, 0], [0, 1], [1, 1]], C: [0, 0, 255]},
+      ];
+      const keyMap = {
+        ArrowRight: 'R',
+        ArrowDown: 'D',
+        ArrowLeft: 'L',
+        ArrowUp: 1,
+        ArrowDown: 3,
+        KeyZ: 3,
+        KeyX: 1,
+      };
+      const phaseTimes = {
+        set: 25,
+        fall: 2000,
+        vanish: 15,
+        strip: 15,
+      };
+      const scoreMap = [100, 200, 400, 1200];
+
+      const display = document.getElementById('display');
+      const displayWrapper = document.getElementById('display-wrapper');
+      const displayContext = display.getContext('2d');
+      const scoreWrapper = document.getElementById('score-wrapper');
+      const scoreDisplays = Array(4).fill(null).map(
+        (_, i) => document.getElementById(`score-display${i + 1}`)
+      );
+      const nextBlockDisplay = document.getElementById('next-block-display');
+      const nextBlockDisplayWrapper = document.getElementById('next-block-display-wrapper');
+      const nextBlockDisplayContext = nextBlockDisplay.getContext('2d');
+      const failedDialog = document.getElementById('failed-dialog');
+      display.style.width = `${capacity_X * W}px`;
+      display.style.height = `${capacity_Y * W}px`;
+      display.setAttribute('width', capacity_X * W);
+      display.setAttribute('height', capacity_Y * W);
+      displayWrapper.style.height = `${capacity_Y * W}px`;
+      nextBlockDisplay.style.width = `${7 * W}px`;
+      nextBlockDisplay.style.height = `${7 * W}px`;
+      nextBlockDisplay.setAttribute('width', 7 * W);
+      nextBlockDisplay.setAttribute('height', 7 * W);
+      nextBlockDisplayWrapper.style.width = `${7 * W}px`;
+      nextBlockDisplayWrapper.style.height = `${7 * W}px`;
+      [displayWrapper, scoreWrapper].forEach((elem) => {
+        elem.style.width = `${capacity_X * W}px`;
+      });
+
+      let animation = null;
+      let animationSwitch = false;
+      let phase = 'set';
+      let blocks = [];
+      let block = null;
+      let nextBlock = null;
+      let direction = 0;
+      let fallingParams = null;
+      let fallingBlocks = [];
+      let vanishingBlocks = [];
+      let time = 0;
+      let nextTime = 0;
+      let phaseTime = 0;
+      let score = [0, 0, 0, 0];
+
+      const calculateColor = (CS) => {
+        CS = CS.map((C) => (
+          (C < 16 ? '0' : '') + C.toString(16)
+        ));
+
+        return '#' + CS.join('');
+      };
+
+      const output = () => {
+        displayContext.clearRect(0, 0, capacity_X * W, capacity_Y * W);
+
+        [
+          ...blocks,
+          ...(block ? block.P.map((p) => ({ P: p, C: block.C })) : []),
+          ...(fallingBlocks.map((B) => ({ ...B, F: true }))),
+          ...(vanishingBlocks.map((B) => ({ ...B, K: true }))),
+        ].forEach(({ P: { X, Y }, C }) => {
+          displayContext.fillStyle = calculateColor(C) + 'aa';
+          displayContext.strokeStyle = calculateColor(C) + 'ff';
+          displayContext.beginPath();
+          [
+            { X: X * W + 1, Y: Y * W + 1 },
+            { X: (X + 1) * W - 1, Y: Y * W + 1 },
+            { X: (X + 1) * W - 1, Y: (Y + 1) * W - 1 },
+            { X: X * W + 1, Y: (Y + 1) * W - 1 },
+          ].forEach(({ X, Y, Z }, j) => {
+            j === 0
+              ? displayContext.moveTo(X, capacity_Y * W - Y)
+              : displayContext.lineTo(X, capacity_Y * W - Y);
+          });
+          displayContext.closePath();
+          displayContext.fill();
+          displayContext.stroke();
+        });
+
+        if (block) {
+          const [blockBase, blocksCap] = block.P.reduce(([BS, CS], { X, Y }) => {
+            const B = BS.find(({ X: BX }) => BX === X);
+            const C = CS.find(({ X: CX }) => CX === X);
+            if (B) {
+              B.Y = Math.min(B.Y, Y);
+            } else {
+              BS.push({ X, Y });
+            }
+            if (!C) {
+              const CY = blocks.reduce((res, { P: { X: CX, Y: CY } }) => CX === X ? Math.max(res, CY) : res, -1);
+              CS.push({ X, Y: CY });
+            }
+
+            return [BS, CS];
+          }, [[], []]);
+
+          const interval = blockBase.reduce((res, B) => {
+            const C = blocksCap.find(({ X }) => X === B.X);
+
+            return Math.min(res, B.Y - C.Y);
+          }, capacity_Y);
+
+          if (interval > 1) {
+            blockBase.sort((A, B) => A.X - B.X);
+  
+            displayContext.beginPath();
+            displayContext.moveTo(blockBase[0].X * W + 1, (capacity_Y - blockBase[0].Y) * W + 1);
+            blockBase.forEach(({ X, Y }, j) => {
+              if (blockBase[j - 1]) {
+                if (blockBase[j - 1].Y < Y) {
+                  displayContext.lineTo(X * W + 1, (capacity_Y - Y) * W + 1);
+                } else if (blockBase[j - 1].Y > Y) {
+                  displayContext.lineTo(X * W - 1, (capacity_Y - Y) * W + 1);
+                }
+              }
+              if (blockBase[j + 1] && blockBase[j + 1].Y > Y) {
+                displayContext.lineTo((X + 1) * W + 1, (capacity_Y - Y) * W + 1);
+              } else {
+                displayContext.lineTo((X + 1) * W - 1, (capacity_Y - Y) * W + 1);
+              }
+            });
+            blockBase.sort((A, B) => B.X - A.X);
+            displayContext.lineTo((blockBase[0].X + 1) * W - 1, (capacity_Y - blockBase[0].Y + interval - 1) * W - 1);
+            blockBase.forEach(({ X, Y }, j) => {
+              if (blockBase[j - 1]) {
+                if (blockBase[j - 1].Y < Y) {
+                  displayContext.lineTo((X + 1) * W + 1, (capacity_Y - Y + interval - 1) * W - 1);
+                } else if (blockBase[j - 1].Y > Y) {
+                  displayContext.lineTo((X + 1) * W - 1, (capacity_Y - Y + interval - 1) * W - 1);
+                }
+              }
+              if (blockBase[j + 1] && blockBase[j + 1].Y < Y) {
+                displayContext.lineTo(X * W - 1, (capacity_Y - Y + interval - 1) * W - 1);
+              } else {
+                displayContext.lineTo(X * W + 1, (capacity_Y - Y + interval - 1) * W - 1);
+              }
+            });
+            displayContext.closePath();
+            displayContext.fillStyle = '#ff88aa22';
+            displayContext.strokeStyle = '#ff88aa44';
+            displayContext.fill();
+            displayContext.stroke();
+          }
+        }
+      };
+
+      const summonBlock = () => {
+        block = nextBlock;
+
+        const S = { X: Math.ceil(capacity_X / 2) - 1, Y: capacity_Y - 3 };
+        const B = blockFormations[Math.floor(Math.random() * blockFormations.length)];
+        const P = B.P.map(([X, Y]) => ({ X: X + S.X, Y: Y + S.Y }));
+
+        nextBlock = { P, C: B.C, S };
+        rotateBlock(Math.floor(Math.random() * 4), true);
+
+        if (!block) {
+          return summonBlock();
+        }
+
+        if (block.P.find(({ X, Y }) => blocks.find(({ P: { X: BX, Y: BY } }) => BX === X && BY === Y))) return -1;
+
+        nextBlockDisplayContext.clearRect(0, 0, 7 * W, 7 * W);
+        nextBlockDisplayContext.fillStyle = calculateColor(nextBlock.C) + 'aa';
+        nextBlockDisplayContext.strokeStyle = calculateColor(nextBlock.C) + 'ff';
+        nextBlock.P.forEach((P) => {
+          const X = P.X - nextBlock.S.X + 3;
+          const Y = P.Y - nextBlock.S.Y + 3;
+
+          nextBlockDisplayContext.beginPath();
+          [
+            { X: X * W + 1, Y: Y * W + 1 },
+            { X: (X + 1) * W - 1, Y: Y * W + 1 },
+            { X: (X + 1) * W - 1, Y: (Y + 1) * W - 1 },
+            { X: X * W + 1, Y: (Y + 1) * W - 1 },
+          ].forEach(({ X, Y, Z }, j) => {
+            j === 0
+              ? nextBlockDisplayContext.moveTo(X, 7 * W - Y)
+              : nextBlockDisplayContext.lineTo(X, 7 * W - Y);
+          });
+          nextBlockDisplayContext.closePath();
+          nextBlockDisplayContext.fill();
+          nextBlockDisplayContext.stroke();
+        });
+
+        return 0;
+      };
+
+      const rotateBlock = (R, isNext = false) => {
+        try {
+          const targetBlock = isNext ? nextBlock : block;
+          const { S } = targetBlock;
+          const P = targetBlock.P.map(({ X, Y }, i) => {
+            [X, Y] = [X - targetBlock.S.X, Y - targetBlock.S.Y];
+            [X, Y] = R === 1 ? [Y, X * -1] : R === 2 ? [X * -1, Y * -1] : R === 3 ? [Y * -1, X] : [X, Y];
+            if (!isNext && (X + S.X < 0 || Y + S.Y < 0 || X + S.X >= capacity_X || Y + S.Y >= capacity_Y)) throw -1;
+            if (!isNext && blocks.find((b) => b.X === X + S.X && b.Y === Y + S.Y)) throw -2;
+
+            return { X: X + targetBlock.S.X, Y: Y + targetBlock.S.Y };
+          });
+
+          targetBlock.P = P;
+
+          return 0;
+        } catch (e) {
+          return e;
+        }
+      };
+
+      const slideBlock = (direction) => {
+        const VLR = direction === 'L' ? -1 : direction === 'R' ? 1 : 0;
+        const VUD = direction === 'D' ? -1 : 0;
+        const [P, [S]] = [block.P, [block.S]].map(
+          (ps) => ps.map((p) => ({ X: p.X + VLR, Y: p.Y + VUD }))
+        );
+
+        if (P.find((p) => blocks.find((b) => b.P.X === p.X && b.P.Y === p.Y))) {
+          return -1;
+        }
+
+        if (P.find((p) => p.Y < 0 || p.X < 0 || p.X >= capacity_X)) {
+          return -1;
+        }
+
+        block.P = P;
+        block.S = S;
+
+        return 0;
+      };
+
+      const pushDownBlock = () => {
+        const [intarvalU, intarvalB] = block.P.reduce(([US, BS], { X, Y }) => {
+          const U = US.find(({ X: UX }) => UX === X);
+          const B = BS.find(({ X: UX }) => UX === X);
+          if (U) {
+            U.Y = Math.min(U.Y, Y);
+          } else {
+            US.push({ X, Y });
+          }
+          if (!B) {
+            const BY = blocks.reduce(
+              (res, { P: { X: BX, Y: BY } }) => BX === X && BY < Y ? Math.max(res, BY) : res,
+              -1
+            );
+            BS.push({ X, Y: BY });
+          }
+
+          return [US, BS];
+        }, [[], []]);
+
+        const DY = intarvalU.reduce((res, { X, Y }) => {
+          const B = intarvalB.find((b) => b.X === X);
+
+          return Math.min(Y - B.Y, res);
+        }, capacity_Y);
+
+        block.P.forEach((b) => {
+          b.Y -= DY - 1;
+        });
+      };
+
+      const inspectBlocks = () => {
+        block.P.forEach((p) => {
+          blocks.push({ P: { ...p }, C: block.C });
+        });
+
+        fallingParams = [];
+        const afterBlocks = [];
+        let horizonLayler = 0;
+
+        try {
+          Array(capacity_Y).fill(null).forEach((_1, Y) => {
+            const layerBlocks = [];
+
+            Array(capacity_X).fill(null).forEach((_2, X) => {
+              const P = blocks.find(({ P: p }) => p.X === X && p.Y === Y);
+              if (P) layerBlocks.push(P);
+            });
+
+            if (layerBlocks.length === 0) throw null;
+            if (layerBlocks.length === capacity_X) {
+              vanishingBlocks = vanishingBlocks.concat(layerBlocks);
+            } else {
+              if (horizonLayler === Y) {
+                layerBlocks.forEach((b) => {
+                  afterBlocks.push(b);
+                });
+              } else {
+                fallingParams.push({ P: layerBlocks, D: Y - horizonLayler });
+              }
+              horizonLayler ++;
+            }
+          });
+        } catch (_e) {
+        }
+
+        if (vanishingBlocks.length) {
+          const scoreDivision = vanishingBlocks.length / capacity_X - 1;
+          score[scoreDivision] += scoreMap[scoreDivision];
+          scoreDisplays[scoreDivision].innerText = score[scoreDivision];
+        }
+
+        if (afterBlocks.length === blocks.length) return;
+
+        phaseTime = 0;
+        block = null;
+        blocks = afterBlocks;
+        fallingBlocks = [];
+      };
+
+      const makeFallingBlocks = () => {
+        const PR3 = Math.pow(phaseTime, 2) * 0.02;
+        let lastIndex = null;
+
+        fallingBlocks = [];
+        fallingParams.forEach((fallingParam, i) => {
+          const isLast = PR3 >= fallingParam.D;
+          fallingParam.P.forEach((B) => {
+            if (isLast) {
+              blocks.push({ ...B, P: { ...B.P, Y: B.P.Y - fallingParam.D } });
+            } else {
+              fallingBlocks.push({ ...B, P: { ...B.P, Y: B.P.Y - PR3 } });
+            }
+          });
+          if (isLast) {
+            lastIndex = i;
+          }
+        });
+
+        if (lastIndex !== null) {
+          fallingParams = fallingParams.splice(lastIndex + 1);
+        }
+        if (!fallingParams.length) {
+          fallingParams = null;
+          fallingBlocks = [];
+        }
+      };
+
+      const animate = () => {
+        if (!animationSwitch) return;
+
+        switch (phase) {
+          case 'set':
+            const setResult = summonBlock();
+            if (setResult === -1) {
+              stopAnimation();
+              showFailedDialog();
+              phase = 'failed';
+            } else {
+              phase = 'fall';
+            }
+            break;
+          case 'fall':
+            const slidedResult = slideBlock('D');
+            if (slidedResult === -1) {
+              inspectBlocks();
+              if (vanishingBlocks.length) {
+                makeFallingBlocks();
+                phase = 'vanish';
+              } else {
+                phase = 'set';
+              }
+            }
+            break;
+          case 'vanish':
+            if (phaseTime > 5) {
+              phaseTime = 0;
+              vanishingBlocks = [];
+              phase = 'strip';
+            } else {
+              phaseTime ++;
+            }
+            break;
+          case 'strip':
+            if (!fallingParams || phaseTime > 100) {
+              phase = 'set';
+            } else {
+              makeFallingBlocks();
+              phaseTime ++;
+            }
+            break;
+        }
+
+        output();
+
+        time = (new Date()).getTime();
+        nextTime = time + phaseTimes[phase];
+        animation = setTimeout(animate, nextTime - time);
+      };
+
+      const startAnimation = () => {
+        if (animation) clearTimeout(animation);
+        animationSwitch = true;
+        if (nextTime > time) {
+          animation = setTimeout(animate, nextTime - time);
+        } else {
+          animate();
+        }
+      };
+
+      const stopAnimation = () => {
+        animationSwitch = false;
+        if (animation) clearTimeout(animation);
+        time = (new Date()).getTime();
+      };
+
+      const showFailedDialog = () => {
+        failedDialog.style.display = 'flex';
+      };
+
+      document.onkeydown = (event) => {
+        switch (event.code) {
+          case 'Enter':
+            if (animationSwitch === false) {
+              startAnimation();
+            } else {
+              stopAnimation();
+            }
+
+            break;
+          case 'ArrowRight':
+          case 'ArrowLeft':
+            slideBlock(keyMap[event.code]);
+            output();
+            break;
+          case 'ArrowUp':
+          case 'ArrowDown':
+          case 'KeyZ':
+          case 'KeyX':
+            rotateBlock(keyMap[event.code]);
+            output();
+            break;
+          case 'Space':
+            if (phase === 'fall' && animationSwitch) {
+              if (animation) clearTimeout(animation);
+              pushDownBlock();
+              nextTime = time;
+              animate();
+            }
+            break;
+          default:
+        }
+      };
+
+      startAnimation();
+    </script>
+  </body>
+</html>
