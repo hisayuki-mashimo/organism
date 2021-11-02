@@ -1,0 +1,704 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * {
+        user-select: none;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        overscroll-behavior-x: none;
+        overscroll-behavior-y: none;
+      }
+      #contents {
+        display: flex;
+        margin: 10px 0 0 10px;
+      }
+      .wrapper {
+        position: relative;
+        box-sizing: border-box;
+        border: solid 1px #aaaaaa;
+        margin: 0 10px 10px 0;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+      }
+      .wrapper canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      #display-wrapper {
+        border: solid 1px #888888;
+      }
+      #score-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px;
+      }
+      #color-mode-wrapper {
+        display: flex;
+        align-items: center;
+        padding: 5px;
+      }
+      #color-mode-wrapper input {
+        margin: 0 2px 0 0;
+      }
+      #color-mode-wrapper label {
+        margin: 0 8px 0 0;
+      }
+      #failed-dialog {
+        display: none;
+        position: absolute;
+        margin: 150px 10px;
+        justify-content: center;
+        align-items: center;
+        width: calc(100% - 20px);
+        height: calc(100% - 300px);
+        background-color: #ffffffcc;
+        border: solid 1px #aaaaccee;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="contents">
+      <div id="display-score-wrapper">
+        <div class="wrapper canvas-wrapper" id="display-wrapper">
+          <canvas class="canvas" id="display"></canvas>
+          <div id="failed-dialog">
+            残念です。
+          </div>
+        </div>
+        <div class="wrapper" id="score-wrapper">
+          <div>得点：</div>
+          <div id="score-display">0</div>
+        </div>
+        <div class="wrapper" id="color-mode-wrapper">
+          層色分け：
+          <input type="radio" name="color-mode" id="color-mode-1" checked /><label for="color-mode-1">あり</label>
+          <input type="radio" name="color-mode" id="color-mode-2" /><label for="color-mode-2">なし</label>
+        </div>
+      </div>
+      <div class="wrapper" id="next-block-display-wrapper">
+        <canvas class="canvas" id="next-block-display"></canvas>
+      </div>
+    </div>
+    <script>
+      const W = 12;
+      const capacity = 16;
+      const blockFormations = [
+        {P: [[0, 0], [0, -1], [0, 1], [0, 2]], C: [255, 0, 0]},
+        {P: [[0, 0], [0, -1], [-1, -1], [0, 1]], C: [0, 128, 255]},
+        {P: [[0, 0], [0, -1], [-1, 1], [0, 1]], C: [255, 192, 0]},
+        {P: [[0, 0], [-1, 0], [0, -1], [1, -1]], C: [0, 170, 0]},
+        {P: [[0, 0], [1, 0], [0, 1], [1, -1]], C: [128, 0, 170]},
+        {P: [[0, 0], [-1, 0], [1, 0], [0, 1]], C: [255, 80, 170]},
+        {P: [[0, 0], [1, 0], [0, 1], [1, 1]], C: [0, 0, 255]},
+      ];
+      const keyMap = {
+        ArrowUp: 0,
+        ArrowRight: 1,
+        ArrowDown: 2,
+        ArrowLeft: 3,
+        KeyZ: 3,
+        KeyX: 1,
+        ShiftLeft: 3,
+        ShiftRight: 1,
+      };
+      const vectorMap = [
+        ['Y', 'X', capacity * -1, 1],
+        ['X', 'Y', capacity, -1],
+        ['Y', 'X', capacity, -1],
+        ['X', 'Y', capacity * -1, 1],
+      ];
+      const colorMap = [
+        [200, 255, 248],
+        [255, 200, 0],
+        [255, 80, 120],
+        [80, 80, 255],
+        [0, 200, 100],
+        [200, 40, 184],
+        [255, 120, 20],
+        [40, 200, 255],
+        [200, 200, 200],
+        [60, 60, 60],
+        [255, 0, 0],
+        [0, 255, 0],
+        [0, 0, 255],
+      ];
+      const phaseTimes = {
+        set: 25,
+        fall: 2000,
+        vanish: 15,
+        strip: 15,
+      };
+
+      const display = document.getElementById('display');
+      const displayWrapper = document.getElementById('display-wrapper');
+      const displayContext = display.getContext('2d');
+      const scoreWrapper = document.getElementById('score-wrapper');
+      const scoreDisplay = document.getElementById('score-display');
+      const colorModeWrapper = document.getElementById('color-mode-wrapper');
+      const colorModeInput1= document.getElementById('color-mode-1');
+      const colorModeInput2 = document.getElementById('color-mode-2');
+      const nextBlockDisplay = document.getElementById('next-block-display');
+      const nextBlockDisplayWrapper = document.getElementById('next-block-display-wrapper');
+      const nextBlockDisplayContext = nextBlockDisplay.getContext('2d');
+      const failedDialog = document.getElementById('failed-dialog');
+      display.style.width = `${(capacity * 2 + 1) * W}px`;
+      display.style.height = `${(capacity * 2 + 1) * W}px`;
+      display.setAttribute('width', (capacity * 2 + 1) * W);
+      display.setAttribute('height', (capacity * 2 + 1) * W);
+      displayWrapper.style.height = `${(capacity * 2 + 1) * W}px`;
+      nextBlockDisplay.style.width = `${7 * W}px`;
+      nextBlockDisplay.style.height = `${7 * W}px`;
+      nextBlockDisplay.setAttribute('width', 7 * W);
+      nextBlockDisplay.setAttribute('height', 7 * W);
+      nextBlockDisplayWrapper.style.width = `${7 * W}px`;
+      nextBlockDisplayWrapper.style.height = `${7 * W}px`;
+      [displayWrapper, scoreWrapper, colorModeWrapper].forEach((elem) => {
+        elem.style.width = `${(capacity * 2 + 1) * W}px`;
+      });
+
+      let animation = null;
+      let animationSwitch = false;
+      let phase = 'set';
+      let blocks = [{ P: { X: 0, Y: 0 }, C: [200, 255, 248] }];
+      let block = null;
+      let nextBlock = null;
+      let direction = 0;
+      let fallingParams = null;
+      let fallingBlocks = [];
+      let vanishingBlocks = [];
+      let time = 0;
+      let nextTime = 0;
+      let phaseTime = 0;
+      let score = 0;
+      let colorMode = 'agate';
+
+      const calculateBlockIntervals = () => {
+        const [K1, K2, S, V] = vectorMap[direction];
+        const blockBase = block.P.reduce(
+          (R, { [K1]: V1, [K2]: V2 }) => (!R[`${V2}`] || R[`${V2}`].V * V < V1 * V) ? { ...R, [`${V2}`]: { [K1]: V1, [K2]: V2, V: V1 }} : R,
+          {}
+        );
+        const blocksCover = blocks.reduce(
+          (R, { P: { [K1]: V1, [K2]: V2 } }) => (blockBase[`${V2}`] && blockBase[`${V2}`].V * V < V1 * V && (!(`${V2}` in R) || R[`${V2}`] * V > V1 * V)) ? { ...R, [`${V2}`]: V1 } : R,
+          {}
+        );
+        const diffBase =
+          [1, 2].includes(direction)
+            ? capacity + 3 + Math.min(...Object.keys(blockBase).map((code) => blockBase[code].V))
+            : capacity + 3 - Math.max(...Object.keys(blockBase).map((code) => blockBase[code].V));
+        const diffs = Object.keys(blockBase)
+          .filter(
+            (code) => code in blocksCover
+          ).map(
+            (code) => Math.abs(blockBase[code].V - blocksCover[code])
+          );
+        const diff = Math.min(diffBase, ...diffs);
+
+        return { blockBase, blocksCover, diff };
+      };
+
+      const calculateBlockColor = ({ X, Y }) => {
+        const colorIndex = [X, Y].reduce((N1, N2) => Math.max(N1, Math.abs(N2)), 0);
+        if (!colorMap[colorIndex]) console.log(blocks);
+
+        return colorMap[colorIndex];
+      };
+
+      const calculateColor = (CS) => {
+        CS = CS.map((C) => (
+          (C < 16 ? '0' : '') + C.toString(16)
+        ));
+
+        return '#' + CS.join('');
+      };
+
+      const output = () => {
+        displayContext.clearRect(0, 0, (capacity * 2 + 1) * W, (capacity * 2 + 1) * W);
+
+        [
+          ...(colorMode === 'agate' ? blocks.map((b) => ({ ...b, C: calculateBlockColor(b.P) })) : blocks),
+          ...(block ? block.P.map((p) => ({ P: p, C: block.C })) : []),
+          ...(fallingBlocks.map((B) => ({ ...B, F: true }))),
+          ...(vanishingBlocks.map((B) => ({ ...B, K: true }))),
+        ].forEach(({ P: { X, Y }, C }) => {
+          displayContext.fillStyle = calculateColor(C) + 'aa';
+          displayContext.strokeStyle = calculateColor(C) + 'ff';
+          displayContext.beginPath();
+          [
+            { X: (capacity + X) * W + 1, Y: (capacity + Y) * W + 1 },
+            { X: (capacity + X + 1) * W - 1, Y: (capacity + Y) * W + 1 },
+            { X: (capacity + X + 1) * W - 1, Y: (capacity + Y + 1) * W - 1 },
+            { X: (capacity + X) * W + 1, Y: (capacity + Y + 1) * W - 1 },
+          ].forEach(({ X, Y }, j) => {
+            j === 0
+              ? displayContext.moveTo(X, Y)
+              : displayContext.lineTo(X, Y);
+          });
+          displayContext.closePath();
+          displayContext.fill();
+          displayContext.stroke();
+        });
+
+        if (block) {
+          const { blockBase, blocksCover, diff } = calculateBlockIntervals();
+
+          if (diff > 1) {
+            const poses = [];
+            const [K1, K2, S, V] = vectorMap[direction];
+            const blockBaseKeys = Object.keys(blockBase).map((k) => parseInt(k)).sort((A, B) => A - B);
+
+            blockBaseKeys.forEach((K, i) => {
+              const basePos = blockBase[K];
+              const prevPos = i > 0 ? blockBase[blockBaseKeys[i - 1]] : null;
+              const postPos = i < blockBaseKeys.length - 1 ? blockBase[blockBaseKeys[i + 1]] : null;
+              const presPos = {
+                [K1]: (capacity + basePos[K1] + ([1, 2].includes(direction) ? 1 : 0) + V) * W + V,
+                [K2]: (capacity + basePos[K2] + 1) * W + (postPos && postPos[K1] > basePos[K1] ? 1 : -1),
+              };
+
+              if (!prevPos || prevPos[K1] !== basePos[K1]) {
+                poses.push({
+                  [K1]: presPos[K1],
+                  [K2]: (capacity + basePos[K2]) * W + ((!prevPos || prevPos[K1] < basePos[K1]) ? 1 : -1),
+                });
+              }
+
+              poses.push(presPos);
+            });
+
+            displayContext.beginPath();
+            [
+              ...poses,
+              ...poses.reverse().map((P) => ({ ...P, [K1]: P[K1] + (diff - 1) * W * V })),
+            ].forEach((P, i) => {
+              i === 0
+                ? displayContext.moveTo(P.X, P.Y)
+                : displayContext.lineTo(P.X, P.Y);
+            });
+            displayContext.closePath();
+            displayContext.fillStyle = '#ff88aa22';
+            displayContext.strokeStyle = '#ff88aa44';
+            displayContext.fill();
+            displayContext.stroke();
+          }
+        }
+
+        scoreDisplay.innerText = score;
+      };
+
+      const summonBlock = () => {
+        block = nextBlock;
+
+        const B = blockFormations[Math.floor(Math.random() * blockFormations.length)];
+        const S = { X: 0, Y: 0 };
+        const P = B.P.map(([X, Y]) => ({ X, Y }));
+
+        nextBlock = { P, C: B.C, S };
+        rotateBlock(Math.floor(Math.random() * 4), true);
+
+        if (!block) {
+          return summonBlock();
+        }
+
+        direction = Math.floor(Math.random() * 4);
+        const [K1, K2, T, V] = vectorMap[direction];
+        block.S[K1] = T + V * 2;
+        block.S[K2] = 0;
+        block.P.forEach((P) => {
+          P.X += block.S.X;
+          P.Y += block.S.Y;
+        });
+
+        if (block.P.find(({ X, Y }) => blocks.find(({ P: { X: BX, Y: BY } }) => BX === X && BY === Y))) return -1;
+
+        nextBlockDisplayContext.clearRect(0, 0, 7 * W, 7 * W);
+        nextBlockDisplayContext.fillStyle = calculateColor(nextBlock.C) + 'aa';
+        nextBlockDisplayContext.strokeStyle = calculateColor(nextBlock.C) + 'ff';
+        nextBlock.P.forEach((P) => {
+          const X = P.X - nextBlock.S.X + 3;
+          const Y = P.Y - nextBlock.S.Y + 3;
+
+          nextBlockDisplayContext.beginPath();
+          [
+            { X: X * W + 1, Y: Y * W + 1 },
+            { X: (X + 1) * W - 1, Y: Y * W + 1 },
+            { X: (X + 1) * W - 1, Y: (Y + 1) * W - 1 },
+            { X: X * W + 1, Y: (Y + 1) * W - 1 },
+          ].forEach(({ X, Y, Z }, j) => {
+            j === 0
+              ? nextBlockDisplayContext.moveTo(X, 7 * W - Y)
+              : nextBlockDisplayContext.lineTo(X, 7 * W - Y);
+          });
+          nextBlockDisplayContext.closePath();
+          nextBlockDisplayContext.fill();
+          nextBlockDisplayContext.stroke();
+        });
+
+        return 0;
+      };
+
+      const rotateBlock = (R, isNext = false) => {
+        try {
+          const targetBlock = isNext ? nextBlock : block;
+          const { S } = targetBlock;
+          const P = targetBlock.P.map(({ X, Y }, i) => {
+            [X, Y] = [X - targetBlock.S.X, Y - targetBlock.S.Y];
+            [X, Y] = R === 1 ? [Y, X * -1] : R === 2 ? [X * -1, Y * -1] : R === 3 ? [Y * -1, X] : [X, Y];
+            if (!isNext && (X + S.X <= capacity * -1 || X + S.X >= capacity || Y + S.Y <= capacity * -1 || Y + S.Y >= capacity)) throw -1;
+            if (!isNext && blocks.find((b) => b.X === X + S.X && b.Y === Y + S.Y)) throw -2;
+
+            return { X: X + targetBlock.S.X, Y: Y + targetBlock.S.Y };
+          });
+
+          targetBlock.P = P;
+
+          return 0;
+        } catch (e) {
+          return e;
+        }
+      };
+
+      const slideBlock = (operatedDirection) => {
+        const VLR = operatedDirection === 1 ? 1 : operatedDirection === 3 ? -1 : 0;
+        const VUD = operatedDirection === 2 ? 1 : operatedDirection === 0 ? -1 : 0;
+        const [P, [S]] = [block.P, [block.S]].map((ps) => ps.map((p) => ({ X: p.X + VLR, Y: p.Y + VUD })));
+        if (P.find((p) => blocks.find((b) => b.P.X === p.X && b.P.Y === p.Y))) return -1;
+        if (P.find((p) => p.X <= capacity * -1 || p.X >= capacity || p.Y <= capacity * -1 || p.Y >= capacity)) return -2;
+
+        block.P = P;
+        block.S = S;
+
+        return 0;
+      };
+
+      const pushDownBlock = () => {
+        const { diff } = calculateBlockIntervals();
+        const Z = calculateBlockIntervals();
+        const [K1, K2, S, V] = vectorMap[direction];
+
+        block.P.forEach((P) => {
+          P[K1] += (diff - 1) * V;
+        });
+      };
+
+      const inspectBlocks = () => {
+        block.P.forEach((p) => {
+          blocks.push({ P: { ...p }, C: block.C });
+        });
+
+        fallingParams = [];
+        const afterBlocks = [{ P: { X: 0, Y: 0 }, C: [200, 255, 248] }];
+
+        try {
+          Array(capacity).fill(null).forEach((_1, L) => {
+            const layerBlocks = [];
+            const coordinate = { X: (L + 1) * -1, Y: (L + 1) * -1 };
+
+            Array(4).fill(null).forEach((_2, D) => {
+              const Z = [0, 2].includes(D) ? 'X' : 'Y';
+              const V = [0, 1].includes(D) ? 1 : -1;
+
+              Array((L + 1) * 2).fill(null).forEach((_3, N) => {
+                coordinate[Z] += V;
+                const { X, Y } = coordinate;
+                const P = blocks.find(({ P: p }) => p.X === X && p.Y === Y);
+                if (P) layerBlocks.push(P);
+              });
+            });
+
+            if (layerBlocks.length === 0) throw null;
+            if (layerBlocks.length === (L + 1) * 8) {
+              vanishingBlocks = vanishingBlocks.concat(layerBlocks);
+              score += Math.pow(50, L + 1);
+            } else {
+              layerBlocks.forEach((b) => {
+                afterBlocks.push(b);
+              });
+            }
+          });
+        } catch (_e) {
+        }
+
+        if (afterBlocks.length === blocks.length) return;
+
+        let blockChain = { '0.0': { P: [afterBlocks[0]], BP: [] } };
+        const blockRelations = { '0.0': '0.0' };
+        const [K1, K2, S, V] = vectorMap[direction];
+
+        afterBlocks.forEach((BA) => {
+          const { P: { [K1]: P1, [K2]: P2 } } = BA;
+          const KA = `${P1}.${P2}`;
+          let isBase = false;
+
+          [[P1, P2 + 1], [P1 + V, P2]].forEach(([NP1, NP2], l) => {
+            const IB = afterBlocks.findIndex(({ P }) => P[K1] === NP1 && P[K2] === NP2);
+            if (IB >= 0) {
+              const BB = afterBlocks[IB];
+              const KB = `${NP1}.${NP2}`;
+              if (blockRelations[KA] && blockRelations[KB]) {
+                const { [KA]: KC, [KB]: KD } = blockRelations;
+                if (KC !== KD) {
+                  const [KE, KF] = KC === '0.0' ? [KC, KD] : [KD, KC];
+                  const { [KF]: { P, BP }, ...afterBlockChain } = blockChain;
+                  P.forEach((b) => {
+                    afterBlockChain[KE].P.push(b);
+                    blockRelations[`${b.P[K1]}.${b.P[K2]}`] = KE;
+                  });
+                  afterBlockChain[KE].BP = afterBlockChain[KE].BP.concat(BP);
+                  blockChain = afterBlockChain;
+                }
+              } else if (blockRelations[KA]) {
+                blockChain[blockRelations[KA]].P.push(BB);
+                blockRelations[KB] = blockRelations[KA];
+              } else if (blockRelations[KB]) {
+                blockChain[blockRelations[KB]].P.push(BA);
+                blockRelations[KA] = blockRelations[KB];
+              } else {
+                blockChain[KA] = { P: [BA, BB], BP: [] };
+                blockRelations[KA] = KA;
+                blockRelations[KB] = KA;
+              }
+            } else if (l === 1) {
+              isBase = true;
+            }
+          });
+          if (!blockRelations[KA]) {
+            blockRelations[KA] = KA;
+            blockChain[KA] = { P: [BA], BP: [] };
+          }
+          if (isBase) {
+            blockChain[blockRelations[KA]].BP.push(BA);
+          }
+        });
+
+        const { '0.0': coreChain, ...fallingChain } = blockChain;
+        phaseTime = 0;
+        block = null;
+        blocks = coreChain.P;
+        fallingParams = [];
+        fallingBlocks = [];
+
+        try {
+          Object.keys(fallingChain).forEach((_) => {
+            const coreCovers = {};
+
+            coreChain.P.forEach((P) => {
+              const { P: { [K1]: P1, [K2]: P2 } } = P;
+              const K = `${P2}`;
+              if (!(K in coreCovers)) coreCovers[K] = [];
+              if (!blocks.find(({ P: { [K1]: NP1, [K2]: NP2 } }) => NP1 === P1 - V && NP2 === P2)) {
+                coreCovers[K].push(P1);
+              }
+              fallingBlocks.push(P);
+            });
+
+            const fallingParam = Object.keys(fallingChain).map((code) => {
+              let [D, I] = [capacity * 2, false];
+
+              fallingChain[code].BP.forEach(({ P: { [K1]: P1, [K2]: P2 } }) => {
+                if (coreCovers[`${P2}`]) {
+                  coreCovers[`${P2}`].forEach((CP1) => {
+                    const d = (CP1 - P1) * V;
+                    if (d > 0 && d < D) [D, I] = [d, true];
+                  });
+                }
+              });
+
+              return { ...fallingChain[code], C: code, D, I };
+            }).sort(
+              (A, B) => A.D - B.D
+            ).reduce((res, param, i) => {
+              if (i === 0) {
+                delete fallingChain[param.C];
+
+                return param;
+              }
+
+              if (param.I && res.I && param.D === res.D) {
+                delete fallingChain[param.C];
+                res.P = res.P.concat(param.P);
+                res.BP = res.P.concat(param.BP);
+              }
+
+              return res;
+            }, null);
+
+            fallingParams.push(fallingParam);
+
+            if (!Object.keys(fallingChain).length) throw null;
+          });
+        } catch (_e) {
+        }
+      };
+
+      const makeFallingBlocks = () => {
+        const [K1, K2, S, V] = vectorMap[direction];
+        const PR3 = Math.pow(phaseTime, 2) * 0.02;
+        let lastIndex = null;
+
+        fallingBlocks = [];
+        fallingParams.forEach((fallingParam, i) => {
+          const isLast = PR3 >= fallingParam.D - 1;
+          fallingParam.P.forEach((B) => {
+            if (isLast) {
+              if (fallingParam.I) {
+                blocks.push({ ...B, P: { ...B.P, [K1]: B.P[K1] + V * (fallingParam.D - 1) } });
+              }
+            } else {
+              fallingBlocks.push({ ...B, P: { ...B.P, [K1]: B.P[K1] + V * PR3 } });
+            }
+          });
+          if (isLast) {
+            lastIndex = i;
+          }
+        });
+
+        if (lastIndex !== null) {
+          fallingParams = fallingParams.splice(lastIndex + 1);
+        }
+        if (!fallingParams.length) {
+          fallingParams = null;
+          fallingBlocks = [];
+        }
+      };
+
+      const animate = () => {
+        if (!animationSwitch) return;
+
+        switch (phase) {
+          case 'set':
+            const setResult = summonBlock();
+            if (setResult === -1) {
+              stopAnimation();
+              showFailedDialog();
+              phase = 'failed';
+            } else {
+              phase = 'fall';
+            }
+            break;
+          case 'fall':
+            const slidedResult = slideBlock((direction + 2) % 4);
+            if (slidedResult === -1) {
+              inspectBlocks();
+              if (vanishingBlocks.length) {
+                makeFallingBlocks();
+                phase = 'vanish';
+              } else {
+                phase = 'set';
+              }
+              score += 40;
+            } else if (slidedResult === -2) {
+              phase = 'set';
+              score -= 20;
+            }
+            break;
+          case 'vanish':
+            if (phaseTime > 5) {
+              phaseTime = 0;
+              vanishingBlocks = [];
+              phase = 'strip';
+            } else {
+              phaseTime ++;
+            }
+            break;
+          case 'strip':
+            if (!fallingParams || phaseTime > 100) {
+              phase = 'set';
+            } else {
+              makeFallingBlocks();
+              phaseTime ++;
+            }
+            break;
+        }
+
+        output();
+
+        time = (new Date()).getTime();
+        nextTime = time + phaseTimes[phase];
+        animation = setTimeout(animate, nextTime - time);
+      };
+
+      const startAnimation = () => {
+        if (animation) clearTimeout(animation);
+        animationSwitch = true;
+        if (nextTime > time) {
+          animation = setTimeout(animate, nextTime - time);
+        } else {
+          animate();
+        }
+      };
+
+      const stopAnimation = () => {
+        animationSwitch = false;
+        if (animation) clearTimeout(animation);
+        time = (new Date()).getTime();
+      };
+
+      const showFailedDialog = () => {
+        failedDialog.style.display = 'flex';
+      };
+
+      const setColorMode = (operate) => {
+        colorMode = operate;
+        output();
+      };
+
+      colorModeInput1.onchange = (event) => {
+        setColorMode(event.target.checked ? 'agate' : 'normal');
+      };
+
+      colorModeInput2.onchange = (event) => {
+        setColorMode(event.target.checked ? 'normal' : 'agate');
+      };
+
+      document.onkeydown = (event) => {
+        switch (event.code) {
+          case 'Enter':
+            if (animationSwitch === false) {
+              startAnimation();
+            } else {
+              stopAnimation();
+            }
+
+            break;
+          case 'ArrowUp':
+          case 'ArrowRight':
+          case 'ArrowDown':
+          case 'ArrowLeft':
+            const key = keyMap[event.code];
+            if ((direction - key) % 2) {
+              slideBlock(key);
+            } else {
+              rotateBlock([1, 3].includes(key) ? key : key + 1);
+            }
+            output();
+            break;
+          case 'KeyZ':
+          case 'KeyX':
+          case 'ShiftLeft':
+          case 'ShiftRight':
+            rotateBlock(keyMap[event.code]);
+            output();
+            break;
+          case 'Space':
+            if (phase === 'fall' && animationSwitch) {
+              if (animation) clearTimeout(animation);
+              pushDownBlock();
+              nextTime = time;
+              animate();
+            }
+            break;
+          default:
+        }
+      };
+
+      startAnimation();
+    </script>
+  </body>
+</html>
