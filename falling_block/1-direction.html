@@ -12,9 +12,7 @@
         overscroll-behavior-y: none;
       }
       #contents {
-        display: grid;
-        grid-template-columns: auto auto;
-        grid-template-rows: auto auto;
+        display: flex;
         margin: 10px 0 0 10px;
       }
       .wrapper {
@@ -32,13 +30,9 @@
         left: 0;
       }
       #display-wrapper {
-        grid-column: 1;
-        grid-row: 1;
         border: solid 1px #888888;
       }
       #score-wrapper {
-        grid-column: 1;
-        grid-row: 2;
         flex-direction: column;
         align-items: inherit;
         padding-bottom: 5px;
@@ -65,8 +59,6 @@
         border: solid 1px #aaaaccee;
       }
       #form {
-        grid-column: 1;
-        grid-row: 3;
         padding: 5px;
         justify-content: space-between;
       }
