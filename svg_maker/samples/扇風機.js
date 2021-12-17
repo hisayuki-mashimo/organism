@@ -1,5 +1,5 @@
 const coordinates = {};
-const surfaces = {};
+const surfaces = { SS: [], KF: [], KB: [] };
 const params = {
   羽根枚数: 3,
   羽根径: [
@@ -40,7 +40,7 @@ const params = {
   ],
   羽根傾斜: [15, 25],
   柵数: 24,
-  柵形状F: [
+  柵形状: [
     [ 48, 139],
     [ 55, 140],
     [ 65, 139],
@@ -53,27 +53,24 @@ const params = {
     [135, 116],
     [145, 106],
     [150,  81],
-  ],
-  柵形状B: [
-    [ 48, 38],
-    [ 55, 38],
-    [ 65, 37],
-    [ 75, 35],
-    [ 85, 36],
-    [ 95, 37],
-    [105, 38],
-    [115, 42],
-    [125, 46],
-    [135, 51],
-    [145, 59],
-    [150, 81],
+    [145,  59],
+    [135,  51],
+    [125,  46],
+    [115,  42],
+    [105,  38],
+    [ 95,  37],
+    [ 85,  36],
+    [ 75,  35],
+    [ 65,  37],
+    [ 55,  38],
+    [ 48,  38],
   ],
   電動機形状: [
     [57,  34],
     [52, -54],
     [47, -84],
     [44, -89],
-    [22, -95],
+    [33, -95],
   ],
   操作器位置: { Z: -60, Y: 48 },
   操作器形状: [
@@ -95,10 +92,10 @@ const params = {
     [ 24, -410 ],
     [ 28, -420 ],
   ],
-  台位置: { Z: 30, Y: -470 },
-  台形状: [
-    [ 30,  -7],
-    [ 45,  -8],
+  円盤位置: { Z: 30, Y: -470 },
+  円盤形状: [
+    [ 30,  -5],
+    [ 45,  -7],
     [ 65, -10],
     [ 85, -16],
     [105, -22],
@@ -106,29 +103,55 @@ const params = {
     [145, -40],
     [145, -48],
   ],
-  送風縦角度: -10 / 180 * Math.PI,
-  送風横角度:  12 / 180 * Math.PI,
+  送風機構縦角度: -10 / 180 * Math.PI,
+  送風機構横角度:  12 / 180 * Math.PI,
 };
 
 const 送風機構座標計算 = (LX0, LY0, LZ0) => {
   const RY0 = LX0 === 0 ? LZ0 : Math.pow(LX0 * LX0 + LZ0 * LZ0, 1 / 2);
   const TY0 = LX0 === 0 ? 0 : Math.acos(LZ0 / RY0) * (LX0 >= 0 ? 1 : -1);
-  const TY1 = TY0 + params.送風横角度;
+  const TY1 = TY0 + params.送風機構横角度;
   const LX1 = TY1 === TY0 ? LX1 : Math.sin(TY1) * RY0;
   const LZ1 = TY1 === TY0 ? LZ1 : Math.cos(TY1) * RY0;
-
   const RX1 = Math.pow(LY0 * LY0 + LZ1 * LZ1, 1 / 2);
   const TX1 = Math.acos(LZ1 / RX1) * (LY0 >= 0 ? 1 : -1);
-  const TX2 = TX1 + params.送風縦角度;
+  const TX2 = TX1 + params.送風機構縦角度;
   const LY2 = TX2 === TX1 ? LY0 : Math.sin(TX2) * RX1;
   const LZ2 = TX2 === TX1 ? LZ1 : Math.cos(TX2) * RX1;
 
   return { X: LX1, Y: LY2, Z: LZ2 };
 };
 
-const 冷却穴TB = Math.PI * 2 / params.羽根枚数 * 0.8 / params.羽根径.length;
-const 冷却穴RB = params.電動機形状[0][0] * 0.8;
-const 冷却穴ZB = params.電動機形状[0][1];
+const 排気穴TB = Math.PI * 2 / params.羽根枚数 * 0.8 / params.羽根径.length;
+const 排気穴RB = params.電動機形状[0][0] * 0.8;
+const 排気穴ZB = params.電動機形状[0][1];
+const 電動機BYF = Math.cos(Math.PI * 3 / 4) * params.電動機形状[0][0] - 20;
+const 電動機BYB = Math.cos(Math.PI * 3 / 4) * params.電動機形状[params.電動機形状.length - 2][0] - 15;
+const 電動機BZF = params.電動機形状[0][1];
+const 電動機BW = params.電動機形状[params.電動機形状.length - 2][1] - 電動機BZF;
+const 吸気穴BR = params.電動機形状[params.電動機形状.length - 1][0];
+const 吸気穴BZ = params.電動機形状[params.電動機形状.length - 1][1];
+const 吸気穴BH = 吸気穴BR * 2 / 11;
+const 吸気穴弧R = 150;
+const 吸気穴弧Z = Math.pow(吸気穴弧R * 吸気穴弧R - 吸気穴BR * 吸気穴BR, 1 / 2) + 吸気穴BZ;
+const 円盤末端番号 = params.円盤形状.length - 2;
+const 指示器R = (params.円盤形状[円盤末端番号][0] + params.円盤形状[円盤末端番号 - 3][0]) / 2;
+const 指示器Y = (params.円盤形状[円盤末端番号][1] + params.円盤形状[円盤末端番号 - 3][1]) / 2 + params.円盤位置.Y;
+const 指示器K = Math.atan(
+  (params.円盤形状[円盤末端番号][1] - params.円盤形状[円盤末端番号 - 3][1]) /
+  (params.円盤形状[円盤末端番号][0] - params.円盤形状[円盤末端番号 - 3][0])
+);
+const 指示器P = Array(12).fill(null).map((_, i) => {
+  const T0 = Math.PI * i / 6;
+  const X0 = Math.sin(T0) * 10;
+  const Z0 = Math.cos(T0) * 10;
+  const Z1 = Z0 * Math.cos(指示器K) + 指示器R;
+  const Y1 = Z0 * Math.sin(指示器K) + 指示器Y;
+  const R1 = Math.pow(X0 * X0 + Z1 * Z1, 1 / 2);
+  const T1 = Math.asin(X0 / R1);
+
+  return [R1, T1, Y1];
+});
 
 Array(params.羽根枚数).fill(null).forEach((_, i) => {
   params.羽根幅.forEach(([TS, TW], j) => {
@@ -147,40 +170,30 @@ Array(params.羽根枚数).fill(null).forEach((_, i) => {
     });
   });
 
-  const 冷却穴TS = Math.PI * 2 / params.羽根枚数 * i - 冷却穴TB * params.羽根径.length / 2;
+  const 排気穴TS = Math.PI * 2 / params.羽根枚数 * i - 排気穴TB * params.羽根径.length / 2;
   surfaces[`R${i}`] = [];
   params.羽根径.forEach((_, k) => {
-    const T1 = 冷却穴TS + 冷却穴TB * k;
-    const XO = Math.sin(T1) * 冷却穴RB;
-    const YO = Math.cos(T1) * 冷却穴RB;
-    const XI = Math.sin(T1) * (冷却穴RB - 10);
-    const YI = Math.cos(T1) * (冷却穴RB - 10);
-    coordinates[`冷却穴${i}.${k}O`] = 送風機構座標計算(XO, YO, 冷却穴ZB);
-    coordinates[`冷却穴${i}.${k}I`] = 送風機構座標計算(XI, YI, 冷却穴ZB);
-    surfaces[`R${i}`].push(`冷却穴${i}.${k}O`);
-    surfaces[`R${i}`].unshift(`冷却穴${i}.${k}I`);
+    const T1 = 排気穴TS + 排気穴TB * k;
+    const XO = Math.sin(T1) * 排気穴RB;
+    const YO = Math.cos(T1) * 排気穴RB;
+    const XI = Math.sin(T1) * (排気穴RB - 10);
+    const YI = Math.cos(T1) * (排気穴RB - 10);
+    coordinates[`排気穴${i}.${k}O`] = 送風機構座標計算(XO, YO, 排気穴ZB);
+    coordinates[`排気穴${i}.${k}I`] = 送風機構座標計算(XI, YI, 排気穴ZB);
+    surfaces[`R${i}`].push(`排気穴${i}.${k}O`);
+    surfaces[`R${i}`].unshift(`排気穴${i}.${k}I`);
   });
 });
-
-surfaces.SS = [];
 
 Array(params.柵数).fill(null).forEach((_, i) => {
   const T1 = Math.PI * 2 / params.柵数 * i;
   const T2 = Math.PI * 2 / params.柵数 * (i + 1 / 2);
-  params.柵形状F.forEach(([R1, Z1], j) => {
+  params.柵形状.forEach(([R1, Z1], j) => {
     const X1 = Math.sin(T1) * R1;
     const Y1 = Math.cos(T1) * R1;
-    coordinates[`柵F${i}.${j}`] = 送風機構座標計算(X1, Y1, Z1);
+    coordinates[`柵${i}.${j}`] = 送風機構座標計算(X1, Y1, Z1);
     if (j > 0) {
-      surfaces[`SF${i}.${j}`] = [`柵F${i}.${j - 1}`, `柵F${i}.${j}`];
-    }
-  });
-  params.柵形状B.forEach(([R1, Z1], j) => {
-    const X1 = Math.sin(T1) * R1;
-    const Y1 = Math.cos(T1) * R1;
-    coordinates[`柵B${i}.${j}`] = 送風機構座標計算(X1, Y1, Z1);
-    if (j > 0) {
-      surfaces[`SB${i}.${j}`] = [`柵B${i}.${j - 1}`, `柵B${i}.${j}`];
+      surfaces[`SK${i}.${j}`] = [`柵${i}.${j - 1}`, `柵${i}.${j}`];
     }
   });
 
@@ -222,11 +235,6 @@ Array(params.柵数).fill(null).forEach((_, i) => {
   surfaces[`S${i}B`] = [`飾輪${i}O`, `飾輪${i}B`, `飾輪${(i + 1) % params.柵数}B`, `飾輪${(i + 1) % params.柵数}O`];
 });
 
-const 電動機BYF = Math.cos(Math.PI * 3 / 4) * params.電動機形状[0][0] - 20;
-const 電動機BYB = Math.cos(Math.PI * 3 / 4) * params.電動機形状[params.電動機形状.length - 2][0] - 15;
-const 電動機BZF = params.電動機形状[0][1];
-const 電動機BW = params.電動機形状[params.電動機形状.length - 2][1] - 電動機BZF;
-
 ['L', 'R'].forEach((D, d) => {
   Array(17).fill(null).forEach((_, i) => {
     const T1 = Math.PI * i / 16;
@@ -263,26 +271,65 @@ const 電動機BW = params.電動機形状[params.電動機形状.length - 2][1]
 
   Array(25).fill(null).forEach((_, i) => {
     const T = Math.PI / 24 * i;
-    params.台形状.forEach(([RR, RY], j) => {
-      const K = (params.台位置.Z - params.支柱位置.Z) * Math.min(j / (params.台形状.length - 2), 1);
+    params.円盤形状.forEach(([RR, RY], j) => {
+      const K = (params.円盤位置.Z - params.支柱位置.Z) * Math.min(j / 円盤末端番号, 1);
       const X = Math.sin(T) * RR * (d === 0 ? 1 : -1);
       const Z = Math.cos(T) * RR + K + params.支柱位置.Z;
-      const Y = RY + params.台位置.Y;
-      coordinates[`台${i}.${j}${D}`] = { X, Y, Z };
+      const Y = RY + params.円盤位置.Y;
+      coordinates[`円盤${i}.${j}${D}`] = { X, Y, Z };
       if (j === 0) {
         const [SR, SY] = params.支柱形状[params.支柱形状.length - 1];
         const XS = Math.sin(T) * SR / 5 * (d === 0 ? 3 : -3);
         const ZS = Math.cos(T) * SR + params.支柱位置.Z;
         const YS = SY + params.支柱位置.Y;
-        coordinates[`台${i}.S${D}`] = { X: XS, Y: YS, Z: ZS };
+        coordinates[`円盤${i}.S${D}`] = { X: XS, Y: YS, Z: ZS };
       }
       if (i > 0) {
         if (j === 0) {
-          surfaces[`DA${i}.S${D}`] = [`台${i - 1}.S${D}`, `台${i - 1}.${j}${D}`, `台${i}.${j}${D}`, `台${i}.S${D}`];
+          surfaces[`DA${i}.S${D}`] = [`円盤${i - 1}.S${D}`, `円盤${i - 1}.${j}${D}`, `円盤${i}.${j}${D}`, `円盤${i}.S${D}`];
         } else {
-          surfaces[`DA${i}.${j}${D}`] = [`台${i - 1}.${j - 1}${D}`, `台${i - 1}.${j}${D}`, `台${i}.${j}${D}`, `台${i}.${j - 1}${D}`];
+          surfaces[`DA${i}.${j}${D}`] = [`円盤${i - 1}.${j - 1}${D}`, `円盤${i - 1}.${j}${D}`, `円盤${i}.${j}${D}`, `円盤${i}.${j - 1}${D}`];
         }
       }
+    });
+  });
+
+  Array(3).fill(null).forEach((_1, i) => {
+    const YB = 吸気穴BR - 吸気穴BH * ((i + 1) * 2 - 1);
+    const TB = Math.acos(YB / 吸気穴BR);
+    const WB = Math.sin(TB) * 吸気穴BR - 5;
+    const XL = Math.max(3, WB / 30);
+    surfaces[`KY${i}${D}F`] = [];
+    surfaces[`KY${i}${D}B`] = [];
+    Array(XL + 1).fill(null).forEach((_2, j) => {
+      const X1 = (WB * (1 - j / XL) + 5) * (d === 0 ? 1 : -1);
+      const R1 = Math.pow(X1 * X1 + YB * YB, 1 / 2);
+      const T1 = Math.atan(R1 / 150);
+      const Z1 = 吸気穴弧Z - Math.cos(T1) * 吸気穴弧R;
+      coordinates[`吸気穴${i}.${j}${D}F1`] = 送風機構座標計算(X1, YB, Z1);
+      coordinates[`吸気穴${i}.${j}${D}B1`] = 送風機構座標計算(X1, YB * -1, Z1);
+      surfaces[`KY${i}${D}F`].push(`吸気穴${i}.${j}${D}F1`);
+      surfaces[`KY${i}${D}B`].push(`吸気穴${i}.${j}${D}B1`);
+      let X0 = X1;
+      let Y0 = Math.min(YB + 吸気穴BH, 吸気穴BR);
+      let R0 = Math.pow(X1 * X1 + Y0 * Y0, 1 / 2);
+      if (R0 > 吸気穴BR) {
+        R0 = 吸気穴BR;
+        if (j > 0) {
+          Y0 = Math.pow(吸気穴BR * 吸気穴BR - X1 * X1, 1 / 2);
+        } else {
+          X0 = Math.pow(吸気穴BR * 吸気穴BR - Y0 * Y0, 1 / 2) * (d === 0 ? 1 : -1);
+          if (Math.abs(X0) < Math.abs((WB * (1 - (j + 1) / XL) + 5))) {
+            return;
+          }
+        }
+      }
+      const T0 = Math.atan(R0 / 150);
+      const Z0 = 吸気穴弧Z - Math.cos(T0) * 吸気穴弧R;
+      coordinates[`吸気穴${i}.${j}${D}F0`] = 送風機構座標計算(X0, Y0, Z0);
+      coordinates[`吸気穴${i}.${j}${D}B0`] = 送風機構座標計算(X0, Y0 * -1, Z0);
+      surfaces[`KY${i}${D}F`].unshift(`吸気穴${i}.${j}${D}F0`);
+      surfaces[`KY${i}${D}B`].unshift(`吸気穴${i}.${j}${D}B0`);
     });
   });
 
@@ -297,14 +344,6 @@ const 電動機BW = params.電動機形状[params.電動機形状.length - 2][1]
   surfaces[`T${D}M`] = [`取手${D}M`, `取手${D}U`];
   surfaces[`T${D}U`] = [`取手${D}U`, '取手M'];
 });
-
-const 指示器位置 = {
-  R: params.台形状[params.台形状.length - 2][0],
-  Y: params.台形状[params.台形状.length - 2][1] + params.台位置.Y,
-};
-
-surfaces.KF = [];
-surfaces.KB = [];
 
 Array(12).fill(null).forEach((_, i) => {
   const T0 = Math.PI / 6 * i;
@@ -336,13 +375,11 @@ Array(12).fill(null).forEach((_, i) => {
 Array(4).fill(null).forEach((_1, i) => {
   surfaces[`SH${i}`] = [];
   const T0 = Math.PI * (i / 12 - 3 / 24);
-  const X0 = Math.sin(T0) * 指示器位置.R;
-  const Z0 = Math.cos(T0) * 指示器位置.R;
-  Array(12).fill(null).forEach((_2, j) => {
-    const T = Math.PI * j / 6;
-    const X = Math.sin(T) * 10 + X0;
-    const Z = Math.cos(T) * 10 + Z0;
-    coordinates[`指示器${i}.${j}`] = { X, Z, Y: 指示器位置.Y + 15 };
+  指示器P.forEach(([R1, T1, Y1], j) => {
+    const T = T0 + T1;
+    const X = Math.sin(T) * R1;
+    const Z = Math.cos(T) * R1 + params.円盤位置.Z;
+    coordinates[`指示器${i}.${j}`] = { X, Z, Y: Y1 + 3 };
     surfaces[`SH${i}`].push(`指示器${i}.${j}`);
   });
 });
@@ -372,9 +409,10 @@ const colors = {
   Z: '#0088aaee',
   SH: '#ccccff',
   SH0: '#ffaaaa',
+  KY: '#000000',
 };
 const strokeColors = {
-  default: '#000000aa',
+  default: '#000000',
   H: '#00558888',
   Z: '#005588ee',
 };
